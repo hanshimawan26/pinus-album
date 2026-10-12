@@ -1,0 +1,71 @@
+---
+/** Site header (TRD §6.1): placeholder mark, "Pinus Community" linking home, descriptor. */
+import { SITE } from '../lib/config.ts';
+import { withBase } from '../lib/url.ts';
+import LogoMark from './LogoMark.astro';
+
+interface Props {
+  /** True on the home page, so the home link is marked as the current page. */
+  isHome?: boolean;
+}
+const { isHome = false } = Astro.props;
+---
+
+<header class="site-header">
+  <div class="container inner">
+    <a class="brand" href={withBase()} aria-current={isHome ? 'page' : undefined}>
+      <LogoMark size={34} />
+      <span class="names">
+        <span class="name">{SITE.name}</span>
+        <span class="descriptor">{SITE.descriptor}</span>
+      </span>
+    </a>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .inner {
+    display: flex;
+    align-items: center;
+    min-height: 4rem;
+    padding-block: var(--space-3);
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--color-text);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+  }
+
+  .brand:hover .name {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.2em;
+  }
+
+  .names {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .name {
+    font-size: var(--text-base);
+    font-weight: 700;
+    line-height: var(--leading-snug);
+    letter-spacing: -0.01em;
+  }
+
+  .descriptor {
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+    color: var(--color-text-muted);
+  }
+</style>

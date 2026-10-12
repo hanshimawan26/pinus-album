@@ -1,0 +1,130 @@
+---
+/**
+ * Card for an event (home) or a section (album page): cover, title, date, photo count, and
+ * section count when the node has sections (TRD §6.2, §6.3). The whole card is clickable
+ * through the title link; the cover is decorative because the title names the link.
+ */
+import type { AlbumNode } from '../lib/content/types.ts';
+import type { CardSize, LoadingHint } from '../lib/image-sizes.ts';
+import { coverImageFor } from '../lib/images.ts';
+import { albumUrl } from '../lib/url.ts';
+import DraftBadge from './DraftBadge.astro';
+import ImageIcon from './ImageIcon.astro';
+import NodeMeta from './NodeMeta.astro';
+
+interface Props {
+  node: AlbumNode;
+  size: CardSize;
+  headingLevel: 2 | 3;
+  loading: LoadingHint;
+}
+
+const { node, size, headingLevel, loading } = Astro.props;
+const cover = node.cover ? await coverImageFor(node.cover, size) : undefined;
+const Heading = headingLevel === 2 ? 'h2' : 'h3';
+---
+
+<article class:list={['card', `card--${size}`]}>
+  <div class="cover">
+    {
+      cover ? (
+        <img
+          src={cover.src}
+          srcset={cover.srcset}
+          sizes={cover.sizes}
+          width={cover.width}
+          height={cover.height}
+          alt=""
+          loading={loading.loading}
+          fetchpriority={loading.fetchpriority}
+          decoding="async"
+        />
+      ) : (
+        <ImageIcon />
+      )
+    }
+  </div>
+  <div class="text">
+    <Heading class="title">
+      <a class="link" href={albumUrl(node.slugPath)}>{node.title}</a>
+      {node.draft && <DraftBadge />}
+    </Heading>
+    <NodeMeta node={node} size={size} />
+  </div>
+</article>
+
+<style>
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .cover {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    display: grid;
+    place-items: center;
+    color: var(--color-text-muted);
+  }
+
+  .cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--duration-slow) var(--ease-out);
+  }
+
+  .card:hover .cover img {
+    transform: scale(1.03);
+  }
+
+  .text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .title {
+    font-size: var(--text-lg);
+    font-weight: 650;
+    line-height: var(--leading-snug);
+    letter-spacing: -0.01em;
+  }
+
+  .card--section .title {
+    font-size: var(--text-base);
+  }
+
+  .link {
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  /* The link covers the whole card, so the cover is clickable too. */
+  .link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-md);
+  }
+
+  .card:hover .link {
+    color: var(--color-link);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+  }
+
+  .link:focus-visible {
+    outline: none;
+  }
+
+  .link:focus-visible::after {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+  }
+</style>

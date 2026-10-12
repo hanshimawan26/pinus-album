@@ -62,6 +62,13 @@ jobs:
           CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
           TIMEZONE: ${{ vars.TIMEZONE || 'Asia/Singapore' }}
 
+      # No EXIF/GPS in published images, no copies of original photos, no broken links.
+      # Must use the same BASE_PATH as the build.
+      - name: Verify built site
+        run: npm run verify:dist
+        env:
+          BASE_PATH: ${{ vars.BASE_PATH || format('{0}/', steps.pages.outputs.base_path) }}
+
       - name: Upload site
         uses: actions/upload-pages-artifact@v5
         with:

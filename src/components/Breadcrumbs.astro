@@ -1,0 +1,76 @@
+---
+/** Breadcrumbs (TRD §6.3): Home › Event › Section, the last item is the current page. */
+import type { AlbumNode } from '../lib/content/types.ts';
+import { albumUrl, withBase } from '../lib/url.ts';
+import ChevronIcon from './ChevronIcon.astro';
+
+interface Props {
+  /** Nodes from the event down to the current node (inclusive). */
+  trail: readonly AlbumNode[];
+}
+const { trail } = Astro.props;
+const items = [
+  { label: 'Home', href: withBase() },
+  ...trail.map((node) => ({ label: node.title, href: albumUrl(node.slugPath) })),
+];
+---
+
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <ol class="bare-list" role="list">
+    {
+      items.map((item, index) => {
+        const isCurrent = index === items.length - 1;
+        return (
+          <li>
+            {index > 0 && <ChevronIcon direction="right" size={14} />}
+            {isCurrent ? (
+              <span aria-current="page">{item.label}</span>
+            ) : (
+              <a href={item.href}>{item.label}</a>
+            )}
+          </li>
+        );
+      })
+    }
+  </ol>
+</nav>
+
+<style>
+  .breadcrumbs {
+    font-size: var(--text-md);
+    line-height: var(--leading-snug);
+  }
+
+  ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: var(--space-1);
+  }
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  li :global(.chevron) {
+    margin-inline: var(--space-1);
+    color: var(--color-text-muted);
+  }
+
+  a {
+    text-decoration: none;
+    padding-block: var(--space-1);
+  }
+
+  a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+  }
+
+  [aria-current='page'] {
+    padding-block: var(--space-1);
+    color: var(--color-text-muted);
+  }
+</style>

@@ -1,0 +1,126 @@
+---
+/**
+ * Instagram-profile photo grid (TRD §6.4): square thumbnails, 3 columns on phones, 4 from
+ * 600px, 5 from 1100px, 3px gaps. Squares reserve their space, so nothing shifts while
+ * images load. Each tile is a button named by the photo's alt text.
+ *
+ * The post viewer (milestone 4) reads the JSON below: `photos[i]` belongs to the tile with
+ * `data-index="i"`, and `data-photo-slug` is the deep-link hash (TRD §4.7, §6.5).
+ */
+import type { Photo } from '../lib/content/types.ts';
+import { loadingHint } from '../lib/image-sizes.ts';
+import { thumbnailFor, viewerImageFor } from '../lib/images.ts';
+import { jsonForScript } from '../lib/presentation.ts';
+import { viewerPhoto, type ViewerData } from '../lib/viewer-data.ts';
+
+interface Props {
+  photos: readonly Photo[];
+  /** "Day 1 · Demo Event A", shown in the viewer's details panel. */
+  context: string;
+  /** True when the grid starts in the first viewport, so the first row loads eagerly. */
+  nearTop: boolean;
+}
+
+const { photos, context, nearTop } = Astro.props;
+const tiles = await Promise.all(
+  photos.map(async (photo) => ({ photo, thumbnail: await thumbnailFor(photo), viewer: await viewerImageFor(photo) })),
+);
+const viewerData: ViewerData = {
+  context,
+  photos: tiles.map(({ photo, viewer }) => viewerPhoto(photo, viewer)),
+};
+// The first row of the widest layout (5 tiles) loads eagerly with high priority: the tiles
+// are all the same size, so any of them can be the largest contentful paint.
+const policy = { nearTop, highPriority: 5, eager: 5 };
+---
+
+<ul class="bare-list grid" role="list">
+  {
+    tiles.map(({ photo, thumbnail }, index) => {
+      const hint = loadingHint(index, policy);
+      return (
+        <li>
+          <button type="button" class="tile" data-photo-slug={photo.slug} data-index={index}>
+            <img
+              src={thumbnail.src}
+              srcset={thumbnail.srcset}
+              sizes={thumbnail.sizes}
+              width={thumbnail.width}
+              height={thumbnail.height}
+              alt={photo.alt}
+              loading={hint.loading}
+              fetchpriority={hint.fetchpriority}
+              decoding="async"
+            />
+          </button>
+        </li>
+      );
+    })
+  }
+</ul>
+<script is:inline type="application/json" id="viewer-data" set:html={jsonForScript(viewerData)} />
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--grid-gap);
+    /* Edge to edge on phones, like a profile grid. */
+    margin-inline: calc(-1 * var(--gutter));
+  }
+
+  @media (min-width: 600px) {
+    .grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-inline: 0;
+    }
+  }
+
+  @media (min-width: 1100px) {
+    .grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+
+  .tile {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--color-surface-sunken);
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Hover veil and focus ring sit above the photo. */
+  .tile::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: transparent;
+    transition: background-color var(--duration-fast) var(--ease-out);
+    pointer-events: none;
+  }
+
+  .tile:hover::after {
+    background: var(--color-tile-veil);
+  }
+
+  .tile:focus-visible {
+    outline: none;
+  }
+
+  .tile:focus-visible::after {
+    border: 3px solid var(--color-focus);
+    box-shadow: inset 0 0 0 2px var(--color-bg);
+  }
+</style>

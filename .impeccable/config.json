@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "src/lib/build-checks/image-claims.ts"
+        ],
+        "createdAt": "2026-10-12T16:06:50.349Z",
+        "reason": "agent: L23 is a regex literal (/<img\\b[^>]*>/) in a TypeScript build checker, not markup"
+      }
+    ]
+  }
+}

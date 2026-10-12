@@ -1,0 +1,63 @@
+---
+/** Site footer (TRD §6.1, §10): organisation name and descriptor, takedown line. */
+import { SITE } from '../lib/config.ts';
+---
+
+<footer class="site-footer">
+  <div class="container inner">
+    <p class="takedown">
+      Not comfortable with a photo? Contact <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a> and we'll
+      remove it.
+    </p>
+    <p class="org">
+      <span class="name">{SITE.name}</span>
+      <span class="descriptor">{SITE.descriptor}</span>
+    </p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: auto;
+    border-top: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding-block: var(--space-6) var(--space-7);
+  }
+
+  /* No width cap: on desktop the sentence fits on one line; when it must wrap, balance keeps
+     "and we'll remove it." from ending up alone. */
+  .takedown {
+    text-wrap: balance;
+  }
+
+  .takedown a {
+    overflow-wrap: anywhere;
+  }
+
+  .org {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: var(--space-2);
+  }
+
+  .name {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  @media (min-width: 900px) {
+    .inner {
+      flex-direction: row-reverse;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: var(--space-6);
+    }
+  }
+</style>

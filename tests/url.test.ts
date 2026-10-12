@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { normaliseBasePath } from '../src/lib/config.ts';
 import { albumUrl, withBase } from '../src/lib/url.ts';
 
 describe('withBase', () => {
@@ -23,5 +24,18 @@ describe('albumUrl', () => {
 
   it('returns home for an empty path', () => {
     expect(albumUrl([], '/x/')).toBe('/x/');
+  });
+});
+
+describe('normaliseBasePath (BASE_PATH, TRD §8)', () => {
+  it('adds the slashes a base needs', () => {
+    expect(normaliseBasePath('pinus-album')).toBe('/pinus-album/');
+    expect(normaliseBasePath('/pinus-album')).toBe('/pinus-album/');
+    expect(normaliseBasePath(' /a/b// ')).toBe('/a/b/');
+  });
+
+  it('treats empty and "/" as the domain root', () => {
+    expect(normaliseBasePath('')).toBe('/');
+    expect(normaliseBasePath('/')).toBe('/');
   });
 });

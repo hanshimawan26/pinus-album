@@ -1,14 +1,23 @@
 ---
-import { ALLOW_INDEXING, SITE } from '../lib/config.ts';
+/**
+ * Page shell: document head (title, description, robots), skip link and the landmarks
+ * header › main › footer (TRD §6.1, §6.6). The global stylesheet is imported once, here.
+ */
+import '../styles/global.css';
+import SiteFooter from '../components/SiteFooter.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import { ALLOW_INDEXING, SITE, THEME_COLOR } from '../lib/config.ts';
 import { withBase } from '../lib/url.ts';
 
 interface Props {
   /** Page-specific title; the site name is appended. Omit on the home page. */
   title?: string;
   description?: string;
+  /** Marks the header's home link as the current page. */
+  isHome?: boolean;
 }
 
-const { title, description = `Photo album of ${SITE.name}, ${SITE.descriptor}.` } = Astro.props;
+const { title, description = `Photo albums of ${SITE.name}, ${SITE.descriptor}.`, isHome = false } = Astro.props;
 const fullTitle = title ? `${title} · ${SITE.name}` : SITE.name;
 ---
 
@@ -20,10 +29,45 @@ const fullTitle = title ? `${title} · ${SITE.name}` : SITE.name;
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <meta name="robots" content={ALLOW_INDEXING ? 'index, follow' : 'noindex, nofollow'} />
+    <meta name="theme-color" content={THEME_COLOR} />
     <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
     <meta name="generator" content={Astro.generator} />
   </head>
   <body>
-    <slot />
+    <a class="skip-link" href="#main">Skip to content</a>
+    <SiteHeader isHome={isHome} />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <SiteFooter />
   </body>
 </html>
+
+<style>
+  .skip-link {
+    position: absolute;
+    top: var(--space-2);
+    left: var(--space-2);
+    z-index: 10;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-sm);
+    background: var(--brand-blue);
+    color: var(--color-on-accent);
+    font-weight: 600;
+    text-decoration: none;
+    transform: translateY(calc(-100% - var(--space-4)));
+  }
+
+  .skip-link:focus {
+    transform: none;
+  }
+
+  main {
+    display: block;
+    padding-bottom: var(--space-8);
+  }
+
+  main:focus {
+    outline: none;
+  }
+</style>

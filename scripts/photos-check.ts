@@ -7,16 +7,7 @@
  */
 import { loadAlbums, type Issue } from '../src/lib/content/index.ts';
 import { ALBUMS_DIR, TIMEZONE } from '../src/lib/config.ts';
-
-const useColour = Boolean(process.stdout.isTTY) && !process.env.NO_COLOR;
-const paint = (code: number) => (text: string) => (useColour ? `\x1b[${code}m${text}\x1b[0m` : text);
-const red = paint(31);
-const yellow = paint(33);
-const green = paint(32);
-const bold = paint(1);
-const dim = paint(2);
-
-const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
+import { bold, dim, green, plural, red, runCli, yellow } from './cli.ts';
 
 function printGroup(title: string, issues: readonly Issue[], colour: (text: string) => string, marker: string): void {
   if (issues.length === 0) return;
@@ -61,12 +52,4 @@ async function main(): Promise<number> {
   return 0;
 }
 
-main().then(
-  (code) => {
-    process.exitCode = code;
-  },
-  (error: unknown) => {
-    console.error(red(`photos:check could not run: ${error instanceof Error ? error.message : String(error)}`));
-    process.exitCode = 1;
-  },
-);
+runCli('photos:check', main);

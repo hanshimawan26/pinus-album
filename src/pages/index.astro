@@ -1,29 +1,59 @@
 ---
+/** Home (TRD §6.2): every event, newest first. */
+import AlbumCardList from '../components/AlbumCardList.astro';
+import EmptyState from '../components/EmptyState.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { SITE } from '../lib/config.ts';
 import { loadAlbumsOrThrow } from '../lib/content/index.ts';
-import { formatDateRange } from '../lib/dates.ts';
+import { countLabel } from '../lib/presentation.ts';
 
-// Milestone 2 smoke test: proves the content engine runs in the build (and fails it on
-// content errors). The real home page (event cards) arrives in milestone 3.
 const albums = await loadAlbumsOrThrow({ includeDrafts: import.meta.env.DEV });
 const events = albums.root.children;
 ---
 
-<BaseLayout>
-  <main>
-    <h1>{SITE.name}</h1>
-    <p>{SITE.descriptor}</p>
-    <ul>
+<BaseLayout isHome>
+  <div class="container page">
+    <header class="intro">
+      <h1 class="page-title">Photo albums</h1>
       {
-        events.map((event) => (
-          <li>
-            {event.title}
-            {event.date && <> · {formatDateRange(event.date, event.endDate)}</>}
-            {` · ${event.photoCount} photos`}
-          </li>
-        ))
+        events.length > 0 && (
+          <p class="meta">
+            <span>{countLabel(events.length, 'event')}</span>
+            {albums.root.photoCount > 0 && <span>{countLabel(albums.root.photoCount, 'photo')}</span>}
+          </p>
+        )
       }
-    </ul>
-  </main>
+    </header>
+
+    {
+      events.length > 0 ? (
+        <AlbumCardList nodes={events} size="event" headingLevel={2} nearTop />
+      ) : (
+        <EmptyState title="No albums yet">
+          <p>Photos from our events will appear here soon. Check back after the next event.</p>
+        </EmptyState>
+      )
+    }
+  </div>
 </BaseLayout>
+
+<style>
+  .page {
+    padding-top: var(--space-6);
+  }
+
+  .intro {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+  }
+
+  @media (min-width: 900px) {
+    .page {
+      padding-top: var(--space-7);
+    }
+    .intro {
+      margin-bottom: var(--space-7);
+    }
+  }
+</style>

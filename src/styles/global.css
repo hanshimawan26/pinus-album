@@ -1,0 +1,230 @@
+/*
+ * Global stylesheet: design tokens, base elements and a few shared utilities.
+ * Imported once by BaseLayout. Components keep their own scoped styles and use these
+ * tokens. Colour roles and measured contrast are documented in DESIGN.md.
+ *
+ * Breakpoints (keep in step with src/lib/image-sizes.ts): 600px, 900px, 1100px.
+ */
+
+:root {
+  /* Brand colours (binding; accents, not base colours). */
+  --brand-blue: #334e97;
+  --brand-red: #ef4c2b;
+  --brand-yellow: #f1b244;
+
+  /* Neutral base. */
+  --color-bg: #faf8f4; /* = THEME_COLOR in src/lib/config.ts (a unit test checks) */
+  --color-surface-sunken: #f1ede5;
+  --color-text: #1c1b19;
+  --color-text-muted: #5f5a52;
+  --color-border: #e4dfd5;
+
+  /* Interactive: brand blue. */
+  --color-link: var(--brand-blue);
+  --color-link-hover: #263b75;
+  --color-on-accent: #faf8f4;
+  --color-focus: var(--brand-blue);
+  --color-selection: #dce2f2;
+  --color-tile-veil: rgb(0 0 0 / 0.14);
+
+  /* Post viewer (milestone 4): the photo area is black. */
+  --color-viewer-bg: #000000;
+  --color-viewer-text: #ffffff;
+  --color-viewer-text-muted: #b8b2a7;
+  --color-viewer-focus: #a9b9e6;
+
+  /* Type: the platform's own UI face (TRD §6.1). */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
+  --text-sm: 0.8125rem; /* 13px: meta lines, footer */
+  --text-md: 0.9375rem; /* 15px: breadcrumbs, card text */
+  --text-base: 1rem; /* 16px: body */
+  --text-lg: 1.1875rem; /* 19px: card titles, section headings */
+  --text-display: clamp(1.75rem, 1.3rem + 1.9vw, 2.75rem); /* 28→44px: page titles */
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-body: 1.6;
+  --tracking-display: -0.025em;
+
+  /* Spacing (4px base). */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+
+  /* Layout. */
+  --content-max: 70rem; /* 1120px */
+  --prose-max: 65ch;
+  --gutter: 1rem;
+  --grid-gap: 3px;
+
+  /* Shape. */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-full: 999px;
+  --focus-ring: 2px solid var(--color-focus);
+  --focus-offset: 3px;
+
+  /* Motion: exponential ease-out, short. Disabled under prefers-reduced-motion. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 160ms;
+  --duration-slow: 480ms;
+
+  color-scheme: light;
+  accent-color: var(--brand-blue);
+  scrollbar-color: #8f897e transparent;
+}
+
+@media (min-width: 600px) {
+  :root {
+    --gutter: 1.5rem;
+  }
+}
+
+@media (min-width: 1100px) {
+  :root {
+    --gutter: 2rem;
+  }
+}
+
+/* ---------- Base ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-wrap: break-word;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  line-height: var(--leading-snug);
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--color-link);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  color: var(--color-link-hover);
+  text-decoration-thickness: 2px;
+}
+
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+  border-radius: 2px;
+}
+
+::selection {
+  background: var(--color-selection);
+  color: var(--color-text);
+}
+
+/* ---------- Utilities ---------- */
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Centred content column with side gutters. */
+.container {
+  width: 100%;
+  max-width: calc(var(--content-max) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Unstyled list (keeps list semantics; `role="list"` restores them in Safari). */
+.bare-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Page title (h1) on every page, the 404 included. */
+.page-title {
+  font-size: var(--text-display);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+}
+
+/* Meta line: "18–20 Sep 2026 · 35 photos · 3 sections". */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.5em;
+  color: var(--color-text-muted);
+}
+
+.meta > * + *::before {
+  content: '·';
+  margin-inline-end: 0.5em;
+  color: var(--color-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

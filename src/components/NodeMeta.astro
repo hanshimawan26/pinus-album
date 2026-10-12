@@ -1,0 +1,48 @@
+---
+/**
+ * Meta line of an album node: "18–20 Sep 2026 · 35 photos · 3 sections" (TRD §6.2, §6.3).
+ * Shared by the album page header and the event and section cards. `<time datetime>` is
+ * used only for single days, since a range has no single machine-readable value. Renders
+ * nothing when the node has neither a date nor photos.
+ */
+import type { AlbumNode } from '../lib/content/types.ts';
+import { nodeCounts, nodeDateLabel, nodeIsoDay } from '../lib/presentation.ts';
+
+interface Props {
+  node: AlbumNode;
+  /** Text size: album page header, event card or section card. */
+  size: 'page' | 'event' | 'section';
+}
+
+const { node, size } = Astro.props;
+const date = nodeDateLabel(node);
+const isoDay = nodeIsoDay(node);
+const counts = nodeCounts(node);
+---
+
+{
+  (date || counts.length > 0) && (
+    <p class:list={['meta', `meta--${size}`]}>
+      {date && (isoDay ? <time datetime={isoDay}>{date}</time> : <span>{date}</span>)}
+      {counts.map((count) => (
+        <span>{count}</span>
+      ))}
+    </p>
+  )
+}
+
+<style>
+  .meta--page {
+    font-size: var(--text-base);
+  }
+
+  .meta--event {
+    font-size: var(--text-md);
+    line-height: var(--leading-snug);
+  }
+
+  .meta--section {
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+  }
+</style>

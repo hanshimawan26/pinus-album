@@ -11,6 +11,9 @@ logged in [docs/DECISIONS.md](docs/DECISIONS.md). Read the TRD before changing b
 - `npm run typecheck` — `astro check`
 - `npm run photos:check` — validate `src/albums/` (exit 1 on errors)
 - `npm run demo:images` — regenerate the placeholder demo images (deterministic, idempotent)
+- `npm run verify:dist` — after a build: no EXIF/GPS in published images, no copies of source
+  photos, no broken internal links, every image file the size (and orientation) its page
+  claims. Run it with the same `BASE_PATH` as the build.
 - Build under a sub-path: `BASE_PATH=/pinus-album/ npm run build`. In Git Bash, prefix
   `MSYS_NO_PATHCONV=1` when passing `BASE_PATH=/`, or MSYS rewrites it into a Windows path.
 
@@ -19,27 +22,38 @@ logged in [docs/DECISIONS.md](docs/DECISIONS.md). Read the TRD before changing b
 ```
 src/
   albums/            content only (event folders, index.md, photos.yaml, @photographer folders)
-  lib/               plain TypeScript, framework-free, unit-tested
-    config.ts        env-driven settings (TIMEZONE, ALLOW_INDEXING, CONTACT_EMAIL)
+  lib/               plain TypeScript, unit-tested; framework-free except images.ts (Astro-only)
+    config.ts        env-driven settings (BASE_PATH, TIMEZONE, ALLOW_INDEXING, CONTACT_EMAIL)
     url.ts           withBase()/albumUrl() — every internal link goes through these
     slug.ts          slugify, numeric-prefix stripping, title-from-slug, photo/photographer slugs
     dates.ts         EXIF date parsing in TIMEZONE, display formatting, ranges
     content/
       types.ts       domain types (AlbumNode, Photo, Photographer, Issue)
       schemas.ts     zod schemas for index.md frontmatter, photos.yaml, photographers.yaml
-      scan.ts        filesystem walk → SourceTree (the only fs-reading module besides exif.ts)
+      scan.ts        filesystem walk → SourceTree (fs IO lives only in scan.ts, exif.ts and
+                     build-checks/files.ts)
       exif.ts        EXIF date / orientation / upright dimensions (build time only)
       resolve.ts     PURE: per-photo metadata precedence (TRD §4.6), photos.yaml key matching
       model.ts       PURE: SourceTree → ContentModel (every node and photo, drafts/hidden included)
       tree.ts        PURE: ContentModel → published AlbumNode tree: ordering, counts, covers, drafts
       validate.ts    PURE: ContentModel → TRD §4.8 errors and warnings (Issue[])
       index.ts       loadAlbums() / loadAlbumsOrThrow(): scan → exif → model → tree + validate
+    image-sizes.ts   PURE: derivative widths, crops, `sizes` strings, eager/lazy policy (TRD §7)
+    presentation.ts  PURE: counts, date labels, meta descriptions, JSON-for-<script> escaping
+    viewer-data.ts   PURE: per-photo data embedded for the post viewer (TRD §6.5)
+    images.ts        ASTRO-ONLY: photos → getImage() derivatives (thumb, viewer srcset, covers)
+    build-checks/    checks of the built site: image-metadata.ts, links.ts, image-claims.ts
+                     (all PURE), files.ts (fs). Not named dist/: that name is the build output
+  content.config.ts  `stories` collection: renders index.md stories with Astro's Markdown
+  integrations/      remove-source-copies.ts — deletes copies of original photos from dist/
+  styles/global.css  design tokens (see DESIGN.md) and base styles, imported once by the layout
   components/        .astro components (one responsibility each)
-  layouts/           BaseLayout.astro
+  layouts/           BaseLayout.astro (head, skip link, header › main › footer)
   pages/             index.astro, albums/[...path].astro, 404.astro — thin; data comes from lib
   scripts/           client-side TS (the post viewer), bundled by Astro, only on pages with photos
-scripts/             maintainer CLIs (photos:check, photos:prep, photos:init, demo:images) —
-                     thin wrappers over src/lib, run with Node type stripping
+scripts/             maintainer CLIs (photos:check, photos:prep, photos:init, demo:images,
+                     verify:dist) — thin wrappers over src/lib, run with Node type stripping;
+                     cli.ts holds the shared colours and runCli() (readable crash message)
 tests/               Vitest; helpers under tests/helpers/ (fs fixtures are generated at test time)
 ```
 
@@ -55,12 +69,16 @@ tests/               Vitest; helpers under tests/helpers/ (fs fixtures are gener
 - **Absent data disappears.** Never render "Unknown" or an empty row (TRD §4.6, §6.5).
 - **Links:** never hard-code a leading `/`; use `withBase()` / `albumUrl()`.
 - **Privacy:** published images must carry no EXIF/GPS, and original source files must not be
-  copied into `dist/` (they still contain EXIF).
+  copied into `dist/` (they still contain EXIF). Never read a property of an imported image
+  (`.src`, `.width`, …): Astro then keeps the original in `dist/`. Pass it only to
+  `getImage()` in `images.ts`; sizes come from the content engine. `verify:dist` enforces it.
+- **Design:** visual decisions and colour roles live in `DESIGN.md`; use the tokens in
+  `src/styles/global.css`, never raw colours in components. Page titles use `.page-title`.
 - **Content errors fail the build** via `loadAlbumsOrThrow()`; pages pass
   `includeDrafts: import.meta.env.DEV`. Validation messages are written for non-developers:
   say what is wrong and how to fix it.
 - **Tests:** pure modules get in-memory trees (`tests/helpers/content.ts`); `scan`/`exif` get a
   fixture tree generated with sharp in a temp folder at test time (no binaries committed).
 - Record any assumption or deviation from the TRD in `docs/DECISIONS.md`.
-- Every milestone ends green: `npm test`, `npm run typecheck`, `npm run photos:check`, and
-  `npm run build` all pass.
+- Every milestone ends green: `npm test`, `npm run typecheck`, `npm run photos:check`,
+  `npm run build` + `npm run verify:dist`, and the same build + verify with `BASE_PATH=/`.

@@ -1,0 +1,83 @@
+---
+/**
+ * Sibling navigation at the bottom of an album page (TRD §6.3): "‹ Day 1 · Day 3 ›".
+ * A side without a sibling is left out; nothing renders when there is neither.
+ */
+import type { AlbumNode } from '../lib/content/types.ts';
+import { albumUrl } from '../lib/url.ts';
+import ChevronIcon from './ChevronIcon.astro';
+
+interface Props {
+  previous?: AlbumNode | undefined;
+  next?: AlbumNode | undefined;
+  /** "sections" or "events": names the landmark and the screen-reader prefixes. */
+  kind: 'sections' | 'events';
+}
+
+const { previous, next, kind } = Astro.props;
+const noun = kind === 'events' ? 'event' : 'section';
+---
+
+{
+  (previous || next) && (
+    <nav class="siblings" aria-label={kind === 'events' ? 'Other events' : 'Other sections'}>
+      {previous && (
+        <a class="link link--previous" href={albumUrl(previous.slugPath)} rel="prev">
+          <ChevronIcon direction="left" />
+          <span>
+            <span class="visually-hidden">Previous {noun}: </span>
+            {previous.title}
+          </span>
+        </a>
+      )}
+      {previous && next && (
+        <span class="separator" aria-hidden="true">
+          ·
+        </span>
+      )}
+      {next && (
+        <a class="link link--next" href={albumUrl(next.slugPath)} rel="next">
+          <span>
+            <span class="visually-hidden">Next {noun}: </span>
+            {next.title}
+          </span>
+          <ChevronIcon direction="right" />
+        </a>
+      )}
+    </nav>
+  )
+}
+
+<style>
+  .siblings {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2) var(--space-4);
+    margin-top: var(--space-8);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
+    font-size: var(--text-base);
+    font-weight: 600;
+  }
+
+  .link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: 2.75rem;
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+  }
+
+  .link:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+  }
+
+  .separator {
+    color: var(--color-text-muted);
+  }
+</style>

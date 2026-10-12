@@ -1,0 +1,28 @@
+---
+/** A small chevron drawn at 1.75px stroke; decorative (the text beside it carries the meaning). */
+interface Props {
+  direction: 'left' | 'right';
+  size?: number;
+}
+const { direction, size = 16 } = Astro.props;
+const d = direction === 'left' ? 'M10 3.5 5.5 8l4.5 4.5' : 'M6 3.5 10.5 8 6 12.5';
+---
+
+<svg class="chevron" width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+  <path d={d}></path>
+</svg>
+
+<style>
+  .chevron {
+    flex: none;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+</style>

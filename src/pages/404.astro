@@ -1,11 +1,21 @@
 ---
+/** Not found (TRD §5). Served by GitHub Pages for any unknown URL under the site. */
+import EmptyState from '../components/EmptyState.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { withBase } from '../lib/url.ts';
 ---
 
-<BaseLayout title="Page not found">
-  <main>
-    <h1>Page not found</h1>
-    <p><a href={withBase()}>Back to all events</a></p>
-  </main>
+<BaseLayout title="Page not found" description="This page does not exist.">
+  <div class="container page">
+    <EmptyState title="Page not found" headingLevel={1}>
+      <p>The link may be incomplete, or the album may have moved.</p>
+      <p><a href={withBase()}>See all photo albums</a></p>
+    </EmptyState>
+  </div>
 </BaseLayout>
+
+<style>
+  .page {
+    padding-top: var(--space-7);
+  }
+</style>
