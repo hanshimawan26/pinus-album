@@ -1,12 +1,29 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { SITE } from '../lib/config.ts';
+import { loadAlbumsOrThrow } from '../lib/content/index.ts';
+import { formatDateRange } from '../lib/dates.ts';
+
+// Milestone 2 smoke test: proves the content engine runs in the build (and fails it on
+// content errors). The real home page (event cards) arrives in milestone 3.
+const albums = await loadAlbumsOrThrow({ includeDrafts: import.meta.env.DEV });
+const events = albums.root.children;
 ---
 
 <BaseLayout>
   <main>
     <h1>{SITE.name}</h1>
     <p>{SITE.descriptor}</p>
-    <p>Hello! The photo album is on its way.</p>
+    <ul>
+      {
+        events.map((event) => (
+          <li>
+            {event.title}
+            {event.date && <> · {formatDateRange(event.date, event.endDate)}</>}
+            {` · ${event.photoCount} photos`}
+          </li>
+        ))
+      }
+    </ul>
   </main>
 </BaseLayout>

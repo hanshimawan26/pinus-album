@@ -16,6 +16,9 @@ export const SITE = {
   contactEmail: env.CONTACT_EMAIL || 'pinus.community.album@example.com',
 } as const;
 
+/** Content folder (TRD §4.1), relative to the project root. */
+export const ALBUMS_DIR = 'src/albums';
+
 /** EXIF dates have no zone; interpret and display them in this IANA zone (TRD §4.6). */
 export const TIMEZONE = env.TIMEZONE || 'Asia/Singapore';
 

@@ -1,0 +1,18 @@
+# Display names and optional Instagram handles for photographer slugs (TRD §4.5).
+# A slug used in an @folder or photos.yaml but not listed here is shown title-cased
+# ("andi-pratama" becomes "Andi Pratama").
+#
+# DEMO entries below: placeholder people, not real. Delete them together with the demo-*
+# folders once real albums exist.
+#   alice-demo  has an Instagram handle (the viewer links her name). The handle is a
+#               made-up placeholder.
+#   budi-demo   has no Instagram handle (name only, no link).
+#   citra-demo  is deliberately NOT listed: Demo Event A / Day 3 credits her, and her name
+#               falls back to "Citra Demo".
+
+alice-demo:
+  name: "Alice (Demo)"
+  instagram: "alice.demo.placeholder"
+
+budi-demo:
+  name: "Budi (Demo)"

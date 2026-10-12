@@ -15,14 +15,19 @@
     "typecheck": "astro check",
     "test": "vitest run",
     "test:watch": "vitest",
-    "photos:check": "node scripts/photos-check.ts"
+    "photos:check": "node scripts/photos-check.ts",
+    "demo:images": "node scripts/demo-images.ts"
   },
   "dependencies": {
     "astro": "^7.3.8",
-    "sharp": "^0.35.5"
+    "exifr": "^7.1.3",
+    "sharp": "^0.35.5",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@playwright/test": "^1.64.0",
     "typescript": "^5.9.3",
     "vitest": "^5.0.4"
   }

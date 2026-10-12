@@ -1,7 +1,8 @@
 * text=auto eol=lf
 *.cmd text eol=crlf
-*.jpg binary
-*.jpeg binary
-*.png binary
-*.webp binary
+# Images are binary in any letter case (cameras write .JPG).
+*.[jJ][pP][gG] binary
+*.[jJ][pP][eE][gG] binary
+*.[pP][nN][gG] binary
+*.[wW][eE][bB][pP] binary
 *.ico binary

@@ -1,0 +1,36 @@
+# DEMO photos.yaml for Demo Event B (flat event, no sections).
+#
+# The IMG-*-WA*.jpg files sit directly in this folder (no @folder) and this event's
+# index.md has no photographer and no date, so these entries show the remaining cases.
+# @alice-demo photos: photographer from the folder, date from EXIF.
+
+# Photographer from photos.yaml (no @folder) and date from photos.yaml (no EXIF).
+"IMG-20260815-WA0001.jpg":
+  caption: "Demo: photographer and date both come from photos.yaml."
+  photographer: budi-demo
+  date: 2026-08-15
+
+# Date missing: no EXIF, no photos.yaml date, and no index.md date anywhere above it.
+# photos:check warns (intentional); the viewer shows no date row.
+"IMG-20260815-WA0002.jpg":
+  photographer: budi-demo
+
+# IMG-20260815-WA0003.jpg is deliberately NOT listed: photographer missing AND date
+# missing. photos:check warns twice (intentional); the viewer shows neither row.
+
+"IMG-20260815-WA0004.png":
+  photographer: budi-demo
+  date: 2026-08-15
+
+"IMG-20260815-WA0005.jpg":
+  photographer: budi-demo
+  date: 2026-08-15
+
+# Carries GPS EXIF tags: used to prove that published images are stripped. Date from EXIF.
+"IMG-20260815-WA0006.jpg":
+  caption: "Demo: this file has GPS data; the website copy must not."
+  photographer: budi-demo
+
+# Caption on a photo credited by its @folder.
+"@alice-demo/IMG_5001.jpg":
+  caption: "Demo caption: arrival at the venue."

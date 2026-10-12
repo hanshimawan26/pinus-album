@@ -1,0 +1,14 @@
+# DEMO photos.yaml for Demo Event A / Day 3.
+#
+# PXL_*.jpg / PXL_0004.png sit directly in this folder (no @folder), so their photographer
+# comes from index.md (citra-demo). The @alice-demo photos keep their folder credit.
+# PXL_0003.jpg and PXL_0004.png have no EXIF date: date falls back to index.md (20 Sep 2026).
+
+# Wrong camera clock: the EXIF date is 1 Jan 2020, outside this section's date.
+# photos:check prints a warning (intentional); the EXIF date still wins (TRD §14 #10).
+PXL_0005.jpg:
+  caption: "Demo: this camera's clock was wrong, so photos:check warns about the date."
+
+# Caption on a photo credited through index.md.
+PXL_0001.jpg:
+  caption: "Demo: credited to Citra through index.md."

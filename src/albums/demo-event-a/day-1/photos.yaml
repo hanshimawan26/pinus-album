@@ -1,0 +1,29 @@
+# DEMO photos.yaml for Demo Event A / Day 1.
+#
+# Day 1 has NO index.md on purpose (TRD §4.2 rule 7): its title "Day 1" comes from the
+# folder name, and its date from its earliest photo. Photos without a camera date fall back
+# to the nearest index.md date above it (Demo Event A: 18 Sep 2026).
+#
+# Photos not listed here: no caption, photographer from their @folder, date from EXIF.
+# @budi-demo/IMG_0004.jpg has no EXIF date, so its date falls back to the event date.
+
+# Caption present; photographer from the @alice-demo folder; date from EXIF.
+"@alice-demo/IMG_0001.jpg":
+  caption: "Demo caption: the registration desk opens."
+
+# Same file name as Alice's IMG_0001.jpg: this is why keys are paths, not bare names.
+# Caption with emoji and a line break.
+"@budi-demo/IMG_0001.jpg":
+  caption: |-
+    Demo caption with an emoji 🎉
+    and a second line.
+
+# The image stored sideways (EXIF Orientation 6). It must display upright: "UP" at the top.
+"@alice-demo/IMG_0004.jpg":
+  caption: "Demo: a portrait photo stored sideways. The arrow should point up."
+
+# Photographer from photos.yaml (overrides the @budi-demo folder credit),
+# and alt text from photos.yaml (overrides the caption-less generated alt).
+"@budi-demo/IMG_0003.jpg":
+  photographer: alice-demo
+  alt: "Demo alt text written by hand in photos.yaml"

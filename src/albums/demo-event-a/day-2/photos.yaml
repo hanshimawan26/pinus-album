@@ -1,0 +1,18 @@
+# DEMO photos.yaml for Demo Event A / Day 2.
+#
+# Photos not listed here: no caption, photographer from their @folder, date from EXIF.
+# @alice-demo/IMG_2005.jpg and @budi-demo/DSC_0104.webp have no EXIF date, so their date
+# falls back to this section's index.md date (node fallback).
+
+# Date from photos.yaml (with a time of day); the file has no EXIF date.
+"@budi-demo/DSC_0103.jpg":
+  caption: "Demo: the date shown comes from photos.yaml."
+  date: 2026-09-19 14:30
+
+# A bare file name is fine when it is unambiguous in this folder (only Budi has DSC_0105.jpg).
+DSC_0105.jpg:
+  caption: "Demo: listed by bare file name."
+
+# Hidden: excluded from the site without deleting the file.
+"@budi-demo/DSC_0106.jpg":
+  hidden: true
