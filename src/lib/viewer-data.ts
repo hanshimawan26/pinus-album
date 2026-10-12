@@ -23,8 +23,7 @@ export interface ViewerPhotographer {
   name: string;
   /** Avatar initials, e.g. `AP`. */
   initials: string;
-  /** Present only when photographers.yaml lists a handle (TRD §10). */
-  instagram?: string;
+  /** Profile link; present only when photographers.yaml lists a handle (TRD §10). */
   instagramUrl?: string;
 }
 
@@ -50,12 +49,9 @@ export function viewerPhoto(photo: Photo, image: ViewerImage): ViewerPhoto {
   const result: ViewerPhoto = { slug: photo.slug, image, alt: photo.alt };
   if (photo.caption) result.caption = photo.caption;
   if (photo.photographer) {
-    const { name, initials, instagram, instagramUrl } = photo.photographer;
+    const { name, initials, instagramUrl } = photo.photographer;
     const photographer: ViewerPhotographer = { name, initials };
-    if (instagram && instagramUrl) {
-      photographer.instagram = instagram;
-      photographer.instagramUrl = instagramUrl;
-    }
+    if (instagramUrl) photographer.instagramUrl = instagramUrl;
     result.photographer = photographer;
   }
   if (photo.date) result.date = { label: formatDate(photo.date), iso: photo.date.day };

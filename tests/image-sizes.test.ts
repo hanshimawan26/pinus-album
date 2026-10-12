@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   coverHeight,
@@ -9,6 +10,7 @@ import {
   thumbnailEdge,
   thumbnailWidths,
   THUMBNAIL_SIZES,
+  VIEWER_LAYOUT,
   VIEWER_SIZES,
   viewerFallbackWidth,
   viewerWidths,
@@ -84,10 +86,25 @@ describe('card covers (4:3 crops)', () => {
 
 describe('sizes attributes', () => {
   it('match the layout breakpoints', () => {
-    expect(VIEWER_SIZES).toBe('(min-width: 900px) calc(100vw - 340px), 100vw');
+    expect(VIEWER_SIZES).toBe('(min-width: 1696px) 1260px, (min-width: 900px) calc(94vw - 340px), (min-width: 600px) 576px, 100vw');
     expect(THUMBNAIL_SIZES).toBe('(min-width: 1100px) 224px, (min-width: 600px) 25vw, 34vw');
     expect(coverSizes('event')).toBe('(min-width: 1100px) 374px, (min-width: 900px) 33vw, (min-width: 600px) 50vw, 100vw');
     expect(coverSizes('section')).toBe('(min-width: 1100px) 280px, (min-width: 900px) 33vw, 50vw');
+  });
+});
+
+describe('VIEWER_LAYOUT', () => {
+  // The viewer's `sizes` is only right while these numbers match the CSS that draws it.
+  const css = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
+  const viewer = css('../src/components/PostViewer.astro');
+  const global = css('../src/styles/global.css');
+
+  it('matches the post viewer CSS', () => {
+    expect(viewer).toContain(`flex: 0 1 ${VIEWER_LAYOUT.column / 16}rem`);
+    expect(viewer).toContain(`max-width: ${VIEWER_LAYOUT.frameMax / 16}rem`);
+    expect(viewer).toContain(`clamp(var(--space-4), ${VIEWER_LAYOUT.insetVw}vw, var(--space-7))`);
+    expect(global).toContain(`--space-7: ${VIEWER_LAYOUT.insetMax / 16}rem`);
+    expect(global).toContain(`--viewer-panel: ${VIEWER_LAYOUT.panel}px`);
   });
 });
 

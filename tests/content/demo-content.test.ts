@@ -69,6 +69,13 @@ describe('demo content', () => {
     expect(photo('demo-event-a/day-1/@alice-demo/IMG_0002.jpg')?.caption).toBeUndefined();
   });
 
+  it('has a long multi-paragraph caption, for the 3-line clamp and "more" in the viewer', () => {
+    const long = photo('demo-event-a/day-1/@alice-demo/IMG_0005.jpg');
+    expect(long?.caption?.length).toBeGreaterThan(200);
+    expect(long?.caption).toContain('\n\n');
+    expect(long).toMatchObject({ alt: 'Demo photo with a long caption', sources: { alt: 'photos.yaml' } });
+  });
+
   it('covers every photographer source: folder, photos.yaml, index.md and missing', () => {
     expect(photo('demo-event-a/day-1/@alice-demo/IMG_0002.jpg')?.sources.photographer).toBe('folder');
     expect(photo('demo-event-a/day-1/@budi-demo/IMG_0003.jpg')?.sources.photographer).toBe('photos.yaml');

@@ -27,3 +27,13 @@
 "@budi-demo/IMG_0003.jpg":
   photographer: alice-demo
   alt: "Demo alt text written by hand in photos.yaml"
+
+# A long caption: the post viewer clamps it to 3 lines on phones and offers "more".
+# With `|-`, every line break is kept as written, so each paragraph is one long line.
+# The alt text is set separately, so screen readers do not hear the whole caption twice.
+"@alice-demo/IMG_0005.jpg":
+  caption: |-
+    Demo caption that is deliberately long, to show how the viewer handles a caption of several lines. On a phone it is cut after three lines and a "more" button reveals the rest; on a wide screen the details panel shows all of it.
+
+    It also keeps the blank line above, and an emoji at the end 🌲
+  alt: "Demo photo with a long caption"

@@ -1,0 +1,24 @@
+---
+/** A close cross drawn at 1.75px stroke, matching ChevronIcon. Decorative: the button carries the name. */
+interface Props {
+  size?: number;
+}
+const { size = 16 } = Astro.props;
+---
+
+<svg class="close-icon" width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+  <path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path>
+</svg>
+
+<style>
+  .close-icon {
+    flex: none;
+    display: block;
+  }
+  path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+  }
+</style>

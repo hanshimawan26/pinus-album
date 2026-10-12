@@ -50,7 +50,11 @@ src/
   components/        .astro components (one responsibility each)
   layouts/           BaseLayout.astro (head, skip link, header › main › footer)
   pages/             index.astro, albums/[...path].astro, 404.astro — thin; data comes from lib
-  scripts/           client-side TS (the post viewer), bundled by Astro, only on pages with photos
+  scripts/viewer/    the post viewer (client TS, bundled by Astro, shipped only with PhotoGrid):
+                     PURE navigation.ts, hash.ts, history.ts (history rules), rows.ts (which
+                     rows a photo fills), swipe.ts, focus-order.ts, data.ts (unit-tested);
+                     DOM dom.ts, view.ts, image.ts, gestures.ts, scroll-lock.ts; controller.ts
+                     (state, history, focus); index.ts (entry, used by PostViewer.astro)
 scripts/             maintainer CLIs (photos:check, photos:prep, photos:init, demo:images,
                      verify:dist) — thin wrappers over src/lib, run with Node type stripping;
                      cli.ts holds the shared colours and runCli() (readable crash message)
@@ -66,7 +70,13 @@ tests/               Vitest; helpers under tests/helpers/ (fs fixtures are gener
   path aliases). Astro and Vitest handle the same files.
 - **No UI framework.** `.astro` components with scoped CSS. Design tokens are CSS custom
   properties defined once in the layout's global stylesheet.
-- **Absent data disappears.** Never render "Unknown" or an empty row (TRD §4.6, §6.5).
+- **Absent data disappears.** Never render "Unknown" or an empty row (TRD §4.6, §6.5). In
+  the viewer, rows without data get the `hidden` attribute (a global rule makes `[hidden]`
+  win over component `display`), and user text is set with `textContent`, never `innerHTML`.
+- **Viewer JS budget:** ≤ 60 KB gzipped (TRD §11); it is about 4.8 KB. No viewer library.
+  Decisions the viewer makes (history, which rows show) go in its pure modules, not in
+  `controller.ts`/`view.ts`, so they are unit-tested. `VIEWER_LAYOUT` in `image-sizes.ts`
+  mirrors the viewer's CSS widths (a test reads the CSS to keep them in step).
 - **Links:** never hard-code a leading `/`; use `withBase()` / `albumUrl()`.
 - **Privacy:** published images must carry no EXIF/GPS, and original source files must not be
   copied into `dist/` (they still contain EXIF). Never read a property of an imported image

@@ -30,8 +30,11 @@
   /* Post viewer (milestone 4): the photo area is black. */
   --color-viewer-bg: #000000;
   --color-viewer-text: #ffffff;
-  --color-viewer-text-muted: #b8b2a7;
   --color-viewer-focus: #a9b9e6;
+  --color-viewer-scrim: rgb(0 0 0 / 0.82); /* ::backdrop around the framed viewer */
+  --color-viewer-control: rgb(0 0 0 / 0.55); /* arrow buttons and counter pill over the photo */
+  --color-viewer-control-hover: rgb(0 0 0 / 0.78);
+  --color-viewer-control-edge: rgb(255 255 255 / 0.3);
 
   /* Type: the platform's own UI face (TRD §6.1). */
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif,
@@ -60,6 +63,7 @@
   /* Layout. */
   --content-max: 70rem; /* 1120px */
   --prose-max: 65ch;
+  --viewer-panel: 340px; /* post viewer details panel from 900px (TRD §6.5) */
   --gutter: 1rem;
   --grid-gap: 3px;
 
@@ -74,6 +78,7 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --duration-fast: 160ms;
   --duration-slow: 480ms;
+  --duration-settle: 220ms; /* a swiped viewer photo springing back (gestures.ts) */
 
   color-scheme: light;
   accent-color: var(--brand-blue);
@@ -131,6 +136,11 @@ h3 {
 p {
   margin: 0;
   text-wrap: pretty;
+}
+
+/* The `hidden` attribute always wins over a component's own `display`. */
+[hidden] {
+  display: none !important;
 }
 
 img {
@@ -221,7 +231,8 @@ a:hover {
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
-  *::after {
+  *::after,
+  ::backdrop {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

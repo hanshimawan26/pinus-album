@@ -89,10 +89,31 @@ export function coverWidths(sourceWidth: number, sourceHeight: number): number[]
 export const coverHeight = (width: number): number => Math.round(width / COVER_ASPECT);
 
 /**
- * `sizes` for the viewer image: full width on phones; next to the ~340 px details panel
- * from 900 px (TRD §6.5).
+ * The post viewer's layout in CSS px, as PostViewer.astro draws it (keep in step):
+ * - below 600 px the photo spans the full width;
+ * - 600–899 px it sits in a column at most `36rem` wide;
+ * - from 900 px it fills the frame minus the details panel (`--viewer-panel`). The frame is
+ *   inset `clamp(16px, 3vw, 48px)` on each side and at most `100rem` wide.
  */
-export const VIEWER_SIZES = `(min-width: ${BREAKPOINTS.md}px) calc(100vw - 340px), 100vw`;
+export const VIEWER_LAYOUT = { column: 576, panel: 340, insetVw: 3, insetMax: 48, frameMax: 1600 } as const;
+
+/**
+ * `sizes` for the viewer image (TRD §6.5, §7), so a tablet or laptop does not download a
+ * file sized for the full window width. Between 900 px and the widest frame the inset is
+ * `3vw`, so the photo is `94vw - 340px` wide; past the widest frame it is a fixed width.
+ * A tall photo is drawn narrower than its slot (it is letterboxed by height); `sizes`
+ * cannot know the photo's shape, so it describes the slot.
+ */
+export const VIEWER_SIZES = (() => {
+  const { column, panel, insetVw, insetMax, frameMax } = VIEWER_LAYOUT;
+  const widest = frameMax + 2 * insetMax;
+  return [
+    `(min-width: ${widest}px) ${frameMax - panel}px`,
+    `(min-width: ${BREAKPOINTS.md}px) calc(${100 - 2 * insetVw}vw - ${panel}px)`,
+    `(min-width: ${BREAKPOINTS.sm}px) ${column}px`,
+    '100vw',
+  ].join(', ');
+})();
 
 export type CardSize = 'event' | 'section';
 

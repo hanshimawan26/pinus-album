@@ -40,8 +40,10 @@ use only those tokens.
 | `--color-tile-veil` | `rgb(0 0 0 / 0.14)` | Hover veil over a grid tile. Decorative, never behind text |
 | `--color-viewer-bg` | `#000000` | Post viewer photo area (milestone 4) |
 | `--color-viewer-text` | `#FFFFFF` | Text on the viewer's black |
-| `--color-viewer-text-muted` | `#B8B2A7` | Secondary text on black |
 | `--color-viewer-focus` | `#A9B9E6` | Focus ring on black (brand blue is too dark there) |
+| `--color-viewer-scrim` | `rgb(0 0 0 / 0.82)` | Viewer backdrop over the page |
+| `--color-viewer-control` | `rgb(0 0 0 / 0.55)` | Arrow buttons and counter pill over the photo (hover: `-hover`, 78%) |
+| `--color-viewer-control-edge` | `rgb(255 255 255 / 0.3)` | Edge of those controls; spinner track |
 
 ### Measured contrast (WCAG 2.x)
 
@@ -59,8 +61,8 @@ Every text/background pair the site uses, measured with the WCAG relative-lumina
 | `#FAF8F4` on-accent | `#334E97` blue | 7.39:1 | Skip link, logo letter, future buttons | AAA |
 | `#1C1B19` text | `#F1B244` yellow | 9.17:1 | "Draft" badge (dev only) | AAA |
 | `#1C1B19` text | `#DCE2F2` selection | 13.28:1 | Selected text | AAA |
-| `#FFFFFF` | `#000000` viewer | 21.00:1 | Viewer text (M4) | AAA |
-| `#B8B2A7` | `#000000` viewer | 9.96:1 | Viewer secondary text (M4) | AAA |
+| `#FFFFFF` | `#000000` viewer | 21.00:1 | Viewer error text on the photo area | AAA |
+| `#FFFFFF` | 55% black over white (≈`#737373`) | 4.74:1 | Viewer counter pill and arrows, worst case | AA |
 | `#334E97` focus ring | `#FAF8F4` bg | 7.39:1 | Focus indicator (non-text, needs 3:1) | Pass |
 | `#A9B9E6` focus ring | `#000000` viewer | 10.77:1 | Focus indicator on black (M4) | Pass |
 | `#8F897E` scrollbar thumb | `#FAF8F4` bg | 3.27:1 | Scrollbar (non-text, needs 3:1) | Pass |
@@ -68,6 +70,8 @@ Every text/background pair the site uses, measured with the WCAG relative-lumina
 ### Rules for the brand accents
 
 - **Blue** is the only interactive colour. Anything blue can be clicked or is focused.
+  Icon-only buttons that are recognised by their shape (the viewer's ✕ and the arrows over the
+  photo) use the text colour, or white on black, instead. Blue is too dark on black (2.68:1).
 - **Red `#EF4C2B`** measures 3.45:1 on the page background. That passes only for large text
   (24 px, or 18.66 px bold) and for graphics. It must **never** be used for small text on the
   light base. On near-black it reaches 4.70:1 and on black 5.74:1. It has no role in
@@ -116,11 +120,15 @@ Headings use `text-wrap: balance` and paragraphs use `pretty`.
 ## Motion
 
 - `--ease-out` is `cubic-bezier(0.16, 1, 0.3, 1)` (exponential ease-out). `--duration-fast` is
-  160 ms and `--duration-slow` is 480 ms.
+  160 ms, `--duration-slow` is 480 ms, and `--duration-settle` (220 ms) is a swiped viewer
+  photo springing back.
 - The one authored moment: on hover, a card's cover zooms in by 3% while its title turns blue
   and underlined on hover. Grid tiles get a 14% dark veil on hover.
 - Everything starts from a visible state, and nothing animates in on load.
-- `prefers-reduced-motion: reduce` sets all transitions and animations to near zero (TRD §6.6).
+- The post viewer's overlay fades in over 160 ms; nothing else in it animates on its own (see
+  "Post viewer").
+- `prefers-reduced-motion: reduce` sets all transitions and animations to near zero, including
+  on `::backdrop`, which `*` does not match (TRD §6.6).
 
 ## Browser surfaces
 
@@ -142,20 +150,64 @@ Headings use `text-wrap: balance` and paragraphs use `pretty`.
 | Breadcrumbs | `Breadcrumbs.astro` | `nav[aria-label=Breadcrumb] > ol`. Blue links separated by muted chevrons. The current page is muted text with `aria-current="page"` |
 | Node meta | `NodeMeta.astro` | The "date · N photos · N sections" line shared by album page headers and cards; `<time datetime>` only for single days |
 | Album card | `AlbumCard.astro`, `AlbumCardList.astro` | 4:3 cover (radius 10), title, then meta "date · N photos · N sections". The title link is stretched over the whole card, and the cover has `alt=""` because the title already names the link. Event cards use 1/2/3 columns; section cards use 2/3/4 |
-| Photo grid | `PhotoGrid.astro` | Square tiles in 3/4/5 columns with 3 px gaps, edge to edge on phones. Each tile is a `<button>` named by the photo's alt text, with `data-photo-slug` and `data-index`. The viewer data is embedded as JSON (`#viewer-data`) |
+| Photo grid | `PhotoGrid.astro` | Square tiles in 3/4/5 columns with 3 px gaps, edge to edge on phones. Each tile is a `<button>` named by the photo's alt text, with `data-index` and `aria-haspopup="dialog"`. The viewer data is embedded as JSON (`#viewer-data`), and the grid renders the post viewer |
+| Post viewer | `PostViewer.astro`, `src/scripts/viewer/` | See "Post viewer" below |
 | Sibling nav | `SiblingNav.astro` | "‹ Day 1 · Day 3 ›", centred below a hairline. Screen readers hear "Previous section: Day 1". A side without a sibling is left out |
 | Empty state | `EmptyState.astro` | Sunken panel with an outline photo pictogram, a heading and one plain sentence. Used for "No albums yet", "No photos here yet" and the 404 page. When it carries the page's h1 (404), the heading uses the shared `.page-title` style so it matches every other page title |
 | Draft badge | `DraftBadge.astro` | Yellow pill with near-black text. It only appears in `npm run dev`, because drafts are not published |
-| Icons | `ChevronIcon.astro`, `ImageIcon.astro` | Drawn SVG with a 1.5–1.75 px round stroke in `currentColor`. Decorative |
+| Icons | `ChevronIcon.astro`, `CloseIcon.astro`, `ImageIcon.astro` | Drawn SVG with a 1.5–1.75 px round stroke in `currentColor`. Decorative |
 
 ### Post viewer (milestone 4)
 
-The photo area is black (`--color-viewer-bg`, a binding product constraint). Text uses
-`--color-viewer-text` and `--color-viewer-text-muted`, and focus uses
-`--color-viewer-focus`, because brand blue measures only 2.68:1 on black and fails as a focus
-indicator there. The details panel follows the Instagram post layout (TRD §6.5): the avatar
-circle with initials, then the name (a blue link only when an Instagram handle exists), the
-date, the caption, and the counter.
+`PostViewer.astro` (markup and styles) with its behaviour in `src/scripts/viewer/`. It follows the
+Instagram post layout (TRD §6.5). It is a native `<dialog>` opened with `showModal()`.
+
+- **Photo area is black** (`--color-viewer-bg`, a binding product constraint). The details
+  (header, caption, counter) sit on the page's own off-white `--color-bg`, like an Instagram
+  post. That keeps the name link brand blue (7.39:1). On black, blue would measure only
+  2.68:1.
+- **Below 600 px (phones):** full screen. The header shows the avatar circle (initials, sunken
+  fill, hairline ring), the name (650 weight; a blue underlined link only with an Instagram
+  handle), the date below it in muted 13 px, and ✕ on the right (44 px target). The photo
+  spans the full width at its own aspect ratio, capped at `100dvh − 12rem` so the caption
+  stays in view. A taller photo is letterboxed on black. The caption is 15 px, keeps its line
+  breaks (`white-space: pre-line`) and is clamped to 3 lines, with a blue "more"/"less"
+  button that appears only when the caption really overflows. The counter is muted and right
+  aligned below.
+- **600–899 px:** the same column, 36 rem wide, centred on the backdrop with `--radius-md`
+  corners. The visible backdrop can be clicked to close the viewer.
+- **900 px and up:** the photo on black on the left, the 340 px details panel
+  (`--viewer-panel`) on the right. The panel has a hairline under its header, the **whole**
+  caption (no clamp; the panel scrolls) and the context line ("Day 1 · Demo Event A", muted
+  13 px). The counter sits in the photo's bottom-right corner on a dark pill. The frame is
+  inset `clamp(16px, 3vw, 48px)` from the window edges, so the backdrop shows around it.
+- **Controls over the photo** (prev/next arrows, the counter pill) are white on
+  `--color-viewer-control` (55% black) with a 30% white edge. Over a pure-white photo that
+  backdrop is at worst #737373, which gives white **4.74:1**. They are not blue, because blue
+  fails on black. Arrows are 40 px (44 px from 900 px) and hidden at either end (no wrap).
+  The ✕ is a near-black icon button on the light header. Icons are drawn SVG (`CloseIcon`,
+  `ChevronIcon`), never glyphs.
+- **Focus:** on the light header, the normal blue ring (drawn inside the ✕ so the frame never
+  clips it). On the photo, a `--color-viewer-focus` ring with a black halo on both sides, so
+  it shows over dark and light photos alike.
+- **Backdrop:** `--color-viewer-scrim` (82% black) over the page.
+- **States:** a photo that is not yet loaded keeps its reserved shape on black. After 300 ms
+  a quiet 2 px ring appears, so a fast photo never shows it, and the photo fades in over
+  160 ms when it arrives. A photo that fails shows "This photo didn't load. Check your
+  connection and try again." with a **Try again** button.
+- **Motion:** the overlay fades in over 160 ms (`@starting-style`). Closing is instant.
+  Moving between photos never animates, because it is frequent and often keyboard driven.
+  During a swipe the photo follows the finger, resists past either end, and settles back over
+  `--duration-settle` (220 ms) when the swipe is not taken. Under `prefers-reduced-motion` all
+  of this, the backdrop fade included, is effectively instant (global rule, which also
+  matches `::backdrop`).
+
+| Foreground | Background | Ratio | Use |
+|---|---|---|---|
+| `#FFFFFF` | control over white photo (≈`#737373`) | 4.74:1 | Counter pill, arrows (worst case) |
+| `#FFFFFF` | `#000000` | 21.00:1 | Error message, "Try again" (outlined, on the black stage: the photo is hidden in the error state), spinner |
+| `#1C1B19` | `#F1EDE5` avatar | 14.74:1 | Initials |
+| `#334E97` | `#FAF8F4` | 7.39:1 | Name link, "more" |
 
 ## Images
 

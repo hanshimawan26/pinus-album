@@ -4,11 +4,13 @@
  * 600px, 5 from 1100px, 3px gaps. Squares reserve their space, so nothing shifts while
  * images load. Each tile is a button named by the photo's alt text.
  *
- * The post viewer (milestone 4) reads the JSON below: `photos[i]` belongs to the tile with
- * `data-index="i"`, and `data-photo-slug` is the deep-link hash (TRD §4.7, §6.5).
+ * The post viewer (PostViewer.astro, TRD §6.5) reads the JSON below: `photos[i]` belongs to
+ * the tile with `data-index="i"`; its `slug` is the deep-link hash (TRD §4.7).
+ * Rendering the viewer here means its script ships only on pages that have photos.
  */
 import type { Photo } from '../lib/content/types.ts';
 import { loadingHint } from '../lib/image-sizes.ts';
+import PostViewer from './PostViewer.astro';
 import { thumbnailFor, viewerImageFor } from '../lib/images.ts';
 import { jsonForScript } from '../lib/presentation.ts';
 import { viewerPhoto, type ViewerData } from '../lib/viewer-data.ts';
@@ -34,13 +36,13 @@ const viewerData: ViewerData = {
 const policy = { nearTop, highPriority: 5, eager: 5 };
 ---
 
-<ul class="bare-list grid" role="list">
+<ul class="bare-list grid" role="list" data-photo-grid>
   {
     tiles.map(({ photo, thumbnail }, index) => {
       const hint = loadingHint(index, policy);
       return (
         <li>
-          <button type="button" class="tile" data-photo-slug={photo.slug} data-index={index}>
+          <button type="button" class="tile" aria-haspopup="dialog" data-index={index}>
             <img
               src={thumbnail.src}
               srcset={thumbnail.srcset}
@@ -59,6 +61,7 @@ const policy = { nearTop, highPriority: 5, eager: 5 };
   }
 </ul>
 <script is:inline type="application/json" id="viewer-data" set:html={jsonForScript(viewerData)} />
+<PostViewer />
 
 <style>
   .grid {

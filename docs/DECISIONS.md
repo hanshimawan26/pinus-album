@@ -384,12 +384,12 @@ each section.
 ### Viewer preparation (milestone 4)
 
 - Each tile is a `<button type="button">` holding the thumbnail. Its accessible name is the
-  image's alt text, and it carries `data-photo-slug` and `data-index`. The buttons do nothing
-  yet.
+  image's alt text, and it carries `data-index`. The buttons did
+  nothing in milestone 3. Milestone 4 makes them open the viewer.
 - The album page embeds `<script type="application/json" id="viewer-data">` with
   `{ context, photos[] }`. `context` is "Day 1 · Demo Event A". Each photo has `slug`,
   `image {src, srcset, sizes, width, height}`, `alt`, and, only when present, `caption`,
-  `photographer {name, initials, instagram?, instagramUrl?}` and `date {label, iso}`. Absent
+  `photographer {name, initials, instagramUrl?}` and `date {label, iso}`. Absent
   values are left out, never stored as empty strings. The JSON is escaped (`<`, `>`, `&`,
   U+2028 and U+2029), so a caption cannot break out of the script element. The builder is
   `src/lib/viewer-data.ts`, which is pure and tested.
@@ -420,3 +420,276 @@ each section.
   conflicts with the TRD" at the top of this file. A re-run after the review fixes (home and
   Demo Event A) was unchanged: Performance, Accessibility and Best Practices 100, CLS 0, LCP
   0.9 s.
+
+## Milestone 4 — Post viewer
+
+### Approach
+
+- **A custom `<dialog>` viewer in plain TypeScript, not PhotoSwipe** (TRD §3 allows either). The
+  TRD's layout is an Instagram *post*: a header, the photo, the caption, a counter, and a details
+  panel on desktop. PhotoSwipe is built around a full-bleed photo and would need most of that
+  UI added as custom elements on top of its own. A native `<dialog>` with `showModal()` gives
+  the modal semantics, the inert page behind it, Esc and the `::backdrop` for free. **No
+  dependency was added.**
+- **Size:** the bundled viewer script is **12.6 KB raw, 4.76 KB gzipped** (after the review
+  fixes; 11.4 KB / 4.26 KB before),
+  measured on the built file in `dist/_astro/`. The TRD §11 budget is 60 KB. Astro bundles it
+  from the `<script>` in `PostViewer.astro`, and `PhotoGrid.astro` renders that component, so
+  only pages with their own photos load it. In the demo, those are Day 1–3 and Event B, but
+  not the home page, Demo Event A (sections only) or the 404 page.
+- **Code layout** (`src/scripts/viewer/`). The rules live in pure modules that Vitest
+  imports without a DOM: `navigation.ts` (clamping, steps, neighbours, counter and dialog
+  labels), `hash.ts` (hash → slug → index, URL with or without the hash), `history.ts` (what
+  to do with history on load, on close and when the URL changes), `rows.ts` (which rows a
+  photo fills), `swipe.ts` (axis
+  lock, swipe/flick classification, edge resistance), `focus-order.ts` (Tab wrapping) and
+  `data.ts` (guarded parsing of `#viewer-data`). The DOM side is split into `dom.ts` (element
+  lookup), `view.ts` (writes one photo's rows), `image.ts` (loading/error states, preloading),
+  `gestures.ts` (pointer events), `scroll-lock.ts` and `controller.ts` (state, history,
+  focus). `index.ts` is the entry. 76 new unit tests (426 in total; 24 of them added by the review fixes).
+- **Without JavaScript** (or without `<dialog>` support) the grid still shows every photo, but
+  the tiles do not open anything. Making tiles links to the full image was not done: it would
+  need a second, non-viewer URL scheme. This is acceptable for the POC.
+
+### Behaviour
+
+- **No wrap-around.** The first photo has no "previous" and the last has no "next", like an
+  Instagram carousel. The counter's end is meaningful ("13 / 13"), and a swipe past the end
+  meets resistance and springs back. The arrow at an end is hidden (`hidden`, not disabled).
+  If it had focus, focus moves to the other arrow (or ✕), so it never drops to `<body>`
+  (see "A control that disappears while focused" for the general rule).
+  **Home / End** jump to the first and last photo. Arrow keys with Alt/Ctrl/Meta are left to
+  the browser (Alt+← is Back).
+- **Swipe** uses pointer events on the photo area, which has `touch-action: pan-y pinch-zoom`.
+  After 10 px of movement, the larger axis decides. A vertical gesture is never a swipe. A
+  swipe is ≥ 50 px horizontally, or a flick of ≥ 20 px at ≥ 0.4 px/ms, and horizontal
+  movement must be ≥ 1.5× vertical movement. A second finger (pinch) cancels the swipe. Mouse
+  input is ignored (it has the arrows and keys), and so are gestures that start on a button.
+- **Closing:** ✕, Esc (the dialog's native cancel), browser Back, and a click on the
+  backdrop. A backdrop click counts only when both the press and the release land on the
+  backdrop, so dragging out of a caption selection never closes the viewer. Both are
+  recorded (`pointerdown` and `pointerup` targets): a press and release on different elements
+  is dispatched as a click on their common ancestor, the `<dialog>`, so the click target alone
+  cannot tell. **Below 600 px the
+  viewer is full screen and has no backdrop**, so phones close it with ✕ or Back (and Esc on
+  a keyboard). The black area around a letterboxed photo is *not* a close target, so a slightly
+  missed swipe cannot close the viewer.
+- **History and deep links** follow the task's rules exactly. The rules are pure functions in
+  `history.ts` (`loadAction`, `closeAction`, `syncAction`), unit-tested; `controller.ts`
+  carries them out:
+  - Opening from a tile pushes one entry `#<slug>`, marked `{ pinusViewer: true }` in
+    `history.state`.
+  - Moving to another photo uses `replaceState`.
+  - Closing with ✕, Esc or the backdrop calls `history.back()` when the current entry is
+    marked, and otherwise clears the hash with `replaceState`.
+  - `popstate` and `hashchange` share one sync function. A valid photo hash opens or moves the
+    viewer, and anything else closes it.
+  - On load, a valid hash rewrites history to "page, then page#photo", so Back closes the
+    viewer and stays on the page. If the entry is already marked (a reload while the viewer
+    was open), history is left alone, so reloading does not stack extra entries.
+  - **Forward** after closing reopens the photo.
+  - An invalid hash is ignored and left in the URL.
+  - Hashes are matched case-insensitively, because slugs are lowercase.
+  - **A hash that names an element on the page is never a photo.** Slugs and page ids share
+    one namespace (`main.jpg` gives the slug `main`, the skip link's target). A fragment that
+    names an element is a jump to it, so the skip link keeps working; such a photo still opens
+    from its tile, but its deep link only scrolls to the element. Renaming page ids into a
+    namespace slugs cannot reach (slugs are `[a-z0-9-]`) would avoid that, but would make
+    every id unusual for a case no demo or real file is known to hit.
+- **Focus:** on open, focus goes to ✕. Tab and Shift+Tab cycle inside the dialog. Browsers
+  let Tab leave a modal dialog for their own toolbar, so the viewer wraps focus itself. **On
+  close, focus returns to the tile of the photo shown last**, not to the tile that was
+  clicked, and that tile is scrolled into view (`block: 'nearest'`). After moving through 20
+  photos, the visitor is back at the photo they were looking at, as in Instagram. After a deep
+  link there is no clicked tile, so the same rule gives a sensible target. When the viewer
+  closes through its own `history.back()`, the browser then restores the scroll position it
+  saved on opening. Chrome does that *after* `popstate` and *before* the `hashchange` that
+  follows, so the tile is scrolled into view again on both events (the browser check after
+  the review found that the `popstate`-only version ended at the top of the page).
+- **A control that disappears while focused hands focus on.** Moving to another photo can
+  detach the Instagram link (the next photographer has no handle), hide "more" (short or no
+  caption), hide an arrow (an end) or hide "Try again" (on retry or on load). Every change
+  that can do that runs through one guard (`#keepingFocus`): it reads the focused element
+  before the change and, if it is no longer rendered afterwards, focuses the next arrow,
+  else the previous one, else ✕. The Instagram link is re-attached only when it is
+  detached, because re-inserting an attached node moves it and drops its focus, even between
+  two photos by the same photographer. As a safety net, the arrow, Home, End and Tab keys
+  are handled on `document` while the viewer is open (not on the dialog), so they keep
+  working even if focus ever lands on `<body>` (for example after a click on caption text).
+- **Accessible name:** a visually hidden `h2` gives the dialog its name through
+  `aria-labelledby`, for example "Photo 3 of 24 by Alice (Demo)", or "Photo 3 of 24" without a
+  credit. `aria-modal="true"` is set as well, as the task asks, although `showModal()`
+  already implies it. Every move to another photo while open (keys, buttons, swipe, and
+  Back/Forward or an edited hash) announces the same text in a polite live region. The visible counter is `aria-hidden`, because the name already says it. The
+  Instagram link reads "Alice (Demo) on Instagram (opens in a new tab)".
+- **Instagram link** goes to the URL the content engine builds,
+  `https://www.instagram.com/<handle>/` (milestone 2). That is the canonical form of
+  `instagram.com/<handle>`. The viewer renders it only when it is an https Instagram profile
+  URL, as defence in depth against a malformed `href`. **The `<a>` exists in the DOM only for a
+  photographer with a handle.** An `href`-less `<a>` kept hidden in the dialog made Lighthouse
+  report `crawlable-anchors` (SEO 63 → 54), so `dom.ts` creates the link and `view.ts` attaches
+  or detaches it.
+- **The photo's `<img>` is created by the script**, because an `<img>` in the static markup
+  would have no `src` (invalid HTML, and flagged by the design hook). Its styles are
+  `.stage :global(.photo)`.
+- **The caption on desktop is not clamped.** The 340 px panel scrolls and shows all of it, so
+  "more" exists only in the single-column layouts (below 900 px). "more" appears only when the
+  clamped caption really overflows (`scrollHeight > clientHeight`). It is checked on open, on
+  every photo change and on resize. It toggles to "less" with `aria-expanded`, and it resets to
+  collapsed on the next photo. The **context line** ("Day 1 · Demo Event A") is shown only in
+  the desktop panel, as the TRD sketches it. On a phone, the page around the viewer already
+  says which album this is.
+- **Preloading** uses `new Image()` with the same `sizes` and `srcset` as the viewer image (set
+  in the same order), so the browser picks the same file. It preloads the next and previous
+  photos (next first), and keeps references to the last 4 only, because decoded photos are
+  large on phones. The HTTP cache keeps the files.
+- **The photo never overflows its area.** The `<img>` is absolutely positioned to fill the
+  photo area (`inset: 0`, `object-fit: contain`). As a grid item with `height: 100%` it could
+  not resolve its height against the area and grew to its own height, so the area's
+  `overflow: hidden` cropped tall photos (a portrait lost about 45% at 1280×800). The browser
+  check now asserts that the image box equals the photo area for every demo photo at five
+  window sizes.
+- **`sizes` follows the viewer's layout** (`VIEWER_SIZES`, built from `VIEWER_LAYOUT` in
+  `image-sizes.ts`): `100vw` below 600 px, `576px` (the 36rem column) from 600 px,
+  `calc(94vw - 340px)` from 900 px (the frame inset is `3vw` there) and a fixed `1260px` once
+  the frame reaches its 100rem maximum (windows of 1696 px and up). A 768 px tablet at 2× now
+  takes the 1200w file instead of 1600w, and so does its preloading. `sizes` describes the
+  slot, not the photo: a portrait is drawn narrower than its slot, and `sizes` cannot know a
+  photo's shape. A unit test reads the CSS to keep the numbers in step.
+- **Loading state:** the photo area reserves the photo's aspect ratio from the JSON's
+  width/height before any byte arrives (CSS `aspect-ratio`, capped so the caption stays in
+  view on phones). An image that is already decoded appears without any state change. Otherwise
+  the old image is hidden at once, so a stale photo never sits next to a new caption, a ring
+  appears after 300 ms, and the photo fades in when it loads. Late `load`/`error` events from
+  an earlier photo are ignored (`img.complete` is false while the newest request is pending).
+  A failed image shows a message and **Try again**. The layout does not jump: in a browser test
+  with throttled images, the stage height was identical before and after load.
+- **Scroll lock:** `overflow: hidden` on `<html>` while open. The scrollbar width is added as
+  padding, so the page does not shift sideways.
+- **`[hidden] { display: none !important; }`** was added to `global.css`, so the `hidden`
+  attribute (used for every absent row) always wins over a component's own `display`.
+- **Motion** (design-motion-principles, weighted for a consumer mobile app): one fade on open
+  (160 ms, `@starting-style`), an instant close, no animation between photos (frequent, often
+  keyboard driven), direct manipulation while swiping, and a 220 ms settle
+  (`--duration-settle`; `gestures.ts` ends it on `transitionend`, with a timeout only as a
+  fallback, so the CSS value is the single source). Everything is near-instant under
+  `prefers-reduced-motion` through the global rule, which now lists `::backdrop` as well
+  (`*` does not match it, so the backdrop still faded). Checked: the dialog's and the
+  backdrop's transition durations are 0.01 ms with `reducedMotion: 'reduce'`.
+- **Colours in the viewer:** the details sit on the page's off-white, so the name link stays
+  brand blue (7.39:1). Controls over the photo are white on 55% black, which is at worst
+  4.74:1 over a white photo. The full rationale and the contrast table are in DESIGN.md
+  ("Post viewer"). New tokens: `--color-viewer-scrim`, `--color-viewer-control`
+  (`-hover`, `-edge`), `--viewer-panel` and `--duration-settle`. The unused
+  `--color-viewer-text-muted` was removed, as were the tiles' unread `data-photo-slug` and
+  the unread Instagram handle in the viewer JSON (only `instagramUrl` is used).
+
+### Demo content
+
+- **One long caption was added**, to `demo-event-a/day-1/@alice-demo/IMG_0005.jpg`: two
+  paragraphs and an emoji, labelled "Demo caption". It exercises the 3-line clamp and "more".
+  It has its own `alt`, so screen readers do not hear the long caption twice. The
+  demo-content test covers it. The other demo cases were already present: no caption, a name
+  without Instagram, no photographer, no date, and neither (`IMG-20260815-WA0003.jpg`).
+
+### Verification (this milestone)
+
+- **Browser test** (Playwright driving the installed Chrome against `astro preview` on the
+  built site, at 360×740 with touch, 768×1024 with touch, and 1280×800; script kept outside
+  the repo): **375 checks passed, 0 failed.** They cover:
+  - opening by click, with exactly one history entry;
+  - the dialog name, `aria-modal`, initial focus on ✕, scroll lock and no horizontal overflow;
+  - photographer, avatar, date (`datetime`), caption and alt checked against the embedded data
+    for the demo cases;
+  - absent rows really absent: no credit row, no `<a>` and no caption area where the data has
+    none;
+  - the Instagram link with `target="_blank"` and `rel="noopener noreferrer"`;
+  - ← / →, Home / End, buttons, no wrap at the ends, and focus kept when an arrow hides;
+  - 12 Tab and 12 Shift+Tab presses staying inside the dialog;
+  - "more" shown and expanding only for the long caption on phone and tablet, and absent on
+    desktop;
+  - Esc, ✕, backdrop (from 600 px), and a click inside the frame not closing it;
+  - Back closing and staying on the page, and Forward reopening;
+  - focus returning to the tile of the photo shown last, which is in view;
+  - `hashchange` opening and moving the viewer;
+  - deep link on load, with Back after it staying on the page; an invalid hash ignored;
+  - real touch swipes through CDP touch events: left = next, right = previous, nothing at the
+    first photo, vertical drag ignored, short slow drag ignored, the photo settling back;
+  - the rotated demo photo shown upright;
+  - throttled images: loading ring and reserved aspect ratio, no jump on arrival;
+  - an aborted image showing the error with "Try again", which recovers;
+  - reduced motion;
+  - no JavaScript errors.
+- Screenshots of both layouts (phone with clamped and expanded caption, no credit, name only,
+  rotated photo, loading, error; tablet; desktop with the panel) were reviewed.
+- Lighthouse (mobile) on Day 1 and Demo Event B: **Performance 100, Accessibility 100, Best
+  Practices 100, CLS 0, TBT 0 ms**. SEO is 63, which is the deliberate `noindex` only, unchanged
+  from milestone 3. The `network-dependency-tree-insight` insight (HTML → viewer script) is not
+  scored.
+- Real bugs found by the browser test and fixed:
+  - When the previous arrow hid at the first photo, focus fell to `<body>`. Chrome's focus
+    fix-up runs at the next forced layout, which happened before the arrow check, so the
+    focused element is now read before rendering.
+  - The `href`-less Instagram anchor lowered the SEO score (see above).
+
+### Known limitations
+
+- Pinch-zoom inside the viewer is the browser's page zoom (allowed by `touch-action`). There is
+  no in-viewer zoom (not in the TRD).
+- The close transition is instant, by choice. Animating a closing `<dialog>` needs
+  `transition-behavior: allow-discrete`, and that is not supported by every browser the TRD
+  targets.
+- The browser test is not in the repository: Playwright E2E tests are P1 (TRD §12.2). The
+  riskiest logic it covers (history rules, absent rows) now lives in pure, unit-tested
+  modules; turning the browser script into a committed `@playwright/test` suite is the
+  natural next step.
+- **A deep link opened in a new tab, followed by Back with no interaction, may leave the
+  page in Chrome.** The load-time "page, then page#photo" rewrite runs without user
+  activation, and Chromium's history-manipulation intervention lets the browser's own Back
+  button skip entries added that way until the visitor interacts with the page. Any tap,
+  click or key press first (the usual case) makes Back close the viewer. Script cannot create
+  user activation, so this cannot be worked around, and it could not be checked
+  automatically (Playwright's `goBack()` does not take the browser-UI path). On Android, the
+  dialog's close watcher handles the system Back first, so phones are probably unaffected.
+  It needs a manual check in desktop Chrome.
+- When a caption is used as the alt text (TRD §4.6), a screen reader hears it twice in the
+  viewer: once as the image's alt, once as the caption paragraph. This follows the TRD's
+  precedence and is left as it is.
+
+### Review fixes (this milestone)
+
+An independent review found these; each was checked against the code and in Chrome first.
+
+- **Fixed:** focus fell to `<body>` when the focused Instagram link or "more" disappeared on
+  moving, after which ← / → did nothing (see "A control that disappears while focused").
+- **Fixed:** tall photos were cropped by the photo area at every size (see "The photo never
+  overflows its area").
+- **Fixed:** a press on the backdrop released inside the frame closed the viewer.
+- **Fixed:** the backdrop still faded under reduced motion.
+- **Fixed:** `sizes` ignored the 600–899 px column and the desktop inset.
+- **Fixed:** a moved-to photo was not announced on Back/Forward or an edited hash.
+- **Fixed:** a photo slug equal to a page id (`#main`) would hijack the skip link.
+- **Fixed:** the history rules and the absent-row rule had no committed tests. They are now
+  pure modules (`history.ts`, `rows.ts`) with unit tests.
+- **Fixed:** the swipe settle duration was written twice (CSS and TS); unused data and a
+  token were removed; DESIGN.md put "Try again" on the 55% control colour (it is outlined
+  on black, 21:1).
+- **Found while verifying:** the tile of the last photo was not scrolled into view after
+  closing, because Chrome restored the scroll position after the reveal (see "Focus").
+- **Documented, not fixable:** the Chrome Back-button intervention after a deep link (see
+  "Known limitations").
+
+Browser check after the fixes: Playwright drove the installed Chrome against
+`astro preview` (port 4448) at 360×740 (touch), 768×1024 (touch, 2×), 1024×768, 1280×800 and
+1440×900, plus a reduced-motion run: **1580 checks passed, 0 failed**. It repeats the
+earlier list and adds:
+- the image box equal to the photo area for every photo;
+- the two focus-loss cases, keys after clicking caption text, and a hidden "Try again"
+  keeping focus;
+- backdrop press and release in both directions;
+- the announcement on `hashchange`, and `#main` not opening the viewer;
+- the 1200w candidate at 768 px 2×;
+- the backdrop's reduced-motion duration.
+
+Screenshots of the portrait photo at every size, the clamped and expanded caption, the
+uncredited photo and the error state were reviewed.

@@ -1,0 +1,516 @@
+---
+/**
+ * The post viewer (TRD §6.5, §6.6): an Instagram-post overlay for the photos of one grid.
+ * This is the empty `<dialog>`; `src/scripts/viewer/` fills it from the page's
+ * `#viewer-data` JSON. Rendered by PhotoGrid, so the script ships only on pages with photos.
+ *
+ * Layouts:
+ * - below 600px: full screen. Header (avatar, name, date, ✕), the photo across the full
+ *   width at its own aspect ratio, the caption clamped to 3 lines with "more", the counter.
+ * - 600–899px: the same column, 36rem wide, centred on the dark backdrop.
+ * - from 900px: the photo on black on the left, a 340px details panel on the right (header,
+ *   full caption, "Day 1 · Event"), arrows over the photo and the counter in its corner.
+ *
+ * Every row that has no data gets the `hidden` attribute, so it is not rendered at all.
+ * The photo's `<img>` and the photographer's Instagram link are created by the script (an
+ * `<img>` needs a `src`, and a link exists only when there is an Instagram handle), so the
+ * photo's styles below are `:global(.photo)` inside the scoped `.stage`.
+ */
+import ChevronIcon from './ChevronIcon.astro';
+import CloseIcon from './CloseIcon.astro';
+---
+
+<dialog class="viewer" aria-modal="true" aria-labelledby="viewer-title" data-viewer>
+  <div class="frame">
+    <h2 id="viewer-title" class="visually-hidden" data-title></h2>
+
+    <header class="head">
+      <div class="credit" data-credit>
+        <span class="avatar" aria-hidden="true" data-avatar></span>
+        <div class="credit-lines">
+          <p class="name" data-name-row><span data-name-text></span></p>
+          <p class="date" data-date-row><time data-date></time></p>
+        </div>
+      </div>
+      <button type="button" class="close" aria-label="Close" data-close>
+        <CloseIcon size={20} />
+      </button>
+    </header>
+
+    <div class="stage" data-stage>
+      <span class="spinner" aria-hidden="true"></span>
+      <div class="stage-error" role="alert" data-error hidden>
+        <p>This photo didn't load. Check your connection and try again.</p>
+        <button type="button" class="retry" data-retry>Try again</button>
+      </div>
+      <button type="button" class="arrow arrow-previous" aria-label="Previous photo" data-previous>
+        <ChevronIcon direction="left" size={22} />
+      </button>
+      <button type="button" class="arrow arrow-next" aria-label="Next photo" data-next>
+        <ChevronIcon direction="right" size={22} />
+      </button>
+    </div>
+
+    <div class="details">
+      <div class="caption-block" data-caption-block>
+        <p class="caption is-clamped" id="viewer-caption" data-caption></p>
+        <button type="button" class="more" aria-expanded="false" aria-controls="viewer-caption" data-more hidden>more</button>
+      </div>
+      <p class="context" data-context></p>
+    </div>
+
+    <p class="counter" aria-hidden="true" data-counter></p>
+    <div class="visually-hidden" aria-live="polite" aria-atomic="true" data-announce></div>
+  </div>
+</dialog>
+
+<script>
+  import { initPostViewer } from '../scripts/viewer/index.ts';
+
+  initPostViewer();
+</script>
+
+<style>
+  /* ---------- Dialog and frame ---------- */
+
+  .viewer {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-text);
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
+
+  .viewer[open] {
+    display: flex;
+  }
+
+  .viewer::backdrop {
+    background: var(--color-viewer-scrim);
+  }
+
+  /* The one authored moment: the overlay fades in. Closing is instant. Navigation between
+     photos never animates (it is frequent and often keyboard-driven). */
+  .viewer[open],
+  .viewer[open]::backdrop {
+    opacity: 1;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+
+  @starting-style {
+    .viewer[open],
+    .viewer[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  .viewer:focus {
+    outline: none;
+  }
+
+  .frame {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'head'
+      'stage'
+      'details'
+      'counter';
+    align-content: start;
+    flex: 1;
+    min-width: 0;
+    background: var(--color-bg);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* ---------- Header: avatar, name, date, close ---------- */
+
+  .head {
+    grid-area: head;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 3.5rem;
+    padding: var(--space-2) var(--space-1) var(--space-2) var(--space-4);
+  }
+
+  .credit {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  .avatar {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-full);
+    background: var(--color-surface-sunken);
+    box-shadow: inset 0 0 0 1px var(--color-border);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: 650;
+    letter-spacing: 0.02em;
+  }
+
+  .credit-lines {
+    min-width: 0;
+    line-height: var(--leading-snug);
+  }
+
+  .name {
+    font-size: var(--text-md);
+    font-weight: 650;
+    overflow-wrap: anywhere;
+  }
+
+  .date {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .close {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-inline-start: auto;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-out);
+  }
+
+  .close:hover {
+    background: var(--color-surface-sunken);
+  }
+
+  /* Drawn inside the button: the frame clips anything outside its edge on wide screens. */
+  .close:focus-visible {
+    outline-offset: -3px;
+    border-radius: var(--radius-full);
+  }
+
+  /* ---------- Stage: the photo on black ---------- */
+
+  .stage {
+    grid-area: stage;
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    /* Reserve the photo's own shape before it loads (set from width/height), but leave room
+       for the header and caption on short screens; the black band letterboxes the rest. */
+    aspect-ratio: var(--photo-ratio, 1);
+    max-height: max(15rem, 100dvh - 12rem);
+    background: var(--color-viewer-bg);
+    color: var(--color-viewer-text);
+    overflow: hidden;
+    /* Horizontal moves reach the swipe handler; vertical scrolling and zoom stay native. */
+    touch-action: pan-y pinch-zoom;
+  }
+
+  /* Out of flow and pinned to the stage's box, so the photo is always bounded by it: a
+     grid or flex item would grow to the image's own height and be cropped by the stage. */
+  .stage :global(.photo) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: contain;
+    user-select: none;
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+
+  .stage :global(.photo.is-pending) {
+    opacity: 0;
+    transition: none;
+  }
+
+  .stage :global(.photo.is-settling) {
+    transition:
+      transform var(--duration-settle) var(--ease-out),
+      opacity var(--duration-fast) var(--ease-out);
+  }
+
+  .stage[data-state='error'] :global(.photo) {
+    visibility: hidden;
+  }
+
+  /* A slow photo: a quiet ring appears after 300ms (a fast one never shows it). */
+  .spinner {
+    grid-area: 1 / 1;
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid var(--color-viewer-control-edge);
+    border-top-color: var(--color-viewer-text);
+    border-radius: var(--radius-full);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .stage[data-state='loading'] .spinner {
+    animation:
+      viewer-appear var(--duration-fast) var(--ease-out) 300ms both,
+      viewer-spin 900ms linear infinite;
+  }
+
+  @keyframes viewer-appear {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes viewer-spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  .stage-error {
+    grid-area: 1 / 1;
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    max-width: 22rem;
+    padding: var(--space-4);
+    text-align: center;
+    font-size: var(--text-md);
+  }
+
+  .retry {
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--color-viewer-control-edge);
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--color-viewer-text);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .retry:hover {
+    background: var(--color-viewer-control-hover);
+  }
+
+  .arrow {
+    position: absolute;
+    top: 50%;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 1px solid var(--color-viewer-control-edge);
+    border-radius: var(--radius-full);
+    background: var(--color-viewer-control);
+    color: var(--color-viewer-text);
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: background-color var(--duration-fast) var(--ease-out);
+  }
+
+  .arrow:hover {
+    background: var(--color-viewer-control-hover);
+  }
+
+  .arrow-previous {
+    left: var(--space-2);
+  }
+
+  .arrow-next {
+    right: var(--space-2);
+  }
+
+  /* On black (and over any photo): a light ring with a black edge on both sides. */
+  .stage :focus-visible {
+    outline: 2px solid var(--color-viewer-focus);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 6px var(--color-viewer-bg);
+  }
+
+  /* ---------- Details: caption and context ---------- */
+
+  .details {
+    grid-area: details;
+    min-width: 0;
+  }
+
+  .caption-block {
+    padding: var(--space-3) var(--space-4) 0;
+  }
+
+  .caption {
+    font-size: var(--text-md);
+    line-height: 1.5;
+    /* Line breaks typed in photos.yaml are kept; the text is set with textContent. */
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+
+  .caption.is-clamped {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+  }
+
+  .more {
+    padding: var(--space-1) 0;
+    border: 0;
+    background: none;
+    color: var(--color-link);
+    font-size: var(--text-md);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .more:hover {
+    color: var(--color-link-hover);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  /* The page already says where the photos are from; the context line is for the wide
+     layout's details panel (TRD §6.5). */
+  .context {
+    display: none;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .counter {
+    grid-area: counter;
+    justify-self: end;
+    padding: var(--space-2) var(--space-4) var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- 600–899px: a centred column on the dark backdrop ---------- */
+
+  @media (min-width: 600px) {
+    .viewer {
+      padding: var(--space-5);
+    }
+
+    .frame {
+      flex: 0 1 36rem;
+      max-height: 100%;
+      margin: auto;
+      border-radius: var(--radius-md);
+    }
+
+    .stage {
+      max-height: max(15rem, 100dvh - 15rem);
+    }
+  }
+
+  /* ---------- From 900px: photo on the left, details panel on the right ---------- */
+
+  @media (min-width: 900px) {
+    .viewer {
+      padding: clamp(var(--space-4), 3vw, var(--space-7));
+    }
+
+    .frame {
+      flex: 1;
+      max-width: 100rem;
+      height: 100%;
+      max-height: none;
+      grid-template-columns: minmax(0, 1fr) var(--viewer-panel);
+      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-areas:
+        'stage head'
+        'stage details';
+      overflow: hidden;
+    }
+
+    .head {
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .stage {
+      height: 100%;
+      aspect-ratio: auto;
+      max-height: none;
+    }
+
+    .arrow {
+      width: 2.75rem;
+      height: 2.75rem;
+    }
+
+    .arrow-previous {
+      left: var(--space-4);
+    }
+
+    .arrow-next {
+      right: var(--space-4);
+    }
+
+    .details {
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding-bottom: var(--space-4);
+    }
+
+    .caption-block {
+      padding-top: var(--space-4);
+    }
+
+    /* The panel has room for the whole caption. */
+    .caption.is-clamped {
+      display: block;
+      -webkit-line-clamp: none;
+      line-clamp: none;
+      overflow: visible;
+    }
+
+    .more {
+      display: none;
+    }
+
+    .context {
+      display: block;
+      padding: var(--space-3) var(--space-4) 0;
+    }
+
+    /* The counter sits in the photo's corner, on its own dark pill. */
+    .counter {
+      grid-area: stage;
+      align-self: end;
+      z-index: 1;
+      margin: var(--space-4);
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-full);
+      background: var(--color-viewer-control);
+      color: var(--color-viewer-text);
+      pointer-events: none;
+    }
+  }
+</style>

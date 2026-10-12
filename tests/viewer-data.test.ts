@@ -39,7 +39,6 @@ describe('viewerPhoto', () => {
       photographer: {
         name: 'Andi Pratama',
         initials: 'AP',
-        instagram: 'andi.pratama',
         instagramUrl: 'https://www.instagram.com/andi.pratama/',
       },
       date: { label: '20 Sep 2026', iso: '2026-09-20' },
