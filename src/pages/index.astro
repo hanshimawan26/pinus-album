@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE } from '../lib/config.ts';
+---
+
+<BaseLayout>
+  <main>
+    <h1>{SITE.name}</h1>
+    <p>{SITE.descriptor}</p>
+    <p>Hello! The photo album is on its way.</p>
+  </main>
+</BaseLayout>

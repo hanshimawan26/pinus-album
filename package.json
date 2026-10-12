@@ -1,0 +1,29 @@
+{
+  "name": "pinus-album",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pinus Community digital photo album (static Astro site for GitHub Pages)",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "typecheck": "astro check",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "photos:check": "node scripts/photos-check.ts"
+  },
+  "dependencies": {
+    "astro": "^7.3.8",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.4"
+  }
+}

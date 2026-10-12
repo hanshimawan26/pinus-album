@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../lib/url.ts';
+---
+
+<BaseLayout title="Page not found">
+  <main>
+    <h1>Page not found</h1>
+    <p><a href={withBase()}>Back to all events</a></p>
+  </main>
+</BaseLayout>

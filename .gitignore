@@ -1,0 +1,34 @@
+# build output
+dist/
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# test / tooling output
+coverage/
+playwright-report/
+test-results/
+.lighthouseci/
+
+# logs
+npm-debug.log*
+
+# environment variables
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+
+# personal AI-tooling config (shared skills/agents are committed)
+.claude/settings.local.json
+.impeccable/config.local.json
+.impeccable/*.local.*
+
+# per-machine binaries downloaded by the impeccable launcher
+**/skills/impeccable/scripts/bin/
