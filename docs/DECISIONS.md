@@ -148,7 +148,8 @@ each section.
   still validated.
 - **Cover fallback:** a missing or hidden `cover:` is an error, and the tree falls back to the
   default so `astro dev` still renders. A cover inside a draft sub-section that is excluded
-  from production also falls back to the default.
+  from production also falls back to the default. *(Changed in milestone 5: a hidden cover,
+  and a cover inside a draft section, are now warnings. See "Covers that are not shown".)*
 - **Drafts are validated in every mode** (build and `photos:check`), so problems surface
   before publishing. `includeDrafts` only decides what is published. Pages pass
   `includeDrafts: import.meta.env.DEV`.
@@ -206,6 +207,8 @@ each section.
   "Size limits" section (milestone 6), because neither exists yet; a maintainer following
   such a hint today would hit "Missing script". When those land, add them to the
   `large-image` and `content-too-large` messages in `src/lib/content/validate.ts`.
+  *(Milestone 5: `large-image` now names `npm run photos:prep -- "<folder>"`. The README hint
+  in `content-too-large` waits for milestone 6.)*
 
 ## Milestone 3 — Pages
 
@@ -693,3 +696,276 @@ earlier list and adds:
 
 Screenshots of the portrait photo at every size, the clamped and expanded caption, the
 uncredited photo and the error state were reviewed.
+
+## Milestone 5 — Authoring tools and edge cases
+
+### `photos:prep` (TRD §7, §9)
+
+- **Usage:** `npm run photos:prep -- <folder> [--dry-run] [--force]`. It goes through the folder
+  recursively (dot-folders are skipped) and changes JPEG files **in place**. A single file is
+  accepted too. `--dry-run` prints the plan and writes nothing. It runs with plain `node`
+  (type stripping), like the other scripts. **No dependency was added.**
+- **Paths (both tools, decision):** npm always runs scripts from the project folder, so a
+  path is read relative to the folder the maintainer's terminal is in (`INIT_CWD`, which npm
+  sets), like any command. If nothing exists there, it is read relative to the project
+  folder, so a command copied from `photos:check` output (which prints project paths) works
+  from any folder. Refusals show the full path that was looked at
+  (`src/lib/authoring/target.ts`, unit-tested, plus tests that run both CLIs the way npm does).
+- **Rules, in order** (`src/lib/authoring/prep-rules.ts`, pure and unit-tested):
+  1. **Resize:** long edge over 2400 px → scaled down to 2400 px and re-encoded with mozjpeg
+     at quality 85 (TRD §7).
+  2. **Recompress:** within 2400 px but over 1 MB (TRD §7: "ideally under 1 MB"), and not
+     written by photos:prep before → re-encoded at quality 85, but the result is kept only
+     when it is at least 10% smaller. Without the 1 MB rule, a 2400 px export at quality 100
+     (3–4 MB) would stay too big while the `large-image` warning tells the maintainer to run
+     photos:prep.
+  3. **Strip:** otherwise, if the file carries more metadata than the kept tags (below), the
+     metadata is rewritten **without re-encoding**: the image data is copied byte for byte
+     (a test compares it), so there is no quality loss.
+  4. **None:** the file is already web-ready and is not even rewritten.
+- **Idempotency** has two parts:
+  - The kept EXIF block is written by our own deterministic writer, and "is the metadata
+    already clean?" means "rewriting it would give exactly the same bytes". A file that
+    photos:prep wrote therefore always compares equal.
+  - Every file photos:prep writes carries a marker, `Software: pinus-album photos:prep`. A
+    marked file is never re-encoded again, even if it is still over 1 MB. Without the marker,
+    repeated runs could re-encode a heavy file again and again, losing a little quality each
+    time.
+  Tests run every case twice and check that the second run changes nothing. The script also
+  says so at the end ("Running photos:prep again changes nothing").
+- **Orientation (decision):** when the pixels are re-encoded anyway (resize, recompress), the
+  EXIF rotation is **baked into the pixels** and the Orientation tag is dropped, so the
+  master is upright in every program. When only metadata is removed, the pixels are left
+  alone and the **Orientation tag is kept**: re-encoding a photo only to rotate it would cost
+  quality, and every consumer honours the tag (browsers since 2020, sharp and therefore the
+  site's image pipeline, and the content engine, which reports the upright size). Tests check
+  both paths with a picture whose top half is red: it is red on top after prep.
+- **Metadata kept (privacy improvement):** `DateTimeOriginal` and `OffsetTimeOriginal` (the
+  photo's date, TRD §4.6), `Orientation` (only while the pixels are still stored sideways),
+  `Artist` and `ImageDescription` (so the P1 photographer and caption fallbacks stay
+  possible), and the marker. **Everything else is removed**: the GPS position, camera make,
+  model and serial numbers, maker notes, the embedded thumbnail (a second, unstripped copy of
+  the photo), XMP, IPTC/Photoshop data, MPF, other APPn segments and comments, and any data
+  after the end of the image (phones append motion-photo videos and HDR gain maps there).
+  The repository is public, so this matters even though the published derivatives were
+  already clean. The colour profile (ICC), JFIF and Adobe segments are kept when the pixels
+  are not re-encoded, because without them colours can change.
+- **XMP/IPTC caption and creator are carried over:** if EXIF has no `ImageDescription` or
+  `Artist`, the XMP `dc:description`/`dc:creator` (or IPTC Caption/By-line) are written into
+  them before XMP and IPTC are dropped. Lightroom and Photo Mechanic write captions there.
+- **Text values are copied as raw bytes**, never decoded and re-encoded, so a name with
+  accents survives any number of runs unchanged. Values carried over from XMP are written as
+  UTF-8 (EXIF calls the field ASCII, but UTF-8 is what phones and editors write in practice,
+  and exifr reads it back correctly). Values are trimmed, and blank ones (cameras pad
+  `Artist` with spaces) are dropped.
+- **Colour on re-encode:** sharp converts to sRGB using the embedded profile and writes no
+  profile. A wide-gamut (Display P3) phone photo loses its extra-saturated colours, which is
+  what the website's derivatives do anyway.
+- **Our own JPEG segment parser and EXIF writer** (`jpeg.ts`, `exif-block.ts`, about 480 lines,
+  pure, unit-tested) instead of a dependency. sharp cannot remove metadata without
+  re-encoding, and the alternatives (exiftool, piexifjs) would add a Perl binary or an
+  unmaintained package. The parser understands baseline and progressive JPEGs; anything it
+  cannot parse is reported as "could not be prepared" and left untouched.
+- **Scope (decision):** photos:prep overwrites files, so where it may work is fixed:
+  - inside `src/albums`: always (the photos there are copies the maintainer just put there);
+  - a folder **outside the project** (for example Downloads, which may hold the only copy of
+    the originals): only with `--force`;
+  - the project folder itself, a folder that contains it, or any other project folder
+    (`node_modules`, `dist`, `public`, `src`, …): **never, not even with `--force`**. Before
+    this rule, `--force` on the project folder would have rewritten every JPEG in
+    `node_modules`, `dist` and `public`.
+  A path that does not exist gets a clear message with an example.
+- **Demo folders are never changed (decision):** images inside `src/albums/demo-*` (the
+  generated demo content, `DEMO_FOLDER_PREFIX` in `config.ts`) are reported as "skipped:
+  generated demo image" and left alone. `npm run demo:images` owns them, and the demo GPS
+  image must keep its GPS: `verify:dist` and the demo-content test rely on it, while
+  `photos:check`'s `location-in-photo` warning for it points at photos:prep. If a demo
+  image was changed anyway, `npm run demo:images` restores it. Exit code 1 for usage
+  errors, unreadable files, HEIC files and formats the site cannot use (all things
+  `photos:check` would also reject); 0 otherwise.
+- **Other formats:** HEIC/HEIF files (by name, or by content with a `.jpg` name) are listed
+  with the same conversion instructions `photos:check` gives (one shared text,
+  `HEIC_CONVERSION_HELP`). PNG and WebP files are **never changed**; they are flagged when
+  over 2400 px or over 2 MB (the `large-image` threshold) or when they carry a GPS position.
+  `.gif`, camera raw files and similar are flagged as unusable.
+- **Writes are atomic:** the new file is written next to the old one and renamed over it, so
+  an interruption never leaves half a photo.
+- **Report:** one line per file (status, name relative to the folder, size before → after,
+  "turned upright", what metadata was removed), then a summary: counts per action, total
+  size before → after, how many photos lost a GPS position, and what still needs attention.
+  Sizes use binary units like `photos:check`.
+
+### `photos:init` (TRD §4.4, §9)
+
+- **Usage:** `npm run photos:init -- <album-folder> [--dry-run]`. For every photo of that node
+  (its own folder and its `@photographer` folders, not sub-sections) that has no entry, it
+  adds `"<key>":` with `caption: ""`. A blank caption means "no caption" (milestone 2), so the
+  skeleton changes nothing on the site until someone writes a caption. Hidden photos always
+  have an entry (that is how they are hidden), so they are never touched.
+- **New entries are appended to the file's text; the existing text is never rewritten.**
+  The yaml package's Document API parses the file, renders the new entries (with correct
+  quoting) and checks the result, but the file itself is not re-serialised: a round trip
+  through `Document.toString()` turned the Windows line endings (CRLF) of the demo Day 1
+  `photos.yaml` into LF, which would rewrite every line. Appending keeps existing entries,
+  their order, comments, quoting, blank lines and line endings byte for byte (tests compare
+  the prefix). New text uses the file's own line endings. The result is parsed again, and if
+  any existing entry would read differently (for example a file indented in an unusual
+  way), nothing is written and the maintainer is told to add entries by hand.
+- **Keys** follow TRD §4.4: the path relative to the node (`@andi-pratama/IMG_0012.jpg`).
+  A photo directly in the node gets its bare file name, or `./name` when a photographer
+  folder has a file with the same name (so the key is never ambiguous). Keys are always in
+  double quotes, which YAML needs for `@`.
+- **Order:** new entries follow the display order (date, or file name with `sort: filename`),
+  so captions are written in the order visitors see the photos.
+- **Existing keys count even when their entry has a mistake** (an unknown field, for example),
+  because adding a second entry for that photo would only cause a "listed twice" error. A bare
+  file name that matches several photos is reported, and those photos get no new entry until
+  it is fixed. **A key that differs from a photo's name only in capitals** (`img_0012.jpg`
+  for `IMG_0012.jpg`, common on Windows) also counts for that photo: photos:init adds no
+  entry for it and says to correct the capitals first, because following `photos:check`'s
+  "Did you mean" hint would otherwise create a "listed twice" error. A YAML syntax error
+  stops photos:init with the same line-numbered message `photos:check` gives; a file that
+  is valid YAML but not one `"path":` entry per photo (a `{ … }` flow map or a list) stops it
+  with a separate message that points to `photos:check`.
+- **A new file** starts with a four-line comment explaining how to write captions and which
+  other fields exist.
+- **Refused targets:** the albums folder itself, an `@photographer` folder (the message names
+  the album folder to use instead), anything outside `src/albums`, and a folder with a
+  near-miss file such as `Photos.yaml`: on Windows and macOS, opening `photos.yaml` would
+  silently open `Photos.yaml`, which the Linux build does not read.
+- **`Albums.model`:** `loadAlbums()` now also returns the content model (every node, drafts
+  and hidden photos included), so photos:init and verify:dist reuse the content engine instead
+  of walking the folder again.
+
+### Covers that are not shown (changed from milestone 2)
+
+- **A hidden `cover:` is now a warning (`cover-not-shown`), not an error**, and the album falls
+  back to its default cover. Hiding a photo is how a takedown request is handled (TRD §10). If
+  the photo happened to be an album's cover, an error would fail the build and block the
+  takedown until someone also edited `index.md`. A takedown must never be blocked.
+- **A cover inside a draft section is also a warning:** the published site shows the default
+  cover until that section is published. No warning when the album itself is a draft.
+- A `cover:` that matches no file is still an error (TRD §4.8).
+
+### New warning: GPS position in a master (`location-in-photo`)
+
+- `photos:check` now warns about every image whose EXIF contains a GPS position, hidden photos
+  included: the website never shows it, but the original file in the public repository does.
+  For a JPEG, the message gives the exact `photos:prep` command for its folder; for a PNG
+  or WebP (which photos:prep never changes) it says to export the file again without
+  location data, or as a JPEG and then run photos:prep. `exif.ts` reads the GPS tags with
+  exifr, which was already used for the dates.
+- **One definition of "has a GPS position"** for both tools: latitude or longitude present.
+  Many phones write a GPS section with only a date or version number while location is
+  off; photos:prep still removes that section, but does not call it a "GPS location" in its
+  report. A test checks that photos:check and photos:prep agree on the same files.
+- The demo image with GPS tags (`demo-event-b/IMG-20260815-WA0006.jpg`) keeps them on purpose,
+  because `verify:dist` uses it to prove that published images are stripped. It now produces
+  an intentional warning.
+
+### Post viewer: a single photo
+
+- **An album with one photo** shows no arrows (both ends), **no counter** ("1 / 1" carries no
+  information, and Instagram shows none on a single post), and the dialog is named "Photo by
+  Dewi …" instead of "Photo 1 of 1 by Dewi …". Keys and swipes do nothing, as at any end.
+  The rule is `showsCounter()` in the pure `navigation.ts`.
+
+### Hidden photos and drafts in `dist/` (verified end to end)
+
+- **The mechanism is unchanged from milestone 3:** pages never generate derivatives for hidden
+  or draft photos, and the `remove-source-copies` integration deletes the originals Astro
+  emits for them. The build log names them (the hidden photo and the three draft photos).
+  The virtual-module alternative (import only published photos) was considered again and not
+  done: it needs dev-mode invalidation and only changes what exists for a moment during the
+  build, not what is published.
+- **`verify:dist` now proves the result** with two new checks:
+  - **Album pages match the published albums exactly** (`src/lib/build-checks/published.ts`,
+    pure): every published album has a page, no page exists for an album that is not
+    published (a draft or a deleted one), and each page's viewer data lists exactly the
+    album's visible photos, so a hidden photo cannot appear. The expected list comes from the
+    content engine with `includeDrafts: false`.
+  - **No unused images in `_astro/`:** every image there must be referenced by a page or
+    stylesheet, so nothing derived from an unpublished photo can be left behind.
+  Both were proven to fail: a copied page for the draft Day 4 and a stray `.webp` each made
+  verify:dist exit 1. The comparison uses sets, not order, so it does not depend on
+  `TIMEZONE` (which only affects ordering).
+
+### Edge cases: demo content added (all clearly labelled demo)
+
+- **Draft section:** `demo-event-a/day-4/` ("Day 4 (draft demo)", `draft: true`, 3 photos).
+  In `npm run dev` it has a card with the "Draft" badge, a page, a sibling link from Day 3 and
+  counts towards "38 photos · 4 sections". In the production build it has none of these:
+  Demo Event A shows "35 photos · 3 sections" and Day 3 has no "next" link. TRD §12.1 asks
+  for three sections, which is what is published.
+- **Third level, single photo, long title:** `demo-event-a/day-3/closing-photo/`, titled
+  "Closing night: one group photo of everyone who stayed until the very end", with one photo
+  by a new demo photographer, `dewi-demo` ("Dewi Kartika Sari Wulandari Putri (Demo)", no
+  Instagram handle). Its caption contains a long link with no spaces. Day 3 now has both its
+  own photos and sections.
+- **Empty album:** `demo-event-a/day-3/after-party/` (only an `index.md`). Its card shows the
+  placeholder icon and no meta line; its page shows "No photos here yet". It produces the
+  intentional `no-cover` warning.
+- `demo:images` now generates 51 images (4 new). `photos:check` on the demo content reports
+  **0 errors and 6 intentional warnings** (was 4): the two new ones are the empty album and
+  the GPS demo image.
+- Already covered before: no caption, no photographer, no date and neither
+  (`IMG-20260815-WA0003.jpg`), a name without Instagram (`budi-demo`), a hidden photo, a long
+  multi-paragraph caption.
+
+### Verification (this milestone)
+
+- **Browser check** (Playwright driving the installed Chrome; script kept outside the repo) at
+  360×740 (touch), 768×1024 (touch) and 1280×800:
+  - against `astro preview` of the production build: **130 checks passed, 0 failed**;
+  - against `astro dev` (drafts shown): **138 passed**, plus one check whose expected text was
+    wrong in the script itself (it expected a space between the draft title and its badge).
+  They cover: no horizontal scroll and no element outside the viewport on the home page,
+  Demo Event A, Day 1, Day 3, Closing night, After-party, Demo Event B (and Day 4 in dev);
+  the single-photo viewer (no arrows, no counter, its label, keys keeping the photo, focus
+  inside and back on the tile after Esc, no overflow with the long name and link); a photo
+  with no caption, credit or date showing no empty rows; the hidden photo absent from tiles,
+  viewer data and the whole page, with its deep link ignored; the long caption without
+  overflow; section cards, counts and sibling navigation with and without the draft; the
+  empty album's state; Day 4 returning 404 in production.
+- **Extreme words:** a 66-character unbroken word injected into the page title, breadcrumbs,
+  card titles, sibling navigation and the viewer's name and caption wrapped without overflow
+  at 360 px. No CSS change was needed.
+- Screenshots of the new pages and the viewer at 360 and 1280 px were reviewed.
+- photos:prep was also run by hand on a scratch folder (outside the repo, with `--force`):
+  a 4000×3000 sideways photo with GPS and XMP, a GPS-only photo, a clean photo, a 4 MB
+  quality-100 photo, an oversize PNG and a fake HEIC. The second run reported every JPEG as
+  already web-ready.
+- **Tests:** 81 new unit tests (507 in total), covering the JPEG parser, the EXIF block,
+  the prep rules, prep on generated images (resize, orientation both ways, date and offset
+  kept, GPS and camera data dropped, XMP carried over, lossless strip, motion-photo data,
+  recompress, idempotency), prep on a temp folder (dry run, every file kind, the content
+  engine reading the result, second run unchanged), the report, photos:init (append-only,
+  CRLF, comments, ambiguous and invalid keys, refusals, idempotency, the content engine
+  reading the result), the new warnings, the single-photo viewer rules, the published-content
+  check and the demo content (draft in dev only, single photo, empty album).
+
+### Known limitations
+
+- photos:prep never changes PNG or WebP files (by design; it reports them). A screenshot
+  that is really a photo should be exported as JPEG.
+- The lossless path drops data after the end of the image. For Android "Ultra HDR" photos
+  that is the HDR gain map: the photo stays correct, but no longer has HDR highlights.
+- photos:prep processes files one by one (sharp itself uses several threads). Measured: 20
+  noisy 4032×3024 photos (166 MB) took 25 s, about 1.2 s per photo, so an event of 50 phone
+  photos takes about a minute. That is acceptable for a maintainer tool run once per upload.
+- photos:init adds entries for one album folder at a time, not its sub-sections.
+- The README (milestone 6) still has to describe both tools, and the `content-too-large`
+  message should then point to the README's "Size limits" section.
+
+### Review fixes (this milestone)
+
+- Paths are read relative to the maintainer's terminal folder (`INIT_CWD`), with the
+  project folder as fallback; photos:prep refuses project folders outside `src/albums` even
+  with `--force`, and skips the generated demo folders (see `photos:prep` above).
+- The `location-in-photo` advice depends on the file format (see above).
+- photos:init no longer adds a second entry for a photo whose key differs only in capitals.
+- photos:check and photos:prep share one definition of a GPS position.
+- Small cleanups: `fitWithin` (only used by tests; the resize itself is sharp's
+  `fit: 'inside'`) and `bytesText` (now a test helper) were removed; the count helper
+  `countLabel` (`presentation.ts`) replaces two copies; one `isInside` path helper serves
+  both tools and `demo:images`; photos:init's messages use `ALBUMS_DIR`.

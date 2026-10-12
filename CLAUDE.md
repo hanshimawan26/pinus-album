@@ -10,10 +10,19 @@ logged in [docs/DECISIONS.md](docs/DECISIONS.md). Read the TRD before changing b
 - `npm test` — Vitest unit tests (`tests/**/*.test.ts`)
 - `npm run typecheck` — `astro check`
 - `npm run photos:check` — validate `src/albums/` (exit 1 on errors)
-- `npm run demo:images` — regenerate the placeholder demo images (deterministic, idempotent)
+- `npm run photos:prep -- <folder> [--dry-run] [--force]` — make the JPEGs in a folder web-ready
+  in place (≤ 2400 px, quality 85, upright, metadata reduced to date/artist/description, GPS
+  removed). Idempotent. Refuses folders outside the project without `--force`, and other
+  project folders (node_modules, dist, …) always. Never changes `src/albums/demo-*`.
+- `npm run photos:init -- <album-folder> [--dry-run]` — append a `caption: ""` entry to
+  `photos.yaml` for every photo of that node without one (never rewrites existing text).
+  Both tools read paths relative to the terminal's folder (`INIT_CWD`), else the project.
+- `npm run demo:images` — regenerate the placeholder demo images (deterministic, idempotent;
+  also restores a demo image that was changed by hand)
 - `npm run verify:dist` — after a build: no EXIF/GPS in published images, no copies of source
   photos, no broken internal links, every image file the size (and orientation) its page
-  claims. Run it with the same `BASE_PATH` as the build.
+  claims, album pages exactly the published albums (no drafts, no hidden photos) and no unused
+  images in `_astro/`. Run it with the same `BASE_PATH` as the build.
 - Build under a sub-path: `BASE_PATH=/pinus-album/ npm run build`. In Git Bash, prefix
   `MSYS_NO_PATHCONV=1` when passing `BASE_PATH=/`, or MSYS rewrites it into a Windows path.
 
@@ -30,8 +39,8 @@ src/
     content/
       types.ts       domain types (AlbumNode, Photo, Photographer, Issue)
       schemas.ts     zod schemas for index.md frontmatter, photos.yaml, photographers.yaml
-      scan.ts        filesystem walk → SourceTree (fs IO lives only in scan.ts, exif.ts and
-                     build-checks/files.ts)
+      scan.ts        filesystem walk → SourceTree (fs IO lives only in scan.ts, exif.ts,
+                     build-checks/files.ts and authoring/prep-files.ts, init-node.ts)
       exif.ts        EXIF date / orientation / upright dimensions (build time only)
       resolve.ts     PURE: per-photo metadata precedence (TRD §4.6), photos.yaml key matching
       model.ts       PURE: SourceTree → ContentModel (every node and photo, drafts/hidden included)
@@ -42,8 +51,15 @@ src/
     presentation.ts  PURE: counts, date labels, meta descriptions, JSON-for-<script> escaping
     viewer-data.ts   PURE: per-photo data embedded for the post viewer (TRD §6.5)
     images.ts        ASTRO-ONLY: photos → getImage() derivatives (thumb, viewer srcset, covers)
-    build-checks/    checks of the built site: image-metadata.ts, links.ts, image-claims.ts
-                     (all PURE), files.ts (fs). Not named dist/: that name is the build output
+    build-checks/    checks of the built site: image-metadata.ts, links.ts, image-claims.ts,
+                     published.ts (all PURE), files.ts (fs). Not named dist/: that name is the
+                     build output
+    authoring/       the maintainer tools behind photos:prep and photos:init:
+                     PURE jpeg.ts (JPEG segments), exif-block.ts (the kept EXIF tags, read and
+                     written byte-exact), prep-rules.ts (what prep does), prep-report.ts,
+                     photos-yaml.ts (appends photos.yaml entries); prep.ts (sharp, bytes in/out,
+                     no fs); prep-files.ts, init-node.ts and target.ts (fs; target.ts decides
+                     which paths the tools may touch)
   content.config.ts  `stories` collection: renders index.md stories with Astro's Markdown
   integrations/      remove-source-copies.ts — deletes copies of original photos from dist/
   styles/global.css  design tokens (see DESIGN.md) and base styles, imported once by the layout
@@ -82,6 +98,9 @@ tests/               Vitest; helpers under tests/helpers/ (fs fixtures are gener
   copied into `dist/` (they still contain EXIF). Never read a property of an imported image
   (`.src`, `.width`, …): Astro then keeps the original in `dist/`. Pass it only to
   `getImage()` in `images.ts`; sizes come from the content engine. `verify:dist` enforces it.
+  The masters in the (public) repository should carry no GPS either: `photos:prep` removes it
+  and `photos:check` warns (`location-in-photo`). Hiding a photo must never fail the build
+  (a takedown cannot be blocked), so a hidden `cover:` is a warning, not an error.
 - **Design:** visual decisions and colour roles live in `DESIGN.md`; use the tokens in
   `src/styles/global.css`, never raw colours in components. Page titles use `.page-title`.
 - **Content errors fail the build** via `loadAlbumsOrThrow()`; pages pass

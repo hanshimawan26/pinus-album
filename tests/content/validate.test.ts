@@ -162,18 +162,6 @@ describe('errors (TRD §4.8)', () => {
     expect(issue?.message).toContain('Did you mean "@alice/IMG_1.jpg"?');
   });
 
-  it('cover that is a hidden photo', () => {
-    const [issue] = issuesFor([
-      clean('event', {
-        index: index('date: 2026-09-20\ncover: "@alice/IMG_2.jpg"'),
-        photos: '"@alice/IMG_2.jpg":\n  hidden: true\n',
-        images: { '@alice/IMG_1.jpg': { exif: '2026:09:20 10:00:00' }, '@alice/IMG_2.jpg': { exif: '2026:09:20 10:00:00' } },
-      }),
-    ]);
-    expect(issue).toMatchObject({ code: 'missing-cover' });
-    expect(issue?.message).toContain('hidden');
-  });
-
   it('cover pointing into a sub-folder is valid', () => {
     expect(issuesFor([clean('event', { index: index('date: 2026-09-20\ncover: day-1/@alice/IMG_1.jpg'), children: [clean('day-1')] })])).toEqual([]);
   });
@@ -265,6 +253,73 @@ describe('warnings (TRD §4.8)', () => {
     expect(issuesFor(tree(LARGE_IMAGE_BYTES))).toEqual([]);
     const [issue] = issuesFor(tree(LARGE_IMAGE_BYTES + 1));
     expect(issue).toMatchObject({ level: 'warning', code: 'large-image', file: 'src/albums/event/@alice/IMG_1.jpg' });
+    expect(issue?.message).toContain('npm run photos:prep -- "src/albums/event/@alice"');
+  });
+
+  it('cover that is a hidden photo: a warning, never an error, so hiding a photo cannot block a takedown', () => {
+    const { root, issues } = build(
+      sourceTree([
+        clean('event', {
+          index: index('date: 2026-09-20\ncover: "@alice/IMG_2.jpg"'),
+          photos: '"@alice/IMG_2.jpg":\n  hidden: true\n',
+          images: { '@alice/IMG_1.jpg': { exif: '2026:09:20 10:00:00' }, '@alice/IMG_2.jpg': { exif: '2026:09:20 10:00:00' } },
+        }),
+      ]),
+    );
+    expect(issues).toEqual([expect.objectContaining({ level: 'warning', code: 'cover-not-shown', file: 'src/albums/event/index.md' })]);
+    expect(issues[0]?.message).toContain('hidden in photos.yaml');
+    expect(root.children[0]?.cover?.relPath).toBe('@alice/IMG_1.jpg');
+  });
+
+  it('cover inside a draft section: a warning, and the published site falls back', () => {
+    const tree = sourceTree([
+      clean('event', {
+        index: index('date: 2026-09-20\ncover: day-4/@alice/IMG_1.jpg'),
+        children: [clean('day-4', { index: index('title: "Day 4"\ndate: 2026-09-20\ndraft: true') })],
+      }),
+    ]);
+    const { root, issues } = build(tree);
+    expect(issues).toEqual([expect.objectContaining({ level: 'warning', code: 'cover-not-shown', file: 'src/albums/event/index.md' })]);
+    expect(issues[0]?.message).toContain('"Day 4", which is a draft');
+    expect(root.children[0]?.cover?.file).toBe('src/albums/event/@alice/IMG_1.jpg');
+    expect(build(tree, true).root.children[0]?.cover?.file).toBe('src/albums/event/day-4/@alice/IMG_1.jpg');
+  });
+
+  it('cover inside a draft section of a draft album: nothing to warn about', () => {
+    const issues = issuesFor([
+      clean('event', {
+        index: index('date: 2026-09-20\ndraft: true\ncover: day-4/@alice/IMG_1.jpg'),
+        children: [clean('day-4', { index: index('date: 2026-09-20\ndraft: true') })],
+      }),
+    ]);
+    expect(issues).toEqual([]);
+  });
+
+  it('photo whose original file contains a GPS location (hidden photos too: the repository is public)', () => {
+    const issues = issuesFor([
+      clean('event', {
+        photos: '"@alice/IMG_2.jpg":\n  hidden: true\n',
+        images: { '@alice/IMG_1.jpg': { exif: '2026:09:20 10:00:00', gps: true }, '@alice/IMG_2.jpg': { exif: '2026:09:20 10:00:00', gps: true } },
+      }),
+    ]);
+    expect(issues.map((issue) => [issue.level, issue.code, issue.file])).toEqual([
+      ['warning', 'location-in-photo', 'src/albums/event/@alice/IMG_1.jpg'],
+      ['warning', 'location-in-photo', 'src/albums/event/@alice/IMG_2.jpg'],
+    ]);
+    expect(issues[0]?.message).toContain('npm run photos:prep -- "src/albums/event/@alice"');
+  });
+
+  it('GPS in a PNG or WebP: advises exporting again, because photos:prep leaves those formats unchanged', () => {
+    const issues = issuesFor([
+      clean('event', {
+        images: { '@alice/IMG_1.png': { exif: '2026:09:20 10:00:00', gps: true, format: 'png' }, '@alice/IMG_2.webp': { exif: '2026:09:20 10:00:00', gps: true, format: 'webp' } },
+      }),
+    ]);
+    expect(issues.map((issue) => issue.code)).toEqual(['location-in-photo', 'location-in-photo']);
+    for (const issue of issues) {
+      expect(issue.message).toContain('Export it again without location data');
+      expect(issue.message).not.toContain('npm run photos:prep --');
+    }
   });
 
   it('node with no cover (no visible photos in the folder or below)', () => {

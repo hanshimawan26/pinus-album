@@ -34,6 +34,8 @@ export interface ImageInfo {
   exifDateTimeOriginal?: string;
   /** Raw EXIF `OffsetTimeOriginal`, e.g. `+08:00`. */
   exifOffsetTimeOriginal?: string;
+  /** The EXIF data includes a GPS position (the master file reveals where it was taken). */
+  hasGps?: boolean;
 }
 
 /** A supported image file inside a node, directly or in an `@photographer` folder. */
@@ -306,6 +308,8 @@ export type IssueCode =
   | 'date-out-of-range'
   | 'large-image'
   | 'no-cover'
+  | 'cover-not-shown'
+  | 'location-in-photo'
   | 'content-too-large'
   | 'ignored-file';
 

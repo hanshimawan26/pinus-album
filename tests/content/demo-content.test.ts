@@ -6,15 +6,19 @@ import exifr from 'exifr';
 import sharp from 'sharp';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { DEMO_IMAGES, renderDemoImage } from '../../scripts/demo-images.ts';
-import { loadAlbums, photosInSubtree, type Albums, type Photo } from '../../src/lib/content/index.ts';
+import { loadAlbums, photosInSubtree, siblingsOf, type Albums, type Photo } from '../../src/lib/content/index.ts';
 import { formatDate, formatDateRange } from '../../src/lib/dates.ts';
 
+/** As `astro dev` sees it (drafts included). */
 let albums: Albums;
+/** As the production build sees it (no drafts). */
+let published: Albums;
 let photos: Photo[];
 const photo = (file: string) => photos.find((p) => p.file === `src/albums/${file}`);
 
 beforeAll(async () => {
   albums = await loadAlbums({ includeDrafts: true });
+  published = await loadAlbums({ includeDrafts: false });
   photos = [];
   for (const node of albums.nodes.values()) photos.push(...node.photos); // published (visible) photos
 });
@@ -27,14 +31,16 @@ describe('demo content', () => {
   it('has only the intentional warnings', () => {
     expect(albums.warnings.map((issue) => [issue.code, issue.file])).toEqual([
       ['date-out-of-range', 'src/albums/demo-event-a/day-3/PXL_0005.jpg'],
+      ['no-cover', 'src/albums/demo-event-a/day-3/after-party'],
       ['no-date', 'src/albums/demo-event-b/IMG-20260815-WA0002.jpg'],
       ['no-photographer', 'src/albums/demo-event-b/IMG-20260815-WA0003.jpg'],
       ['no-date', 'src/albums/demo-event-b/IMG-20260815-WA0003.jpg'],
+      ['location-in-photo', 'src/albums/demo-event-b/IMG-20260815-WA0006.jpg'],
     ]);
   });
 
   it('has the TRD §12.1 shape: event A with three sections of 10–20 images, flat event B with 12', () => {
-    const [eventA, eventB] = albums.root.children;
+    const [eventA, eventB] = published.root.children;
     expect(eventA?.title).toBe('Demo Event A');
     expect(eventA?.children.map((child) => child.slug)).toEqual(['day-1', 'day-2', 'day-3']);
     for (const section of eventA?.children ?? []) {
@@ -49,12 +55,50 @@ describe('demo content', () => {
   });
 
   it('lists events newest first with dates, counts and covers', () => {
-    const [eventA, eventB] = albums.root.children;
+    const [eventA, eventB] = published.root.children;
     expect(formatDateRange(eventA!.date!, eventA!.endDate)).toBe('18–20 Sep 2026');
-    expect(eventA).toMatchObject({ photoCount: 34, sectionCount: 3, dateSource: 'index.md' });
+    expect(eventA).toMatchObject({ photoCount: 35, sectionCount: 3, dateSource: 'index.md' });
     expect(eventA?.cover?.file).toBe('src/albums/demo-event-a/day-2/@budi-demo/DSC_0102.jpg');
     expect(formatDate(eventB!.date!)).toBe('15 Aug 2026');
     expect(eventB).toMatchObject({ photoCount: 12, sectionCount: 0, dateSource: 'photos', sort: 'filename' });
+  });
+
+  it('has a draft section that only `astro dev` shows: no page, card, sibling link or count in production', () => {
+    const day4 = albums.nodes.get('demo-event-a/day-4');
+    expect(day4).toMatchObject({ draft: true, title: 'Day 4 (draft demo)', photoCount: 3 });
+    expect(day4?.story).toContain('Demo content');
+    expect(albums.nodes.get('demo-event-a')).toMatchObject({ photoCount: 38, sectionCount: 4 });
+    expect(siblingsOf(albums.root, ['demo-event-a', 'day-3']).next?.slug).toBe('day-4');
+
+    expect(published.nodes.has('demo-event-a/day-4')).toBe(false);
+    expect(published.nodes.get('demo-event-a')).toMatchObject({ photoCount: 35, sectionCount: 3 });
+    expect(siblingsOf(published.root, ['demo-event-a', 'day-3']).next).toBeUndefined();
+    expect(photosInSubtree(published.root).some((p) => p.file.includes('/day-4/'))).toBe(false);
+    expect(published.stats).toMatchObject({ draftNodes: 1 });
+  });
+
+  it('has a third level: a single-photo sub-section with a long title, and an empty one', () => {
+    const day3 = published.nodes.get('demo-event-a/day-3');
+    expect(day3?.children.map((child) => child.slug)).toEqual(['closing-photo', 'after-party']);
+    expect(day3?.photos.length).toBeGreaterThan(0); // photos and sections in one node
+    expect(day3).toMatchObject({ photoCount: 11, sectionCount: 2 });
+
+    const closing = published.nodes.get('demo-event-a/day-3/closing-photo');
+    expect(closing?.photos).toHaveLength(1);
+    expect(closing?.title.length).toBeGreaterThan(60);
+    expect(closing?.cover?.relPath).toBe('@dewi-demo/DSC_9001.jpg');
+
+    const empty = published.nodes.get('demo-event-a/day-3/after-party');
+    expect(empty).toMatchObject({ photoCount: 0, sectionCount: 0, photos: [], children: [] });
+    expect(empty?.cover).toBeUndefined();
+    expect(empty?.date).toBeUndefined();
+  });
+
+  it('has a caption with a long unbroken link, by a photographer with a long name and no Instagram', () => {
+    const single = photo('demo-event-a/day-3/closing-photo/@dewi-demo/DSC_9001.jpg');
+    expect(single?.caption).toMatch(/https:\/\/\S{60,}/);
+    expect(single?.photographer).toMatchObject({ name: 'Dewi Kartika Sari Wulandari Putri (Demo)', initials: 'DD', listed: true });
+    expect(single?.photographer?.instagram).toBeUndefined();
   });
 
   it('derives title and date for a section without index.md (Day 1)', () => {

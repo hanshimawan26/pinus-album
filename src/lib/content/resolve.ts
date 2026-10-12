@@ -68,7 +68,8 @@ export function coverFile(dir: string, cover: string): string | undefined {
 
 const baseName = (path: string) => path.slice(path.lastIndexOf('/') + 1);
 
-function normaliseKey(key: string): { path: string; explicitPath: boolean } {
+/** A photos.yaml key as a path relative to the node, and whether it is a path (not a bare file name). */
+export function normaliseKey(key: string): { path: string; explicitPath: boolean } {
   const cleaned = key.trim().replaceAll('\\', '/');
   if (cleaned.startsWith('./')) return { path: cleaned.slice(2), explicitPath: true };
   return { path: cleaned, explicitPath: cleaned.includes('/') };

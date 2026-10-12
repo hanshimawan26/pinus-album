@@ -19,6 +19,12 @@ export const SITE = {
 /** Content folder (TRD §4.1), relative to the project root. */
 export const ALBUMS_DIR = 'src/albums';
 
+/**
+ * Top-level album folders starting with this hold the generated demo content (TRD §12.1):
+ * `npm run demo:images` writes only there, and photos:prep never changes files there.
+ */
+export const DEMO_FOLDER_PREFIX = 'demo-';
+
 /** EXIF dates have no zone; interpret and display them in this IANA zone (TRD §4.6). */
 export const TIMEZONE = env.TIMEZONE || 'Asia/Singapore';
 

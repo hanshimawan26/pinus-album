@@ -18,7 +18,7 @@ import { lookupPhotographer } from './resolve.ts';
 import { validateContent } from './validate.ts';
 
 export type * from './types.ts';
-export { pathTo, siblingsOf, photosInSubtree, slugPathKey } from './tree.ts';
+export { comparePhotos, pathTo, siblingsOf, photosInSubtree, slugPathKey } from './tree.ts';
 
 export interface LoadOptions {
   /** Albums folder; default `src/albums` under the current working directory. */
@@ -41,6 +41,8 @@ export interface Albums {
   errors: readonly Issue[];
   warnings: readonly Issue[];
   stats: { nodes: number; photos: number; hiddenPhotos: number; draftNodes: number; totalBytes: number };
+  /** Every node and photo, drafts and hidden photos included (for the authoring tools and checks). */
+  model: ContentModel;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -142,6 +144,7 @@ async function build(includeDrafts: boolean, timeZone: string, tree: SourceTree)
     errors: issues.filter((issue) => issue.level === 'error'),
     warnings: issues.filter((issue) => issue.level === 'warning'),
     stats: countModel(model),
+    model,
   };
 }
 

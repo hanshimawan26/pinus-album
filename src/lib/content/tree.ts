@@ -132,7 +132,8 @@ function derivedDate(node: AlbumNode): AlbumDate | undefined {
 function chooseCover(model: ModelNode, node: AlbumNode): Photo | undefined {
   if (model.coverFile) {
     const chosen = photosInSubtree(node).find((photo) => photo.file === model.coverFile);
-    // A missing or hidden cover is a validation error; fall back so dev still renders.
+    // A missing cover is a validation error; a hidden one, or one inside an unpublished draft,
+    // is a warning. Either way, fall back to the default cover.
     if (chosen) return chosen;
   }
   return node.photos[0] ?? node.children.find((child) => child.cover)?.cover;

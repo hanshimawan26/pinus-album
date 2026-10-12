@@ -27,6 +27,8 @@
   date: 2026-08-15
 
 # Carries GPS EXIF tags: used to prove that published images are stripped. Date from EXIF.
+# photos:check warns that the original file reveals a location (intentional; in real
+# content, npm run photos:prep removes it; photos:prep never changes the demo folders).
 "IMG-20260815-WA0006.jpg":
   caption: "Demo: this file has GPS data; the website copy must not."
   photographer: budi-demo

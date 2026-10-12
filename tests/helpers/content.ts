@@ -22,6 +22,8 @@ export interface ImageSpec {
   format?: string;
   /** Simulate an unreadable file. */
   readError?: string;
+  /** The EXIF data includes a GPS position. */
+  gps?: boolean;
 }
 
 export interface NodeSpec {
@@ -55,6 +57,7 @@ function makeImage(dir: string, relPath: string, spec: ImageSpec): SourceImage {
   };
   if (spec.exif) info.exifDateTimeOriginal = spec.exif;
   if (spec.offset) info.exifOffsetTimeOriginal = spec.offset;
+  if (spec.gps) info.hasGps = true;
   image.info = info;
   return image;
 }

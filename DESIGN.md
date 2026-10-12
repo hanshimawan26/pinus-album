@@ -187,6 +187,9 @@ Instagram post layout (TRD §6.5). It is a native `<dialog>` opened with `showMo
   fails on black. Arrows are 40 px (44 px from 900 px) and hidden at either end (no wrap).
   The ✕ is a near-black icon button on the light header. Icons are drawn SVG (`CloseIcon`,
   `ChevronIcon`), never glyphs.
+- **A single photo** (an album with one photo) reads like a single Instagram post: no arrows
+  (both ends), no counter ("1 / 1" says nothing), and the dialog is named "Photo by …"
+  instead of "Photo 1 of 1 by …" (milestone 5).
 - **Focus:** on the light header, the normal blue ring (drawn inside the ✕ so the frame never
   clips it). On the photo, a `--color-viewer-focus` ring with a black halo on both sides, so
   it shows over dark and light photos alike.
@@ -218,3 +221,16 @@ Instagram post layout (TRD §6.5). It is a native `<dialog>` opened with `showMo
   `src/lib/image-sizes.ts`), with EXIF stripped and orientation applied.
 - While an image loads, its placeholder is the sunken surface colour. It reserves the final
   aspect ratio, so the layout does not shift.
+
+## Edge cases (milestone 5, checked at 360, 768 and 1280 px)
+
+- **Long titles and links wrap** everywhere (page title, breadcrumbs, cards, sibling
+  navigation, viewer name and caption), including unbroken words of 60+ characters, through
+  the body's `overflow-wrap: break-word` and the viewer's `overflow-wrap: anywhere`. No
+  component needed its own rule.
+- **An album with no photos** has a card with the sunken placeholder and image icon and no
+  meta line (no date, no "0 photos"), and its page shows the "No photos here yet" panel.
+- **An album with photos and sections** shows the section cards first, then its own photos
+  under a visible "Photos" heading.
+- **Draft sections** carry the yellow "Draft" badge in `npm run dev` and do not exist in the
+  published site.

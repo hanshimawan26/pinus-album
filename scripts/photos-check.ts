@@ -7,7 +7,8 @@
  */
 import { loadAlbums, type Issue } from '../src/lib/content/index.ts';
 import { ALBUMS_DIR, TIMEZONE } from '../src/lib/config.ts';
-import { bold, dim, green, plural, red, runCli, yellow } from './cli.ts';
+import { countLabel as plural } from '../src/lib/presentation.ts';
+import { bold, dim, green, red, runCli, yellow } from './cli.ts';
 
 function printGroup(title: string, issues: readonly Issue[], colour: (text: string) => string, marker: string): void {
   if (issues.length === 0) return;

@@ -16,6 +16,15 @@ export const CONTENT_WARNING_BYTES = 700 * 1024 * 1024;
 
 const SUPPORTED_CONTENT_FORMATS = new Set(['jpeg', 'png', 'webp']);
 
+/** How to turn a HEIC/HEIF photo into a JPEG. Shared with photos:prep. */
+export const HEIC_CONVERSION_HELP =
+  'To convert: on a Mac, open it in Preview and use File → Export → JPEG; on Windows, open it in Photos and use "Save as" → JPG. ' +
+  'Then delete the .heic file. To avoid this in future, set the iPhone to Settings → Camera → Formats → Most Compatible.';
+
+/** The command that shrinks photos and removes their location (TRD §9), for messages. */
+const PREP_COMMAND = (folder: string) => `npm run photos:prep -- "${folder}"`;
+const folderOf = (file: string) => file.slice(0, file.lastIndexOf('/'));
+
 const baseName = (path: string) => path.slice(path.lastIndexOf('/') + 1);
 
 /** The metadata file a near-miss name was meant to be: `Photos.yml` → `photos.yaml`. */
@@ -113,9 +122,7 @@ function reportStray(stray: SourceStray, list: IssueList): void {
       list.error(
         'unsupported-format',
         stray.file,
-        'HEIC/HEIF photos (the iPhone default) cannot be shown on the website. Convert it to JPEG and delete the .heic file: ' +
-          'on a Mac, open it in Preview and use File → Export → JPEG; on Windows, open it in Photos and use "Save as" → JPG. ' +
-          'To avoid this in future, set the iPhone to Settings → Camera → Formats → Most Compatible.',
+        `HEIC/HEIF photos (the iPhone default) cannot be shown on the website. Convert it to JPEG. ${HEIC_CONVERSION_HELP}`,
       );
       return;
     case 'unsupported-image':
@@ -220,12 +227,27 @@ function checkImageFiles(node: ModelNode, list: IssueList): void {
           'Convert it to JPEG (for example with Preview on a Mac or Photos on Windows) and replace this file.',
       );
     }
+    // The repository is public: anyone can download the original file and read its location.
+    // photos:prep only rewrites JPEGs, so PNG and WebP files get different advice.
+    if (image.info?.hasGps) {
+      const fix =
+        image.info.format === 'jpeg'
+          ? `Remove it with ${PREP_COMMAND(folderOf(image.file))}.`
+          : 'Export it again without location data (or save it as a JPEG and run photos:prep on its folder).';
+      list.warning(
+        'location-in-photo',
+        image.file,
+        'This photo contains the GPS location where it was taken. The website never shows it, but the original file in the ' +
+          `public repository does. ${fix}`,
+      );
+    }
     if (image.size > LARGE_IMAGE_BYTES) {
       list.warning(
         'large-image',
         image.file,
         `This image is ${megabytes(image.size)} (limit ${megabytes(LARGE_IMAGE_BYTES)}). Shrink it to at most 2400 px on the long side ` +
-          '(for example by exporting it again at a smaller size) so the repository stays small.',
+          `so the repository stays small: for JPEG photos, run ${PREP_COMMAND(folderOf(image.file))}; ` +
+          'for PNG or WebP files, export them again at a smaller size.',
       );
     }
   }
@@ -312,15 +334,10 @@ function checkCover(node: ModelNode, list: IssueList): void {
   const target = node.coverFile;
   const photos = allModelPhotos(node);
   const photo = target ? photos.find((p) => p.file === target) : undefined;
-  if (photo?.hidden) {
-    list.error(
-      'missing-cover',
-      indexFile,
-      `cover: "${cover}" is a photo that is hidden in photos.yaml. Choose another cover, or remove "cover" to use the first photo.`,
-    );
+  if (photo) {
+    checkCoverShown(node, photo, cover, indexFile, list);
     return;
   }
-  if (photo) return;
 
   const caseMatch = target ? photos.find((p) => p.file.toLowerCase() === target.toLowerCase()) : undefined;
   const hint = caseMatch
@@ -332,6 +349,43 @@ function checkCover(node: ModelNode, list: IssueList): void {
 // ---------------------------------------------------------------------------------------
 // Warnings
 // ---------------------------------------------------------------------------------------
+
+/** Nodes from `node` down to the node that holds the photo `file` (inclusive). */
+function pathToPhoto(node: ModelNode, file: string): ModelNode[] | undefined {
+  if (node.photos.some((photo) => photo.file === file)) return [node];
+  for (const child of node.children) {
+    const below = pathToPhoto(child, file);
+    if (below) return [node, ...below];
+  }
+  return undefined;
+}
+
+/**
+ * A cover that exists but is not shown: hidden, or inside a draft section. Warnings, not
+ * errors: hiding a photo is how a takedown request is handled (TRD §10), and a takedown must
+ * never be blocked by a failing build. The album falls back to its first photo (tree.ts).
+ */
+function checkCoverShown(node: ModelNode, photo: Photo, cover: string, indexFile: string, list: IssueList): void {
+  if (photo.hidden) {
+    list.warning(
+      'cover-not-shown',
+      indexFile,
+      `cover: "${cover}" is a photo that is hidden in photos.yaml, so the album shows its first photo as the cover instead. ` +
+        'Choose another cover, or remove "cover" to keep using the first photo.',
+    );
+    return;
+  }
+  if (node.meta.draft) return; // the whole album is unpublished anyway
+  const draft = pathToPhoto(node, photo.file)?.slice(1).find((section) => section.meta.draft);
+  if (draft) {
+    list.warning(
+      'cover-not-shown',
+      indexFile,
+      `cover: "${cover}" is in "${draft.title}", which is a draft (not published yet). Until it is published, the website shows ` +
+        'the first published photo as the cover. Choose a cover outside the draft to avoid this.',
+    );
+  }
+}
 
 function checkPhoto(photo: Photo, node: ModelNode, list: IssueList): void {
   if (photo.hidden) return;

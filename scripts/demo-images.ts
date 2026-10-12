@@ -15,10 +15,11 @@
  * Runs directly with Node's type stripping: `node scripts/demo-images.ts`.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, relative, resolve, sep } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import { ALBUMS_DIR } from '../src/lib/config.ts';
+import { isInDemoFolder } from '../src/lib/authoring/target.ts';
+import { ALBUMS_DIR, DEMO_FOLDER_PREFIX } from '../src/lib/config.ts';
 
 type Shape = 'landscape' | 'portrait' | 'square';
 
@@ -47,6 +48,8 @@ const SIZES: Record<Shape, { width: number; height: number }> = {
 const A1 = 'demo-event-a/day-1';
 const A2 = 'demo-event-a/day-2';
 const A3 = 'demo-event-a/day-3';
+const A3_CLOSING = 'demo-event-a/day-3/closing-photo';
+const A4 = 'demo-event-a/day-4';
 const B = 'demo-event-b';
 
 /** The demo photo set. Which metadata case each photo covers is documented in the photos.yaml files. */
@@ -103,6 +106,14 @@ export const DEMO_IMAGES: readonly DemoImage[] = [
   { path: `${A3}/@alice-demo/IMG_3003.jpg`, shape: 'landscape', exifDate: '2026:09:20 14:15:00' },
   { path: `${A3}/@alice-demo/IMG_3004.jpg`, shape: 'square', exifDate: '2026:09:20 15:00:00' },
   { path: `${A3}/@alice-demo/IMG_3005.jpg`, shape: 'landscape', exifDate: '2026:09:20 18:45:00' },
+
+  // Demo Event A, Day 3, sub-section "closing-photo": the third level, with a single photo
+  { path: `${A3_CLOSING}/@dewi-demo/DSC_9001.jpg`, shape: 'landscape', exifDate: '2026:09:20 21:30:00', note: 'The only photo in its sub-section' },
+
+  // Demo Event A, Day 4: a draft section (shown in `npm run dev` only, never published)
+  { path: `${A4}/@alice-demo/IMG_4001.jpg`, shape: 'landscape', exifDate: '2026:09:21 09:00:00', note: 'Draft section: never published' },
+  { path: `${A4}/@alice-demo/IMG_4002.jpg`, shape: 'portrait', exifDate: '2026:09:21 09:30:00', note: 'Draft section: never published' },
+  { path: `${A4}/@alice-demo/IMG_4003.jpg`, shape: 'square', exifDate: '2026:09:21 10:00:00', note: 'Draft section: never published' },
 
   // Demo Event B (flat: no sections)
   { path: `${B}/@alice-demo/IMG_5001.jpg`, shape: 'landscape', exifDate: '2026:08:15 10:00:00' },
@@ -240,8 +251,7 @@ export async function renderDemoImage(image: DemoImage): Promise<Buffer> {
 /** Resolve a manifest path, refusing anything outside `src/albums/demo-*`. */
 function safeOutputPath(albumsAbs: string, path: string): string {
   const target = resolve(albumsAbs, path);
-  const first = relative(albumsAbs, target).split(sep)[0] ?? '';
-  if (!first.startsWith('demo-') || first.includes('..')) throw new Error(`Refusing to write outside src/albums/demo-*: ${path}`);
+  if (!isInDemoFolder(albumsAbs, target)) throw new Error(`Refusing to write outside ${ALBUMS_DIR}/${DEMO_FOLDER_PREFIX}*: ${path}`);
   return target;
 }
 

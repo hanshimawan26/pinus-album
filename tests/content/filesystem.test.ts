@@ -11,6 +11,7 @@ import { exifTiffBlock, readImageInfo, uprightSize } from '../../src/lib/content
 import { AlbumContentError, loadAlbums, loadAlbumsOrThrow } from '../../src/lib/content/index.ts';
 import { classifyFile, scanAlbums } from '../../src/lib/content/scan.ts';
 import type { SourceTree } from '../../src/lib/content/types.ts';
+import { makeJpeg } from '../helpers/images.ts';
 
 let tmp: string;
 let albums: string;
@@ -188,6 +189,13 @@ describe('exif', () => {
   it('reads images without EXIF', async () => {
     expect(await readImageInfo(join(albums, 'event-1', 'IMG_2.PNG'))).toEqual({ format: 'png', width: 100, height: 100, orientation: 1 });
     expect(await readImageInfo(join(albums, 'event-1', '01-day-1', 'IMG_3.webp'))).toEqual({ format: 'webp', width: 120, height: 80, orientation: 1 });
+  });
+
+  it('notices a GPS position in the EXIF data (for the photos:check privacy warning)', async () => {
+    const file = join(tmp, 'gps.jpg');
+    await writeFile(file, await makeJpeg({ width: 40, height: 30, date: '2026:09:20 10:00:00', gps: true }));
+    expect(await readImageInfo(file)).toMatchObject({ hasGps: true, exifDateTimeOriginal: '2026:09:20 10:00:00' });
+    expect((await readImageInfo(join(albums, 'event-1', '@alice', 'IMG_1.jpg'))).hasGps).toBeUndefined();
   });
 
   it('throws for files that are not images', async () => {

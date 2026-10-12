@@ -1,5 +1,6 @@
 /**
- * Image facts read at build time: pixel size, EXIF orientation and EXIF dates.
+ * Image facts read at build time: pixel size, EXIF orientation, EXIF dates and whether the
+ * file carries a GPS position (for the photos:check privacy warning).
  * Together with scan.ts, the only content module that touches the filesystem.
  *
  * sharp reads the header (size, orientation and the raw EXIF block, for JPEG, PNG and WebP
@@ -27,13 +28,15 @@ export function exifTiffBlock(exif: Buffer): Buffer {
 interface ExifTags {
   DateTimeOriginal?: unknown;
   OffsetTimeOriginal?: unknown;
+  GPSLatitude?: unknown;
+  GPSLongitude?: unknown;
 }
 
 async function readExifTags(exif: Buffer | undefined): Promise<ExifTags> {
   if (!exif || exif.length === 0) return {};
   try {
     const tags = (await exifr.parse(exifTiffBlock(exif), {
-      pick: ['DateTimeOriginal', 'OffsetTimeOriginal'],
+      pick: ['DateTimeOriginal', 'OffsetTimeOriginal', 'GPSLatitude', 'GPSLongitude'],
       reviveValues: false,
       translateValues: false,
     })) as ExifTags | undefined;
@@ -65,5 +68,6 @@ export async function readImageInfo(absPath: string): Promise<ImageInfo> {
   const offsetTimeOriginal = asString(tags.OffsetTimeOriginal);
   if (dateTimeOriginal) info.exifDateTimeOriginal = dateTimeOriginal;
   if (offsetTimeOriginal) info.exifOffsetTimeOriginal = offsetTimeOriginal;
+  if (tags.GPSLatitude !== undefined || tags.GPSLongitude !== undefined) info.hasGps = true;
   return info;
 }

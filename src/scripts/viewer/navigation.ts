@@ -35,11 +35,15 @@ export function counterLabel(index: number, total: number): string {
   return `${index + 1} / ${total}`;
 }
 
+/** A single photo has nowhere to go, so "1 / 1" is noise (like a single Instagram post). */
+export const showsCounter = (total: number): boolean => total > 1;
+
 /**
  * Accessible name of the dialog, also announced when moving to another photo:
- * "Photo 3 of 24 by Andi Pratama", or "Photo 3 of 24" when nobody is credited.
+ * "Photo 3 of 24 by Andi Pratama", or "Photo 3 of 24" when nobody is credited. A single
+ * photo is just "Photo by Andi Pratama" (or "Photo").
  */
 export function photoLabel(photo: Pick<ViewerPhoto, 'photographer'>, index: number, total: number): string {
-  const position = `Photo ${index + 1} of ${total}`;
+  const position = total > 1 ? `Photo ${index + 1} of ${total}` : 'Photo';
   return photo.photographer ? `${position} by ${photo.photographer.name}` : position;
 }

@@ -6,7 +6,7 @@
  */
 import type { ViewerPhoto } from '../../lib/viewer-data.ts';
 import { setShown, type ViewerElements } from './dom.ts';
-import { counterLabel, hasNext, hasPrevious, photoLabel } from './navigation.ts';
+import { counterLabel, hasNext, hasPrevious, photoLabel, showsCounter } from './navigation.ts';
 import { rowsFor, type Rows } from './rows.ts';
 
 export interface Position {
@@ -53,6 +53,7 @@ export function renderPhoto(elements: ViewerElements, photo: ViewerPhoto, { inde
   elements.context.textContent = context;
   setShown(elements.context, context !== '');
   elements.counter.textContent = counterLabel(index, total);
+  setShown(elements.counter, showsCounter(total));
   setShown(elements.previous, hasPrevious(index));
   setShown(elements.next, hasNext(index, total));
 }

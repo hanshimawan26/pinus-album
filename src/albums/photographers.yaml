@@ -9,6 +9,8 @@
 #   budi-demo   has no Instagram handle (name only, no link).
 #   citra-demo  is deliberately NOT listed: Demo Event A / Day 3 credits her, and her name
 #               falls back to "Citra Demo".
+#   dewi-demo   has a long name and no Instagram handle (Day 3 / Closing night): the name
+#               must wrap in the viewer on a narrow phone.
 
 alice-demo:
   name: "Alice (Demo)"
@@ -16,3 +18,6 @@ alice-demo:
 
 budi-demo:
   name: "Budi (Demo)"
+
+dewi-demo:
+  name: "Dewi Kartika Sari Wulandari Putri (Demo)"

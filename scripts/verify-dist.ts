@@ -8,6 +8,10 @@
  *      and inline stylesheet url()s) points to a file that exists under the configured base path.
  *   4. Image sizes (TRD §12.3): every published image is as wide as its srcset descriptor says
  *      and has the aspect ratio the page declares, so portrait photos are upright.
+ *   5. Published content (TRD §4.3, §4.4): there is a page for every published album and none
+ *      for a draft, each page's viewer data lists exactly the album's visible photos (no
+ *      hidden ones), and every image in _astro/ is used by a page, so nothing derived from an
+ *      unpublished photo is left behind.
  *
  * Use the same BASE_PATH as the build. Exit code 1 if anything fails.
  * Runs directly with Node's type stripping: `node scripts/verify-dist.ts`.
@@ -18,10 +22,12 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { ALBUMS_DIR, BASE_PATH } from '../src/lib/config.ts';
+import { loadAlbums } from '../src/lib/content/index.ts';
 import { findSourceCopies, listFiles, relativePosix } from '../src/lib/build-checks/files.ts';
 import { scanImageMetadata } from '../src/lib/build-checks/image-metadata.ts';
 import { dimensionProblem, extractImageClaims, type ImageClaim } from '../src/lib/build-checks/image-claims.ts';
 import { extractCssReferences, extractHtmlReferences, resolveReference, sitePathOf, type Reference } from '../src/lib/build-checks/links.ts';
+import { albumPathOf, comparePublished, viewerPhotoSlugs, type BuiltAlbumPage } from '../src/lib/build-checks/published.ts';
 import { bold, dim, green, red, runCli } from './cli.ts';
 
 const DIST_DIR = resolve('dist');
@@ -64,8 +70,10 @@ async function checkSourceCopies(): Promise<Failure[]> {
   }));
 }
 
-async function checkLinks(files: readonly string[]): Promise<{ checked: number; failures: Failure[] }> {
+/** Also returns every file in dist/ that some page or stylesheet refers to (dist-relative). */
+async function checkLinks(files: readonly string[]): Promise<{ checked: number; failures: Failure[]; referenced: Set<string> }> {
   const failures: Failure[] = [];
+  const referenced = new Set<string>();
   let checked = 0;
   for (const file of files) {
     const isHtml = file.endsWith('.html');
@@ -87,12 +95,48 @@ async function checkLinks(files: readonly string[]): Promise<{ checked: number; 
       checked++;
       if (resolution.kind === 'error') {
         failures.push({ file: distRelative, message: `${reference.source} "${reference.url}" ${resolution.reason}` });
-      } else if (!resolution.candidates.some((candidate) => existsSync(join(DIST_DIR, candidate)))) {
-        failures.push({ file: distRelative, message: `${reference.source} "${reference.url}" is broken: no such file in dist/` });
+      } else {
+        const found = resolution.candidates.find((candidate) => existsSync(join(DIST_DIR, candidate)));
+        if (found === undefined) {
+          failures.push({ file: distRelative, message: `${reference.source} "${reference.url}" is broken: no such file in dist/` });
+        } else {
+          referenced.add(found);
+        }
       }
     }
   }
-  return { checked, failures };
+  return { checked, failures, referenced };
+}
+
+/** Album pages match the published albums exactly (no drafts, no hidden photos). */
+async function checkPublishedContent(files: readonly string[]): Promise<{ checked: number; failures: Failure[] }> {
+  const albums = await loadAlbums({ includeDrafts: false });
+  const expected = [...albums.nodes.values()]
+    .filter((node) => node.depth > 0)
+    .map((node) => ({ path: node.slugPath.join('/'), photoSlugs: node.photos.map((photo) => photo.slug) }));
+  const built: BuiltAlbumPage[] = [];
+  const failures: Failure[] = [];
+  for (const file of files) {
+    const path = albumPathOf(relativePosix(DIST_DIR, file));
+    if (path === undefined) continue;
+    try {
+      built.push({ path, photoSlugs: viewerPhotoSlugs(await readFile(file, 'utf8')) });
+    } catch {
+      built.push({ path, photoSlugs: [] }); // invalid JSON is reported by the link check
+    }
+  }
+  for (const problem of comparePublished(expected, built)) {
+    failures.push({ file: `albums/${problem.path}/`, message: problem.message });
+  }
+  return { checked: expected.length, failures };
+}
+
+/** Images Astro generated that no page uses: leftovers of hidden or draft photos. */
+function checkUnusedImages(files: readonly string[], referenced: ReadonlySet<string>): Failure[] {
+  return files
+    .map((file) => relativePosix(DIST_DIR, file))
+    .filter((file) => file.startsWith('_astro/') && IMAGE_PATTERN.test(file) && !referenced.has(file))
+    .map((file) => ({ file, message: 'is not used by any page (left over from a hidden or draft photo?)' }));
 }
 
 async function checkImageDimensions(files: readonly string[]): Promise<{ checked: number; failures: Failure[] }> {
@@ -155,19 +199,25 @@ async function main(): Promise<number> {
   const copies = await checkSourceCopies();
   const links = await checkLinks(files);
   const dimensions = await checkImageDimensions(files);
+  const published = await checkPublishedContent(files);
+  const unused = checkUnusedImages(files, links.referenced);
 
   printFailures('Images with metadata', metadata.failures);
   printFailures('Copies of original photos', copies);
   printFailures('Broken or misplaced links', links.failures);
   printFailures('Images whose size does not match the page', dimensions.failures);
+  printFailures('Album pages that do not match the published albums', published.failures);
+  printFailures('Images no page uses', unused);
 
-  const failed = metadata.failures.length + copies.length + links.failures.length + dimensions.failures.length;
+  const failed =
+    metadata.failures.length + copies.length + links.failures.length + dimensions.failures.length + published.failures.length + unused.length;
   if (links.failures.some((failure) => failure.message.includes('outside the site'))) {
     console.log(dim(`Hint: run verify:dist with the same BASE_PATH as the build (now "${BASE_PATH}").\n`));
   }
   const summary =
     `${metadata.checked} images checked for metadata, ${files.length} files checked for copies of originals, ` +
-    `${links.checked} internal links checked, ${dimensions.checked} image sizes checked.`;
+    `${links.checked} internal links checked, ${dimensions.checked} image sizes checked, ` +
+    `${published.checked} published albums compared with their pages.`;
   if (failed > 0) {
     console.log(red(bold(`✗ ${failed} problem${failed === 1 ? '' : 's'}. ${summary}`)));
     return 1;

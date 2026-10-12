@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampIndex, counterLabel, hasNext, hasPrevious, neighbours, photoLabel, step } from '../../src/scripts/viewer/navigation.ts';
+import { clampIndex, counterLabel, hasNext, hasPrevious, neighbours, photoLabel, showsCounter, step } from '../../src/scripts/viewer/navigation.ts';
 
 describe('clampIndex', () => {
   it('keeps an index inside the list', () => {
@@ -54,5 +54,12 @@ describe('labels', () => {
   it('names the photographer in the dialog label only when credited', () => {
     expect(photoLabel({ photographer: { name: 'Alice (Demo)', initials: 'AD' } }, 2, 24)).toBe('Photo 3 of 24 by Alice (Demo)');
     expect(photoLabel({}, 0, 12)).toBe('Photo 1 of 12');
+  });
+
+  it('treats a single photo as a single post: no counter, no position in the label', () => {
+    expect(showsCounter(1)).toBe(false);
+    expect(showsCounter(2)).toBe(true);
+    expect(photoLabel({ photographer: { name: 'Dewi (Demo)', initials: 'DD' } }, 0, 1)).toBe('Photo by Dewi (Demo)');
+    expect(photoLabel({}, 0, 1)).toBe('Photo');
   });
 });

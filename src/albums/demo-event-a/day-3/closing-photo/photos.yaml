@@ -1,0 +1,7 @@
+# DEMO photos.yaml for Demo Event A / Day 3 / Closing night (a single-photo sub-section).
+#
+# The photographer, dewi-demo, has a long name in photographers.yaml and no Instagram handle.
+
+# A long caption with a long link in it: it must wrap on a 360 px phone, not overflow.
+"@dewi-demo/DSC_9001.jpg":
+  caption: "Demo caption with a long link that has no spaces to break at: https://example.com/pinus-community/closing-night-group-photo-full-resolution-demo"
