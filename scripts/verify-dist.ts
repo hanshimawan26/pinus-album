@@ -12,8 +12,11 @@
  *      for a draft, each page's viewer data lists exactly the album's visible photos (no
  *      hidden ones), and every image in _astro/ is used by a page, so nothing derived from an
  *      unpublished photo is left behind.
+ *   6. Page rules (TRD §10, §11): every page has the robots meta that ALLOW_INDEXING asks for
+ *      (noindex by default) and the footer's takedown line linking to CONTACT_EMAIL; only
+ *      pages with photos load JavaScript, and no page loads more than 60 KB gzipped.
  *
- * Use the same BASE_PATH as the build. Exit code 1 if anything fails.
+ * Use the same BASE_PATH, ALLOW_INDEXING and CONTACT_EMAIL as the build. Exit code 1 if anything fails.
  * Runs directly with Node's type stripping: `node scripts/verify-dist.ts`.
  */
 import exifr from 'exifr';
@@ -21,12 +24,14 @@ import sharp from 'sharp';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { ALBUMS_DIR, BASE_PATH } from '../src/lib/config.ts';
+import { gzipSync } from 'node:zlib';
+import { ALBUMS_DIR, ALLOW_INDEXING, BASE_PATH, SITE } from '../src/lib/config.ts';
 import { loadAlbums } from '../src/lib/content/index.ts';
 import { findSourceCopies, listFiles, relativePosix } from '../src/lib/build-checks/files.ts';
 import { scanImageMetadata } from '../src/lib/build-checks/image-metadata.ts';
 import { dimensionProblem, extractImageClaims, type ImageClaim } from '../src/lib/build-checks/image-claims.ts';
 import { extractCssReferences, extractHtmlReferences, resolveReference, sitePathOf, type Reference } from '../src/lib/build-checks/links.ts';
+import { extractScripts, JS_BUDGET_GZIP_BYTES, kilobytes, pageProblems, scriptBudgetProblem } from '../src/lib/build-checks/page-rules.ts';
 import { albumPathOf, comparePublished, viewerPhotoSlugs, type BuiltAlbumPage } from '../src/lib/build-checks/published.ts';
 import { bold, dim, green, red, runCli } from './cli.ts';
 
@@ -35,6 +40,9 @@ const IMAGE_PATTERN = /\.(jpe?g|png|webp|gif|avif|tiff?|heic|heif)$/i;
 /** Formats exifr can parse; WebP is covered by the structural scan only. */
 const EXIFR_PATTERN = /\.(jpe?g|png|tiff?|heic|heif|avif)$/i;
 
+/** The first of a reference's candidate files (dist/-relative) that exists in dist/. */
+const existingInDist = (candidates: readonly string[]): string | undefined =>
+  candidates.find((candidate) => existsSync(join(DIST_DIR, candidate)));
 
 interface Failure {
   file: string;
@@ -96,7 +104,7 @@ async function checkLinks(files: readonly string[]): Promise<{ checked: number; 
       if (resolution.kind === 'error') {
         failures.push({ file: distRelative, message: `${reference.source} "${reference.url}" ${resolution.reason}` });
       } else {
-        const found = resolution.candidates.find((candidate) => existsSync(join(DIST_DIR, candidate)));
+        const found = existingInDist(resolution.candidates);
         if (found === undefined) {
           failures.push({ file: distRelative, message: `${reference.source} "${reference.url}" is broken: no such file in dist/` });
         } else {
@@ -167,8 +175,9 @@ async function checkImageDimensions(files: readonly string[]): Promise<{ checked
     for (const claim of claims) {
       const resolution = resolveReference(claim.url, fromSitePath, BASE_PATH);
       if (resolution.kind !== 'internal') continue; // External, or reported by the link check.
-      const image = resolution.candidates.map((candidate) => join(DIST_DIR, candidate)).find((path) => existsSync(path));
-      if (!image) continue; // Broken links are reported by the link check.
+      const found = existingInDist(resolution.candidates);
+      if (found === undefined) continue; // Broken links are reported by the link check.
+      const image = join(DIST_DIR, found);
       checked++;
       const actual = await sizeOf(image);
       const problem = actual ? dimensionProblem(claim, actual) : 'could not be read as an image';
@@ -176,6 +185,41 @@ async function checkImageDimensions(files: readonly string[]): Promise<{ checked
     }
   }
   return { checked, failures };
+}
+
+/** Robots meta, takedown line and JavaScript on every page. Returns the heaviest page's JS. */
+async function checkPageRules(files: readonly string[]): Promise<{ checked: number; failures: Failure[]; largestJs: number }> {
+  const failures: Failure[] = [];
+  const gzipSizes = new Map<string, number>();
+  const policy = { allowIndexing: ALLOW_INDEXING, contactEmail: SITE.contactEmail };
+  let checked = 0;
+  let largestJs = 0;
+  for (const file of files) {
+    if (!file.endsWith('.html')) continue;
+    checked++;
+    const distRelative = relativePosix(DIST_DIR, file);
+    const html = await readFile(file, 'utf8');
+    for (const message of pageProblems(html, policy)) failures.push({ file: distRelative, message });
+
+    let pageJs = 0;
+    for (const src of extractScripts(html).external) {
+      const resolution = resolveReference(src, sitePathOf(distRelative, BASE_PATH), BASE_PATH);
+      if (resolution.kind !== 'internal') continue; // External or broken: the link check reports it.
+      const found = existingInDist(resolution.candidates);
+      if (found === undefined) continue;
+      const script = join(DIST_DIR, found);
+      let size = gzipSizes.get(script);
+      if (size === undefined) {
+        size = gzipSync(await readFile(script)).length;
+        gzipSizes.set(script, size);
+      }
+      pageJs += size;
+    }
+    largestJs = Math.max(largestJs, pageJs);
+    const budget = scriptBudgetProblem(pageJs);
+    if (budget) failures.push({ file: distRelative, message: budget });
+  }
+  return { checked, failures, largestJs };
 }
 
 function printFailures(title: string, failures: readonly Failure[]): void {
@@ -201,6 +245,7 @@ async function main(): Promise<number> {
   const dimensions = await checkImageDimensions(files);
   const published = await checkPublishedContent(files);
   const unused = checkUnusedImages(files, links.referenced);
+  const pages = await checkPageRules(files);
 
   printFailures('Images with metadata', metadata.failures);
   printFailures('Copies of original photos', copies);
@@ -208,16 +253,22 @@ async function main(): Promise<number> {
   printFailures('Images whose size does not match the page', dimensions.failures);
   printFailures('Album pages that do not match the published albums', published.failures);
   printFailures('Images no page uses', unused);
+  printFailures('Pages that break a site-wide rule (robots, takedown line, JavaScript)', pages.failures);
 
   const failed =
-    metadata.failures.length + copies.length + links.failures.length + dimensions.failures.length + published.failures.length + unused.length;
+    metadata.failures.length + copies.length + links.failures.length + dimensions.failures.length + published.failures.length + unused.length + pages.failures.length;
   if (links.failures.some((failure) => failure.message.includes('outside the site'))) {
     console.log(dim(`Hint: run verify:dist with the same BASE_PATH as the build (now "${BASE_PATH}").\n`));
+  }
+  if (pages.failures.some((failure) => /robots|mailto/.test(failure.message))) {
+    console.log(dim('Hint: run verify:dist with the same ALLOW_INDEXING and CONTACT_EMAIL as the build.\n'));
   }
   const summary =
     `${metadata.checked} images checked for metadata, ${files.length} files checked for copies of originals, ` +
     `${links.checked} internal links checked, ${dimensions.checked} image sizes checked, ` +
-    `${published.checked} published albums compared with their pages.`;
+    `${published.checked} published albums compared with their pages, ${pages.checked} pages checked for robots ` +
+    `(${ALLOW_INDEXING ? 'index' : 'noindex'}), takedown line and JavaScript ` +
+    `(largest ${kilobytes(pages.largestJs)} gzipped, budget ${kilobytes(JS_BUDGET_GZIP_BYTES)}).`;
   if (failed > 0) {
     console.log(red(bold(`✗ ${failed} problem${failed === 1 ? '' : 's'}. ${summary}`)));
     return 1;

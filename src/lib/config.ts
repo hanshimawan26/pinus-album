@@ -20,10 +20,12 @@ export const SITE = {
 export const ALBUMS_DIR = 'src/albums';
 
 /**
- * Top-level album folders starting with this hold the generated demo content (TRD §12.1):
- * `npm run demo:images` writes only there, and photos:prep never changes files there.
+ * The top-level album folders that hold the generated demo content (TRD §12.1):
+ * `npm run demo:images` writes only there, photos:prep never changes files there, and the
+ * demo-content and E2E tests run only against them. Exact names, not a `demo-` prefix, so a
+ * real event such as `demo-day-2027` is treated like any other event.
  */
-export const DEMO_FOLDER_PREFIX = 'demo-';
+export const DEMO_EVENTS: readonly string[] = ['demo-event-a', 'demo-event-b'];
 
 /** EXIF dates have no zone; interpret and display them in this IANA zone (TRD §4.6). */
 export const TIMEZONE = env.TIMEZONE || 'Asia/Singapore';

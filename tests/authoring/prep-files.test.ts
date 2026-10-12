@@ -129,8 +129,8 @@ describe('prepFile', () => {
 
 describe('generated demo images', () => {
   it('are never changed: npm run demo:images owns them, and one keeps its GPS on purpose', async () => {
-    const file = join(albums, 'demo-event', 'IMG_1.jpg');
-    await mkdir(join(albums, 'demo-event'), { recursive: true });
+    const file = join(albums, 'demo-event-a', 'IMG_1.jpg');
+    await mkdir(join(albums, 'demo-event-a'), { recursive: true });
     const bytes = await makeJpeg({ width: 3000, height: 2000, gps: true });
     await writeFile(file, bytes);
     const outcome = await prepFile(file, { albumsAbs: albums });

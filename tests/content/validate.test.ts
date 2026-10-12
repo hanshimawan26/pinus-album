@@ -307,6 +307,7 @@ describe('warnings (TRD §4.8)', () => {
       ['warning', 'location-in-photo', 'src/albums/event/@alice/IMG_2.jpg'],
     ]);
     expect(issues[0]?.message).toContain('npm run photos:prep -- "src/albums/event/@alice"');
+    expect(issues[0]?.message).toContain("stays in the repository's history");
   });
 
   it('GPS in a PNG or WebP: advises exporting again, because photos:prep leaves those formats unchanged', () => {
@@ -338,6 +339,8 @@ describe('warnings (TRD §4.8)', () => {
     expect(issuesFor([clean('event')], { totalBytes: CONTENT_WARNING_BYTES + 1 })).toEqual([
       expect.objectContaining({ level: 'warning', code: 'content-too-large', file: 'src/albums' }),
     ]);
+    const [issue] = issuesFor([clean('event')], { totalBytes: CONTENT_WARNING_BYTES + 1 });
+    expect(issue?.message).toContain('"Size limits" section of README.md');
   });
 
   it('ignored files: videos', () => {

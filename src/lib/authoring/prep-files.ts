@@ -23,7 +23,7 @@ export type PrepOutcome =
   | { kind: 'other-format'; absPath: string; format: string; snapshot: ImageSnapshot; oversize: boolean; hasGps: boolean }
   /** An image format the site cannot use at all (.gif, .tiff, camera raw, …). */
   | { kind: 'unsupported'; absPath: string }
-  /** A generated demo image (`src/albums/demo-*`): never changed (`npm run demo:images` owns it). */
+  /** A generated demo image (`DEMO_EVENTS` in config.ts): never changed (`npm run demo:images` owns it). */
   | { kind: 'demo'; absPath: string }
   /** The file could not be read or written. */
   | { kind: 'error'; absPath: string; message: string };
@@ -63,7 +63,7 @@ const message = (error: unknown) => (error instanceof Error ? error.message : St
 
 export interface PrepFileOptions {
   dryRun?: boolean;
-  /** The albums folder: images in its generated demo folders (`demo-*`) are left alone. */
+  /** The albums folder: images in its generated demo event folders (`DEMO_EVENTS`) are left alone. */
   albumsAbs?: string;
 }
 

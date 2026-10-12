@@ -12,7 +12,21 @@ each section.
   the committee decides to allow indexing. The §12.3 item "Lighthouse targets in §11 are met"
   is therefore ticked with this caveat: Performance, Accessibility and Best Practices meet
   their targets as built, and SEO meets its target when indexing is allowed. To be confirmed
-  by the committee, and repeated in the milestone 6 handover.
+  by the committee. Re-measured in milestone 6 (Lighthouse 13.5, see "Milestone 6 —
+  Measured results"): the robots meta is still the only failing SEO audit. The README's
+  settings table and handover checklist ask the committee to decide on `ALLOW_INDEXING`.
+- **"Raw originals must not be committed" (TRD §7) vs. the browser route (TRD §9 asks for
+  the GitHub web UI as well).** A maintainer who only uses github.com cannot run
+  `photos:prep`, so their uploads can be full-size originals, and `location-in-photo` and
+  `large-image` are warnings, not errors (TRD §4.8 lists neither as an error). Once committed,
+  a GPS location stays in the public git history even after `photos:prep` cleans the current
+  file; only the history purge removes it. Decision (milestone 6 review): the browser route
+  stays allowed, but the README now tells browser users to remove the location **before**
+  uploading (iPhone share options, Windows "Remove Properties", Preview on a Mac), says
+  plainly that running photos:prep later does not clean the history, and recommends the
+  computer route for whole new events. The `location-in-photo` message says the same. The
+  committee may prefer to make `location-in-photo` an error (which would block such uploads
+  instead of publishing them); to be confirmed.
 
 ## Project and repository
 
@@ -182,7 +196,8 @@ each section.
 
 - `npm run demo:images` (`scripts/demo-images.ts`) generates all 47 demo images from a fixed
   manifest. It is deterministic, and it only writes a file when the bytes differ, so a re-run
-  causes no git churn. It refuses to write outside `src/albums/demo-*`. The images are
+  causes no git churn. It refuses to write outside `src/albums/demo-*` *(milestone 6: outside
+  the two `DEMO_EVENTS` folders)*. The images are
   committed (about 1.5 MB in total, each under 50 KB). Note: they draw text with the system
   font, so regenerating them on another OS can change the bytes, though not the meaning.
 - **Demo names are clearly labelled:** "Demo Event A/B", "Alice (Demo)", "Budi (Demo)" and
@@ -207,8 +222,9 @@ each section.
   "Size limits" section (milestone 6), because neither exists yet; a maintainer following
   such a hint today would hit "Missing script". When those land, add them to the
   `large-image` and `content-too-large` messages in `src/lib/content/validate.ts`.
-  *(Milestone 5: `large-image` now names `npm run photos:prep -- "<folder>"`. The README hint
-  in `content-too-large` waits for milestone 6.)*
+  *(Milestone 5: `large-image` now names `npm run photos:prep -- "<folder>"`. Milestone 6:
+  `content-too-large` now suggests photos:prep and points to the README's "Size limits"
+  section.)*
 
 ## Milestone 3 — Pages
 
@@ -645,7 +661,7 @@ each section.
 - The browser test is not in the repository: Playwright E2E tests are P1 (TRD §12.2). The
   riskiest logic it covers (history rules, absent rows) now lives in pure, unit-tested
   modules; turning the browser script into a committed `@playwright/test` suite is the
-  natural next step.
+  natural next step. *(Done in milestone 6: `e2e/`, `npm run test:e2e`.)*
 - **A deep link opened in a new tab, followed by Back with no interaction, may leave the
   page in Chrome.** The load-time "page, then page#photo" rewrite runs without user
   activation, and Chromium's history-manipulation intervention lets the browser's own Back
@@ -776,7 +792,8 @@ uncredited photo and the error state were reviewed.
     `node_modules`, `dist` and `public`.
   A path that does not exist gets a clear message with an example.
 - **Demo folders are never changed (decision):** images inside `src/albums/demo-*` (the
-  generated demo content, `DEMO_FOLDER_PREFIX` in `config.ts`) are reported as "skipped:
+  generated demo content, `DEMO_FOLDER_PREFIX` in `config.ts`; *changed in milestone 6: the
+  exact folders in `DEMO_EVENTS`, see "Review fixes" there*) are reported as "skipped:
   generated demo image" and left alone. `npm run demo:images` owns them, and the demo GPS
   image must keep its GPS: `verify:dist` and the demo-content test rely on it, while
   `photos:check`'s `location-in-photo` warning for it points at photos:prep. If a demo
@@ -955,7 +972,7 @@ uncredited photo and the error state were reviewed.
   photos takes about a minute. That is acceptable for a maintainer tool run once per upload.
 - photos:init adds entries for one album folder at a time, not its sub-sections.
 - The README (milestone 6) still has to describe both tools, and the `content-too-large`
-  message should then point to the README's "Size limits" section.
+  message should then point to the README's "Size limits" section. *(Done in milestone 6.)*
 
 ### Review fixes (this milestone)
 
@@ -969,3 +986,279 @@ uncredited photo and the error state were reviewed.
   `fit: 'inside'`) and `bytesText` (now a test helper) were removed; the count helper
   `countLabel` (`presentation.ts`) replaces two copies; one `isInside` path helper serves
   both tools and `demo:images`; photos:init's messages use `ALBUMS_DIR`.
+
+## Milestone 6 — Polish and handover
+
+### Measured results
+
+- **Lighthouse 13.5.0, mobile, default throttling**, against `astro preview` (port 4460) of
+  the production build with the default base `/pinus-album/`:
+
+  | Page | Performance | Accessibility | Best Practices | SEO | CLS | LCP | TBT |
+  |---|---|---|---|---|---|---|---|
+  | Home | 100 | 100 | 100 | 63 | 0 | 0.9 s | 0 ms |
+  | Demo Event A (sections) | 100 | 100 | 100 | 63 | 0 | 0.9 s | 0 ms |
+  | Day 1 (demo album with photos) | 100 | 100 | 100 | 63 | 0 | 1.4–1.7 s | 0 ms |
+  | Home, `ALLOW_INDEXING=true` | 100 | 100 | 100 | **100** | 0 | 0.9 s | 0 ms |
+  | Day 1, `ALLOW_INDEXING=true` | 100 | 100 | 100 | **100** | 0 | 1.4 s | 0 ms |
+
+  **SEO 63 comes only from `is-crawlable`.** Its single blocking source, read from the
+  audit details, is `<meta name="robots" content="noindex, nofollow">`. Every other SEO
+  audit passes, and with `ALLOW_INDEXING=true` SEO is 100. The `noindex` default stays
+  (TRD §10, §14 #5); see "Open conflicts with the TRD" at the top.
+
+  Two unscored insights also appeared:
+  - `network-dependency-tree-insight` (HTML → the viewer script). This is by design: it is
+    the only request chain.
+  - `forced-reflow-insight`: 37 ms, "unattributed", in one of four Day 1 runs. It did not
+    reproduce, and the viewer reads no layout at start-up when there is no hash.
+- **JavaScript (TRD §11):** the viewer bundle is **12,659 bytes raw and 4,780 bytes with
+  `gzip -9`** (4.6 KB at zlib's default level, which is what `verify:dist` now measures). The
+  budget is 60 KB.
+  - It loads on Day 1, Day 2, Day 3, Closing night and Demo Event B (the pages with their own
+    photos).
+  - It does **not** load on the home page, Demo Event A, After-party or the 404 page.
+  - `verify:dist` now enforces both rules on every build (see below).
+- **Responsive:** no horizontal scroll on any of these, at 360, 768 and 1280 px (committed
+  E2E tests): home, an event with sections, a section, a section with photos and
+  sub-sections, a single-photo third level, a flat event, the 404 page and the open viewer.
+  - A one-off check also passed at 320 px (WCAG reflow, i.e. 400% zoom), at 1440 px, and with
+    a 200% root font size at 640 px.
+  - I reviewed screenshots at 360, 768 and 1280 px. The one defect they showed is fixed below.
+- **Design detector** (impeccable `detect`): the source tree is clean. On a rendered page it
+  reports one finding, `cream-palette` (the warm off-white page background). That colour is
+  the user's decision (see "Design" above), so it is an intentional exception, not a defect.
+
+### Fixes from the polish pass
+
+- **A wrapped meta line started with "·".** At 360 px the Day 3 section card read
+  "20 Sep 2026 · 11 photos", then "· 2 sections" on the next line.
+  - Fix: every meta line (`.meta` in `global.css`, used by card meta, the album header and
+    the home intro) now gives each item its own separator and clips the strip to the left of
+    the line. The first item of every line, wrapped or not, now starts without a dot.
+  - The dot also has an empty alternative text (`content: '·' / ''`), so screen readers no
+    longer read "dot" between the date and the count. Browsers without that syntax fall back
+    to the plain `content: '·'`, which was the old behaviour.
+- **The unit tests would have blocked deploys once real albums exist.**
+  - The problem: the demo-content test asserted the exact warnings, events and statistics for
+    all of `src/albums/`, and the deploy workflow runs `npm test`. Every deploy would have
+    failed after any of these: the first real event with an ordinary warning (such as a photo
+    without a photographer), a real draft, or deleting the demo folders as the README says.
+  - The fix: the test now looks only at the demo folders and is skipped when they are
+    gone. *(Narrowed in the review fixes below from a `demo-` prefix to the exact
+    `DEMO_EVENTS` folders.)* The one CLI test that runs inside `demo-event-b` is skipped the same way, and the
+    E2E suite skips itself through an automatic fixture. Real content is checked by
+    `photos:check` and the build, which is their job.
+  - Proven by simulation, with the demo content restored byte-identical afterwards:
+    - a temporary real event (with a warning) next to the demo: `npm test` passed;
+    - the demo folders and demo photographers removed: `npm test` (19 skipped),
+      `photos:check`, the build, `verify:dist` and `test:e2e` (all skipped) passed.
+- **`content-too-large`** now suggests photos:prep and points to the README's "Size limits"
+  section.
+
+### `verify:dist`: site-wide page rules (new check)
+
+- A new pure module, `src/lib/build-checks/page-rules.ts`, turns three TRD requirements into
+  build checks on **every** page in `dist/`:
+  - **Robots (TRD §10):** `<meta name="robots">` must exist. It must say `noindex`, unless
+    the site was built with `ALLOW_INDEXING=true`, in which case it must not.
+  - **Takedown line (TRD §10):** the `<footer>` must contain "Not comfortable with a photo?"
+    and a `mailto:` link to `CONTACT_EMAIL` (case-insensitive). A unit test reads
+    `SiteFooter.astro`, so the check and the footer cannot drift apart.
+  - **JavaScript (TRD §11):** no inline scripts (JSON data blocks excepted), no script at all
+    on a page without a photo grid, and the scripts a page loads must total ≤ 60 KB gzipped.
+- The summary line reports the robots mode and the size of the largest page's JavaScript.
+- Proven to fail: verifying the default build with `ALLOW_INDEXING=true`, or with another
+  `CONTACT_EMAIL`, reports every page, with a hint to use the build's settings.
+- **CI:** `verify:dist` must see the same settings as the build, so `ALLOW_INDEXING` and
+  `CONTACT_EMAIL` moved from the Build step to the job's `env` in `deploy.yml`, shared by the
+  Build and Verify steps. `TIMEZONE` stays on the steps that use it (photos:check and Build),
+  so the unit tests always run with the default time zone and stay hermetic.
+
+### End-to-end tests (TRD §12.2, P1, done as the automated proof of §12.3)
+
+- **No new dependency:** `@playwright/test` was already a devDependency, and Playwright is the
+  E2E tool named in TRD §3.
+- **`playwright.config.ts`:**
+  - The web server runs `npm run build`, then `astro preview` on a fixed port (**4460**;
+    `E2E_PORT` overrides it), with `BASE_PATH=/pinus-album/` and `ALLOW_INDEXING=false`
+    forced. The tests therefore always exercise a fresh production build on the default
+    sub-path.
+  - `reuseExistingServer` is **off**. An old server, or a `dist/` built for `BASE_PATH=/`,
+    would silently test the wrong thing; a busy port fails loudly instead.
+  - Locally the tests drive the installed **Google Chrome** (`channel: 'chrome'`, no browser
+    download). When `CI` is set they use Playwright's bundled Chromium. `E2E_BROWSER`
+    (`chrome` or `chromium`) overrides the choice. It is a separate variable so that picking a
+    browser does not also switch on the CI behaviour (retries, `forbidOnly`, HTML reporter),
+    and it works in PowerShell as well as Git Bash.
+  - Two projects: **phone** (360×740, touch, mobile) and **desktop** (1280×800).
+- **Coverage** (`e2e/viewer.spec.ts`, `navigation.spec.ts`, `site.spec.ts`). Every test also
+  fails on any uncaught page error.
+  - Opening: from the home page into an album and a photo. Checks the photographer (Instagram
+    link with `target` and `rel`), avatar, date (`datetime`), caption, alt text and the
+    dialog's name, plus caption line breaks and emoji.
+  - Absent rows are absent: no credit, date or caption row, no Instagram `<a>`, no "Unknown".
+  - Moving: ← / → and Home / End without wrap-around, the arrow buttons, one history entry
+    for a whole viewing session, and touch swipe both ways (phone).
+  - Closing: Esc, ✕, Back and backdrop (desktop). Focus returns to the tile of the photo
+    shown last, and Tab stays inside the dialog.
+  - Deep links: a deep link opens the photo, and Back then stays on the page. An invalid hash
+    is ignored, and so is the hidden photo's deep link.
+  - Orientation: the sideways demo photo is upright in the viewer (portrait natural size,
+    1067:1600) and in the grid (the white "UP" arrow is in the top band of the pixels, not at
+    a side).
+  - Navigation: home cards (cover, title, date, counts, newest first); section cards without
+    the draft; breadcrumbs from the third level back to the section, the event and home;
+    sibling links; the 404 page with its link home.
+  - On every kind of page: robots `noindex`, the takedown line with a `mailto:` link, the
+    viewer script only with photos, landmarks and the skip link, and no horizontal scroll at
+    360, 768 and 1280 px, including with the viewer open.
+- **Result: 82 passed, 24 skipped by design**, in about 50 s (84 passed after the review
+  fixes, which added the whole-card click test). The skips are: swipe only runs with touch,
+  the backdrop test only from 600 px, and the width loop runs once, in the desktop project.
+- **Flakiness:** a 5× repeated run of the viewer and navigation specs found two races in the
+  tests, now fixed. 220 of 220 runs then passed.
+  - Esc closes the dialog at once, but the hash clears a moment later through
+    `history.back()`, so every hash assertion now polls.
+  - After a click navigation, `toHaveURL` resolves before the deferred viewer script has run,
+    so `openFromTile()` waits for `DOMContentLoaded` (which waits for deferred module scripts)
+    before clicking.
+  The second race also exists for people: a tile tapped in the split second before the
+  script runs does nothing, and the next tap works. This is acceptable and is not worked
+  around.
+- **Swipe** uses Chrome DevTools Protocol touch events, which only Chromium supports. That
+  matches the browsers the suite runs.
+- **Orientation via pixels:** the white-pixel count per edge band has large margins. In the
+  viewer image the top band holds 43,187 white pixels against at most 3,452 in any other
+  band, and an unrotated copy has its arrow on the left. The check is not brittle.
+- **Not in the deploy workflow**, so deploys stay fast. `.github/workflows/e2e.yml` runs the
+  tests on pull requests and on demand (**Actions → End-to-end tests → Run workflow**). It
+  installs the bundled Chromium and uploads the HTML report when a run fails. A failing E2E
+  run never blocks publishing photos.
+- `vitest.config.ts` now excludes `e2e/` explicitly. Vitest already included only `tests/`.
+- **Demo content:** the tests use it, but real albums next to it do not disturb them. The
+  home test checks the demo cards' order and contents, not the number of cards. The tests
+  skip themselves when the demo folders are deleted.
+- **Clean-checkout check:** the committed tree plus this milestone's changes was cloned into a
+  temporary folder. `npm ci` (9 s) and a cold `npm run build` (12.6 s) succeeded, and
+  `verify:dist` passed. Adding a folder with an `index.md` and one photo produced a new album
+  page and home card on rebuild, with no code change. With that real event present, `npm test`
+  (538 passed) and `npm run test:e2e` (82 passed) still passed.
+
+### README (TRD §9)
+
+- **Audience:** a committee member who does not code. The tone is warm and plain, task first,
+  with the exact commands and the GitHub web route side by side.
+- **Sections:**
+  - how the album works;
+  - the two ways to work (browser or computer, with a comparison);
+  - one-time computer setup;
+  - **"Add a new event", in exactly the eight TRD §9 steps**;
+  - everyday tasks: caption, credit, hide, wrong date, cover, order, drafts;
+  - taking a photo down;
+  - what each `photos:check` code means;
+  - deleting the demo content;
+  - size limits;
+  - publishing and first-time setup;
+  - the handover checklist;
+  - a developer section.
+- **Takedown:** the README says plainly that hiding or deleting a photo keeps the original in
+  the public git history. It documents the manual purge:
+  1. `git filter-repo --invert-paths --path …`, then a force push;
+  2. clear the Actions caches, which hold derivatives from earlier builds;
+  3. ask GitHub Support to purge cached views and pull-request refs;
+  4. everyone clones the repository again.
+- **Maintainers who only use the browser** cannot run photos:prep. Decision: this is allowed.
+  The photo still publishes with a `large-image` or `location-in-photo` warning. Blocking web
+  uploads would make the browser route useless for photos. *(Tightened in the review fixes
+  below: the README now asks for the location to be removed before uploading, because a
+  later photos:prep does not clean the git history; see "Open conflicts".)*
+- **The final deploy cannot be done from this environment** (no remote, by instruction). The
+  README's "First-time setup" lists the exact steps:
+  1. create the public repository under the organisation;
+  2. `git remote add origin …` and `git push -u origin main`;
+  3. Settings → Pages → Source: GitHub Actions;
+  4. set `CONTACT_EMAIL`;
+  5. run the workflow;
+  6. check the footer on a phone.
+- The **takedown response time** stays blank in the handover table, for the committee to fill
+  in (TRD §14 #7). The README gives "within 3 days" only as an example.
+- **Custom domain:** the README asks for three things:
+  - the Settings → Pages → Custom domain setting, which is the one that counts: when Pages
+    publishes through GitHub Actions, GitHub reads the domain from this setting, not from a
+    file;
+  - `public/CNAME` "for the record" (TRD §8);
+  - `BASE_PATH=/`, which the workflow also detects by itself.
+
+### Acceptance checklist (TRD §12.3)
+
+| Item | Evidence |
+|---|---|
+| `npm ci && npm run build` from a clean checkout; `npm run dev` serves the demo | Clean-checkout check above; the dev server was checked in milestones 3–5 |
+| Home lists every event with cover, title, date and count | E2E `navigation.spec.ts` |
+| Section cards, section grids, breadcrumbs at every level | E2E `navigation.spec.ts` |
+| A new folder adds an event with no code changes | Clean-checkout check: an `index.md` plus one photo became a new album page and home card |
+| Viewer shows photographer, date, caption; no empty rows | E2E `viewer.spec.ts`; unit tests for `rows.ts` |
+| Buttons, keys, swipe; Esc, ✕, Back; focus returns | E2E `viewer.spec.ts` |
+| Deep link opens the photo; invalid hash ignored | E2E `viewer.spec.ts`; unit tests for `hash.ts` and `history.ts` |
+| Metadata precedence (§4.6) proven by unit tests | `tests/content/resolve.test.ts` (every row and source) |
+| Portrait photos upright in grid and viewer | `verify:dist` check (d) on every build; E2E pixel and size checks |
+| No EXIF/GPS in published images (automated) | `verify:dist` check (a), with the demo GPS image as proof |
+| Works under a sub-path with no broken links/images | `verify:dist` link check for `/pinus-album/` and `/`; E2E on `/pinus-album/` |
+| Workflow deploys on push to `main`; `photos:check` errors fail it | `deploy.yml` runs the photos:check step before the build. The live deploy needs the remote: see README "First-time setup" |
+| Layout correct at 360/768/1280 with no horizontal scroll | E2E `site.spec.ts`; screenshots reviewed |
+| Lighthouse targets (§11) on the demo album page | Performance, Accessibility and Best Practices 100, CLS 0. SEO 100 with `ALLOW_INDEXING=true`, 63 with the deliberate `noindex` default |
+| README lets a non-developer add an event, caption, credit | `README.md` |
+
+### Known limitations (end of the POC)
+
+- **Lighthouse is not automated.** The scores above were measured by hand. CI does not run
+  Lighthouse, because it is slow and noisy on shared runners. `verify:dist` and the E2E suite
+  guard the things most likely to break the scores (JS budget, robots, layout).
+- **Only Chrome/Chromium is tested automatically.** TRD §11 lists the last two versions of
+  Safari, Chrome, Firefox and Edge. The site uses only widely supported features (`<dialog>`,
+  `clip-path: inset()`, and `@starting-style` as progressive enhancement). Before launch, a
+  manual check is still recommended on an iPhone (Safari) and in Firefox, together with the
+  Chrome Back-button check after a deep link (milestone 4, "Known limitations").
+- **The E2E workflow has not run on GitHub** (there is no remote here). Its action versions
+  follow the deploy workflow (`checkout@v7`, `setup-node@v7`, `cache@v6`); `upload-artifact@v5`
+  is assumed to be current.
+- The README's GitHub menu names (Settings → Pages, Actions → Caches, …) match GitHub's
+  interface as of October 2026. GitHub renames menus now and then.
+
+### Review fixes (this milestone)
+
+- **Card meta line was not clickable (regression from the meta-separator fix).** The
+  `clip-path` on `.meta` creates a stacking context, which Chrome paints above the card's
+  stretched link overlay (`.link::after`, earlier in the DOM), so taps on the date or photo
+  count did nothing. Fix: `.link::after` gets `z-index: 1`, and `.card` gets
+  `isolation: isolate` so that z-index stays inside the card. A new E2E test clicks the
+  centre of a card's cover, title and meta line (home and section cards) with a real mouse
+  click and expects the album to open.
+- **Demo content is now the exact folders `demo-event-a` and `demo-event-b`**
+  (`DEMO_EVENTS` in `config.ts`, replacing the `demo-` prefix). Before, a real event named
+  for example `demo-day-2027` would have been treated as demo content: the demo-content test
+  would have failed (blocking deploys) and photos:prep would have skipped its photos (leaving
+  GPS in). The list is shared by `target.ts` (photos:prep, demo:images), the demo-content
+  test and the E2E fixtures, so no folder name is reserved beyond those two.
+- **Takedown by deleting a file could fail the deploy.** TRD §4.8 makes a `photos.yaml` entry
+  without a photo, and a `cover:` that does not exist, errors; photos:init writes an entry for
+  every photo. So deleting only the file stops the update and leaves the photo online.
+  Decision: keep both errors (they are TRD rules and catch real typos) and fix the guidance.
+  The README's "Take a photo down" now recommends `hidden: true` (which can never fail),
+  lists the three things to do in the same commit when deleting instead, and asks the
+  maintainer to confirm the green tick and the photo's old link before replying. "Hide a
+  photo" and the `photos-yaml-no-match` / `missing-cover` rows say the same.
+- **GPS in browser uploads:** see the second item in "Open conflicts". The README's step 5,
+  the "Two ways to work" table and the `location-in-photo` row were rewritten, and the
+  `location-in-photo` message now says that a committed location stays in the history.
+- **Node version:** the README asked for "22 or newer", but the scripts need 22.18+ (type
+  stripping on by default). It now says 22.18 or newer and how to check with
+  `node --version`.
+- **E2E browser choice:** a separate `E2E_BROWSER` variable (`chrome` or `chromium`) instead
+  of `CI=1`, which also switched on retries, `forbidOnly` and the HTML reporter, and which
+  does not work as written in PowerShell. The README gives Git Bash and PowerShell forms.
+- **E2E focus return:** the Back, deep-link Back and backdrop tests now also check that focus
+  returns to the right tile (TRD §12.3), not only the Esc and ✕ tests.
+- Small clean-ups: one `existingInDist()` helper in `verify-dist.ts` instead of three copies
+  of the lookup, and a leftover duplicate comment above `.meta` removed.

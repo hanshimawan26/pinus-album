@@ -148,8 +148,8 @@ Headings use `text-wrap: balance` and paragraphs use `pretty`.
 | Site footer | `SiteFooter.astro` | Takedown line with a mailto link (TRD §10), then the organisation name and descriptor. Stacked on phones; a single row from 900 px. The takedown line has no width cap and uses `text-wrap: balance`, so it reads as one sentence on desktop and never leaves a short tail |
 | Skip link | `BaseLayout.astro` | "Skip to content": hidden above the viewport until focused, then shown in blue |
 | Breadcrumbs | `Breadcrumbs.astro` | `nav[aria-label=Breadcrumb] > ol`. Blue links separated by muted chevrons. The current page is muted text with `aria-current="page"` |
-| Node meta | `NodeMeta.astro` | The "date · N photos · N sections" line shared by album page headers and cards; `<time datetime>` only for single days |
-| Album card | `AlbumCard.astro`, `AlbumCardList.astro` | 4:3 cover (radius 10), title, then meta "date · N photos · N sections". The title link is stretched over the whole card, and the cover has `alt=""` because the title already names the link. Event cards use 1/2/3 columns; section cards use 2/3/4 |
+| Node meta | `NodeMeta.astro`, `.meta` in `global.css` | The "date · N photos · N sections" line shared by album page headers, cards and the home intro; `<time datetime>` only for single days. Each item carries its own muted "·" (1.25em wide, centred); the strip left of the line is clipped, so a line that wraps on a narrow card never starts with a dot. The dot is decorative (empty alternative text), so screen readers skip it |
+| Album card | `AlbumCard.astro`, `AlbumCardList.astro` | 4:3 cover (radius 10), title, then meta "date · N photos · N sections". The title link is stretched over the whole card (its overlay sits at `z-index: 1` inside an isolated card, above the clipped meta line), and the cover has `alt=""` because the title already names the link. Event cards use 1/2/3 columns; section cards use 2/3/4 |
 | Photo grid | `PhotoGrid.astro` | Square tiles in 3/4/5 columns with 3 px gaps, edge to edge on phones. Each tile is a `<button>` named by the photo's alt text, with `data-index` and `aria-haspopup="dialog"`. The viewer data is embedded as JSON (`#viewer-data`), and the grid renders the post viewer |
 | Post viewer | `PostViewer.astro`, `src/scripts/viewer/` | See "Post viewer" below |
 | Sibling nav | `SiblingNav.astro` | "‹ Day 1 · Day 3 ›", centred below a hairline. Screen readers hear "Previous section: Day 1". A side without a sibling is left out |
@@ -234,3 +234,19 @@ Instagram post layout (TRD §6.5). It is a native `<dialog>` opened with `showMo
   under a visible "Photos" heading.
 - **Draft sections** carry the yellow "Draft" badge in `npm run dev` and do not exist in the
   published site.
+
+## Polish and handover (milestone 6)
+
+- **Checked at 320, 360, 768, 1280 and 1440 px**, and with a 200% root font size: no
+  horizontal scroll and no clipped content on any page or in the viewer. The committed
+  Playwright suite (`npm run test:e2e`) repeats the 360/768/1280 px check on every kind of
+  page.
+- **One defect fixed:** a meta line that wrapped started its second line with "·" (see Node
+  meta above).
+- **Lighthouse (mobile):** Accessibility 100 on the home page, an event and a section page;
+  every text pair in the contrast tables above is unchanged.
+- **Design detector:** `cream-palette` on the page background is an intentional exception.
+  The warm off-white `#FAF8F4` was chosen deliberately (docs/DECISIONS.md, "Design"), over
+  white (too clinical next to the brand colours) and a stronger beige (tints the photos).
+- **Red `#EF4C2B` still has no UI role.** The rules above still apply: if a future "new" marker
+  or similar uses it, it must be large text (≥ 24 px, or 18.66 px bold) or a graphic.

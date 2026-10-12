@@ -15,6 +15,7 @@
     "typecheck": "astro check",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "photos:check": "node scripts/photos-check.ts",
     "photos:prep": "node scripts/photos-prep.ts",
     "photos:init": "node scripts/photos-init.ts",

@@ -1,0 +1,52 @@
+# Browser tests (Playwright, `npm run test:e2e`) for pull requests and on demand.
+# Kept out of the deploy workflow so publishing photos stays fast; a failing run here never
+# blocks a deploy. Run it from the Actions tab ("Run workflow") after bigger changes.
+name: End-to-end tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node (LTS)
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore image cache
+        uses: actions/cache@v6
+        with:
+          path: node_modules/.astro
+          key: astro-images-${{ runner.os }}-${{ hashFiles('src/albums/**') }}
+          restore-keys: |
+            astro-images-${{ runner.os }}-
+
+      # On CI the tests use Playwright's own Chromium (locally: the installed Google Chrome).
+      - name: Install the test browser
+        run: npx playwright install --with-deps chromium
+
+      # Builds the site for /pinus-album/ and serves it with `astro preview` (playwright.config.ts).
+      - name: Run end-to-end tests
+        run: npm run test:e2e
+
+      - name: Upload the test report
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

@@ -68,7 +68,8 @@ export function validateContent(model: ContentModel): Issue[] {
       'content-too-large',
       model.root.source.dir,
       `All album files together are ${megabytes(model.totalBytes)} (warning limit ${megabytes(CONTENT_WARNING_BYTES)}). ` +
-        'A GitHub Pages site is limited to 1 GB. Shrink large photos or move old events out of the repository.',
+        'A GitHub Pages site is limited to 1 GB. Run npm run photos:prep on the largest events, or move old events out ' +
+        'of the repository. The "Size limits" section of README.md explains the options.',
     );
   }
 
@@ -238,7 +239,8 @@ function checkImageFiles(node: ModelNode, list: IssueList): void {
         'location-in-photo',
         image.file,
         'This photo contains the GPS location where it was taken. The website never shows it, but the original file in the ' +
-          `public repository does. ${fix}`,
+          `public repository does. ${fix} Once the photo has been committed, its location also stays in the repository's ` +
+          'history; "Take a photo down" in README.md explains how to remove it from there.',
       );
     }
     if (image.size > LARGE_IMAGE_BYTES) {

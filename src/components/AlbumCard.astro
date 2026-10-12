@@ -56,6 +56,8 @@ const Heading = headingLevel === 2 ? 'h2' : 'h3';
 <style>
   .card {
     position: relative;
+    /* Keeps the link overlay's z-index below inside the card. */
+    isolation: isolate;
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
@@ -105,11 +107,14 @@ const Heading = headingLevel === 2 ? 'h2' : 'h3';
     text-decoration: none;
   }
 
-  /* The link covers the whole card, so the cover is clickable too. */
+  /* The link covers the whole card, so the cover and the meta line are clickable too. The
+     z-index lifts it above the meta line, whose clip-path (global.css) gives it a stacking
+     context that would otherwise paint over the overlay and swallow taps. */
   .link::after {
     content: '';
     position: absolute;
     inset: 0;
+    z-index: 1;
     border-radius: var(--radius-md);
   }
 

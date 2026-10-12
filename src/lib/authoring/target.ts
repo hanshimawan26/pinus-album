@@ -7,7 +7,7 @@
  */
 import { stat } from 'node:fs/promises';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
-import { ALBUMS_DIR, DEMO_FOLDER_PREFIX } from '../config.ts';
+import { ALBUMS_DIR, DEMO_EVENTS } from '../config.ts';
 
 /** Is `child` the folder `parent` itself or somewhere inside it? */
 export function isInside(parent: string, child: string): boolean {
@@ -15,11 +15,11 @@ export function isInside(parent: string, child: string): boolean {
   return rel === '' || (rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel));
 }
 
-/** Is `absPath` inside a generated demo folder (`src/albums/demo-*`)? */
+/** Is `absPath` inside one of the generated demo event folders ({@link DEMO_EVENTS})? */
 export function isInDemoFolder(albumsAbs: string, absPath: string): boolean {
   if (!isInside(albumsAbs, absPath)) return false;
   const first = relative(albumsAbs, absPath).split(sep)[0] ?? '';
-  return first.startsWith(DEMO_FOLDER_PREFIX);
+  return DEMO_EVENTS.includes(first);
 }
 
 export interface PathContext {

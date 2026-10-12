@@ -20,6 +20,12 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Repository variables (Settings → Secrets and variables → Actions → Variables). The build
+    # and the "Verify built site" step must see the same values, so they are set once here.
+    # TIMEZONE is set only where it is used, so the unit tests always run with the default.
+    env:
+      ALLOW_INDEXING: ${{ vars.ALLOW_INDEXING || 'false' }}
+      CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -47,6 +53,8 @@ jobs:
 
       - name: Check photos and metadata
         run: npm run photos:check
+        env:
+          TIMEZONE: ${{ vars.TIMEZONE || 'Asia/Singapore' }}
 
       - name: Unit tests
         run: npm test
@@ -54,16 +62,15 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # Repository variables (Settings → Secrets and variables → Actions → Variables)
-          # override the values detected from the Pages configuration.
+          # The repository variables SITE_URL / BASE_PATH override the values detected from
+          # the Pages configuration (needed only for unusual setups).
           SITE_URL: ${{ vars.SITE_URL || steps.pages.outputs.origin }}
           BASE_PATH: ${{ vars.BASE_PATH || format('{0}/', steps.pages.outputs.base_path) }}
-          ALLOW_INDEXING: ${{ vars.ALLOW_INDEXING || 'false' }}
-          CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
           TIMEZONE: ${{ vars.TIMEZONE || 'Asia/Singapore' }}
 
-      # No EXIF/GPS in published images, no copies of original photos, no broken links.
-      # Must use the same BASE_PATH as the build.
+      # No EXIF/GPS in published images, no copies of original photos, no broken links,
+      # no drafts or hidden photos, robots/takedown line on every page, JS budget.
+      # Must use the same BASE_PATH (and the job-level variables above) as the build.
       - name: Verify built site
         run: npm run verify:dist
         env:

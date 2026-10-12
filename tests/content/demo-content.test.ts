@@ -1,13 +1,29 @@
 /**
  * Integration test over the committed demo content (TRD §12.1): it must load with zero
  * errors and demonstrate every metadata case.
+ *
+ * It looks only at the demo event folders (`DEMO_EVENTS`), so real albums next to them (with their own
+ * warnings, drafts or newer dates) never break it, and it is skipped once the committee
+ * deletes the demo folders (README: "Delete the demo content"). Real content is checked
+ * by `npm run photos:check` and the build instead.
  */
 import exifr from 'exifr';
+import { existsSync } from 'node:fs';
 import sharp from 'sharp';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { DEMO_IMAGES, renderDemoImage } from '../../scripts/demo-images.ts';
-import { loadAlbums, photosInSubtree, siblingsOf, type Albums, type Photo } from '../../src/lib/content/index.ts';
+import { ALBUMS_DIR, DEMO_EVENTS } from '../../src/lib/config.ts';
+import { loadAlbums, photosInSubtree, siblingsOf, type AlbumNode, type Albums, type Photo } from '../../src/lib/content/index.ts';
 import { formatDate, formatDateRange } from '../../src/lib/dates.ts';
+
+const demoPresent = DEMO_EVENTS.every((event) => existsSync(`${ALBUMS_DIR}/${event}`));
+/** The demo event a slug path (`demo-event-a/day-1`) or file (`src/albums/demo-event-a/…`) belongs to. */
+const isDemoPath = (slugPath: string) => DEMO_EVENTS.includes(slugPath.split('/')[0] ?? '');
+const isDemoFile = (file: string) => file.startsWith(`${ALBUMS_DIR}/`) && isDemoPath(file.slice(ALBUMS_DIR.length + 1));
+/** The demo events, newest first (real events are left out). */
+const demoEvents = (tree: Albums): AlbumNode[] => tree.root.children.filter((event) => isDemoPath(event.slug));
+const demoNodes = (tree: Albums): AlbumNode[] => [...tree.nodes.entries()].filter(([path]) => isDemoPath(path)).map(([, node]) => node);
+const demoPhotos = (tree: Albums): Photo[] => demoEvents(tree).flatMap((event) => photosInSubtree(event));
 
 /** As `astro dev` sees it (drafts included). */
 let albums: Albums;
@@ -17,19 +33,19 @@ let photos: Photo[];
 const photo = (file: string) => photos.find((p) => p.file === `src/albums/${file}`);
 
 beforeAll(async () => {
+  if (!demoPresent) return;
   albums = await loadAlbums({ includeDrafts: true });
   published = await loadAlbums({ includeDrafts: false });
-  photos = [];
-  for (const node of albums.nodes.values()) photos.push(...node.photos); // published (visible) photos
+  photos = demoPhotos(albums); // visible photos (drafts included, hidden ones not)
 });
 
-describe('demo content', () => {
+describe.skipIf(!demoPresent)('demo content', () => {
   it('has zero errors', () => {
-    expect(albums.errors).toEqual([]);
+    expect(albums.errors.filter((issue) => isDemoFile(issue.file))).toEqual([]);
   });
 
   it('has only the intentional warnings', () => {
-    expect(albums.warnings.map((issue) => [issue.code, issue.file])).toEqual([
+    expect(albums.warnings.filter((issue) => isDemoFile(issue.file)).map((issue) => [issue.code, issue.file])).toEqual([
       ['date-out-of-range', 'src/albums/demo-event-a/day-3/PXL_0005.jpg'],
       ['no-cover', 'src/albums/demo-event-a/day-3/after-party'],
       ['no-date', 'src/albums/demo-event-b/IMG-20260815-WA0002.jpg'],
@@ -40,7 +56,7 @@ describe('demo content', () => {
   });
 
   it('has the TRD §12.1 shape: event A with three sections of 10–20 images, flat event B with 12', () => {
-    const [eventA, eventB] = published.root.children;
+    const [eventA, eventB] = demoEvents(published);
     expect(eventA?.title).toBe('Demo Event A');
     expect(eventA?.children.map((child) => child.slug)).toEqual(['day-1', 'day-2', 'day-3']);
     for (const section of eventA?.children ?? []) {
@@ -51,11 +67,11 @@ describe('demo content', () => {
     expect(eventB?.title).toBe('Demo Event B');
     expect(eventB?.children).toEqual([]);
     expect(eventB?.photos).toHaveLength(12);
-    expect(albums.stats).toMatchObject({ photos: DEMO_IMAGES.length, hiddenPhotos: 1 });
+    expect(demoPhotos(albums)).toHaveLength(DEMO_IMAGES.length - 1); // every image but the hidden one
   });
 
   it('lists events newest first with dates, counts and covers', () => {
-    const [eventA, eventB] = published.root.children;
+    const [eventA, eventB] = demoEvents(published);
     expect(formatDateRange(eventA!.date!, eventA!.endDate)).toBe('18–20 Sep 2026');
     expect(eventA).toMatchObject({ photoCount: 35, sectionCount: 3, dateSource: 'index.md' });
     expect(eventA?.cover?.file).toBe('src/albums/demo-event-a/day-2/@budi-demo/DSC_0102.jpg');
@@ -73,8 +89,8 @@ describe('demo content', () => {
     expect(published.nodes.has('demo-event-a/day-4')).toBe(false);
     expect(published.nodes.get('demo-event-a')).toMatchObject({ photoCount: 35, sectionCount: 3 });
     expect(siblingsOf(published.root, ['demo-event-a', 'day-3']).next).toBeUndefined();
-    expect(photosInSubtree(published.root).some((p) => p.file.includes('/day-4/'))).toBe(false);
-    expect(published.stats).toMatchObject({ draftNodes: 1 });
+    expect(demoPhotos(published).some((p) => p.file.includes('/day-4/'))).toBe(false);
+    expect(demoNodes(albums).filter((node) => node.draft)).toHaveLength(1);
   });
 
   it('has a third level: a single-photo sub-section with a long title, and an empty one', () => {
@@ -145,7 +161,7 @@ describe('demo content', () => {
 
   it('hides exactly one photo from the site', () => {
     expect(photo('demo-event-a/day-2/@budi-demo/DSC_0106.jpg')).toBeUndefined();
-    expect(photosInSubtree(albums.root)).toHaveLength(DEMO_IMAGES.length - 1);
+    expect(demoPhotos(albums)).toHaveLength(DEMO_IMAGES.length - 1);
   });
 
   it('covers photographers with and without Instagram, and one missing from photographers.yaml', () => {
@@ -167,7 +183,7 @@ describe('demo content', () => {
   });
 
   it('labels every demo story as demo content', () => {
-    for (const node of albums.nodes.values()) {
+    for (const node of demoNodes(albums)) {
       if (node.story) expect(node.story).toContain('Demo content');
     }
   });

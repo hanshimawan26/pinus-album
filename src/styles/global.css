@@ -214,17 +214,26 @@ a:hover {
   letter-spacing: var(--tracking-display);
 }
 
-/* Meta line: "18–20 Sep 2026 · 35 photos · 3 sections". */
+/* Meta line: "18–20 Sep 2026 · 35 photos · 3 sections". Every item carries its own "·" in
+   front. The line is moved one separator to the left and that strip is clipped, so the first
+   item of every line (also after wrapping on a narrow card) starts without a dot. The dot is
+   decorative: its alternative text is empty, so screen readers do not read "dot". The clip
+   creates a stacking context; AlbumCard lifts its link overlay above it. */
 .meta {
+  --meta-separator: 1.25em;
   display: flex;
   flex-wrap: wrap;
-  column-gap: 0.5em;
+  margin-inline-start: calc(-1 * var(--meta-separator));
+  clip-path: inset(0 0 0 var(--meta-separator));
   color: var(--color-text-muted);
 }
 
-.meta > * + *::before {
+.meta > *::before {
   content: '·';
-  margin-inline-end: 0.5em;
+  content: '·' / '';
+  display: inline-block;
+  width: var(--meta-separator);
+  text-align: center;
   color: var(--color-text-muted);
 }
 

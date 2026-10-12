@@ -19,7 +19,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { isInDemoFolder } from '../src/lib/authoring/target.ts';
-import { ALBUMS_DIR, DEMO_FOLDER_PREFIX } from '../src/lib/config.ts';
+import { ALBUMS_DIR, DEMO_EVENTS } from '../src/lib/config.ts';
 
 type Shape = 'landscape' | 'portrait' | 'square';
 
@@ -248,10 +248,10 @@ export async function renderDemoImage(image: DemoImage): Promise<Buffer> {
 // Writing
 // ---------------------------------------------------------------------------------------
 
-/** Resolve a manifest path, refusing anything outside `src/albums/demo-*`. */
+/** Resolve a manifest path, refusing anything outside the demo event folders. */
 function safeOutputPath(albumsAbs: string, path: string): string {
   const target = resolve(albumsAbs, path);
-  if (!isInDemoFolder(albumsAbs, target)) throw new Error(`Refusing to write outside ${ALBUMS_DIR}/${DEMO_FOLDER_PREFIX}*: ${path}`);
+  if (!isInDemoFolder(albumsAbs, target)) throw new Error(`Refusing to write outside ${DEMO_EVENTS.map((event) => `${ALBUMS_DIR}/${event}`).join(' and ')}: ${path}`);
   return target;
 }
 

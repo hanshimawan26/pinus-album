@@ -3,6 +3,7 @@
  * project in a temp folder, plus the real CLIs run the way npm runs them.
  */
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -53,8 +54,11 @@ describe('isInside', () => {
 });
 
 describe('isInDemoFolder', () => {
-  it('matches only the generated demo-* folders at the top of the albums folder', () => {
+  it('matches only the generated demo event folders at the top of the albums folder', () => {
     expect(isInDemoFolder(albums, join(albums, 'demo-event-a', 'day-1', '@alice-demo', 'IMG_0001.jpg'))).toBe(true);
+    expect(isInDemoFolder(albums, join(albums, 'demo-event-b', 'IMG-20260815-WA0001.jpg'))).toBe(true);
+    // A real event that merely starts with "demo-" is an ordinary event: photos:prep prepares it.
+    expect(isInDemoFolder(albums, join(albums, 'demo-day-2027', 'IMG_1.jpg'))).toBe(false);
     expect(isInDemoFolder(albums, join(albums, 'event', 'demo-night', 'IMG_1.jpg'))).toBe(false);
     expect(isInDemoFolder(albums, join(project, 'demo-event-a', 'IMG_1.jpg'))).toBe(false);
     expect(isInDemoFolder(albums, albums)).toBe(false);
@@ -123,8 +127,9 @@ describe('the CLIs, run as npm runs them (from the project folder)', () => {
     expect(await readFile(join(outside, 'original.jpg'))).toEqual(before);
   });
 
-  it('photos:prep and photos:init read "." as the folder the terminal is in', async () => {
-    const demoB = join(REPO, 'src', 'albums', 'demo-event-b');
+  // Uses the committed demo folder; skipped once the demo content has been deleted.
+  const demoB = join(REPO, 'src', 'albums', 'demo-event-b');
+  it.skipIf(!existsSync(demoB))('photos:prep and photos:init read "." as the folder the terminal is in', async () => {
     const prep = await node('photos-prep.ts', ['.', '--dry-run'], demoB);
     expect(prep.code).toBe(0);
     expect(prep.stdout).toContain('photos:prep — src/albums/demo-event-b (dry run');

@@ -3,17 +3,24 @@
 Static Astro site (TypeScript, plain CSS) deployed to GitHub Pages. The spec is
 [docs/TRD.md](docs/TRD.md), product context is [PRODUCT.md](PRODUCT.md), and assumptions are
 logged in [docs/DECISIONS.md](docs/DECISIONS.md). Read the TRD before changing behaviour.
+[README.md](README.md) is the maintainers' guide (written for non-developers): keep it in
+step when a command, a content rule or a `photos:check` code changes.
 
 ## Commands
 
 - `npm run dev` / `npm run build` / `npm run preview` — Astro
 - `npm test` — Vitest unit tests (`tests/**/*.test.ts`)
+- `npm run test:e2e` — Playwright browser tests (`e2e/*.spec.ts`): builds for `/pinus-album/`,
+  serves with `astro preview` on port 4460 (`E2E_PORT`), drives the installed Chrome (bundled
+  Chromium when `CI` is set; `E2E_BROWSER=chrome|chromium` overrides). Not in the deploy
+  workflow; `.github/workflows/e2e.yml` runs it on pull requests
 - `npm run typecheck` — `astro check`
 - `npm run photos:check` — validate `src/albums/` (exit 1 on errors)
 - `npm run photos:prep -- <folder> [--dry-run] [--force]` — make the JPEGs in a folder web-ready
   in place (≤ 2400 px, quality 85, upright, metadata reduced to date/artist/description, GPS
   removed). Idempotent. Refuses folders outside the project without `--force`, and other
-  project folders (node_modules, dist, …) always. Never changes `src/albums/demo-*`.
+  project folders (node_modules, dist, …) always. Never changes the demo folders
+  (`DEMO_EVENTS` in `config.ts`: exactly `demo-event-a` and `demo-event-b`, not a prefix).
 - `npm run photos:init -- <album-folder> [--dry-run]` — append a `caption: ""` entry to
   `photos.yaml` for every photo of that node without one (never rewrites existing text).
   Both tools read paths relative to the terminal's folder (`INIT_CWD`), else the project.
@@ -21,8 +28,10 @@ logged in [docs/DECISIONS.md](docs/DECISIONS.md). Read the TRD before changing b
   also restores a demo image that was changed by hand)
 - `npm run verify:dist` — after a build: no EXIF/GPS in published images, no copies of source
   photos, no broken internal links, every image file the size (and orientation) its page
-  claims, album pages exactly the published albums (no drafts, no hidden photos) and no unused
-  images in `_astro/`. Run it with the same `BASE_PATH` as the build.
+  claims, album pages exactly the published albums (no drafts, no hidden photos), no unused
+  images in `_astro/`, and on every page the robots meta for `ALLOW_INDEXING`, the footer's
+  takedown line with `CONTACT_EMAIL`, and JavaScript only on photo pages within 60 KB gzipped.
+  Run it with the same `BASE_PATH`, `ALLOW_INDEXING` and `CONTACT_EMAIL` as the build.
 - Build under a sub-path: `BASE_PATH=/pinus-album/ npm run build`. In Git Bash, prefix
   `MSYS_NO_PATHCONV=1` when passing `BASE_PATH=/`, or MSYS rewrites it into a Windows path.
 
@@ -52,8 +61,8 @@ src/
     viewer-data.ts   PURE: per-photo data embedded for the post viewer (TRD §6.5)
     images.ts        ASTRO-ONLY: photos → getImage() derivatives (thumb, viewer srcset, covers)
     build-checks/    checks of the built site: image-metadata.ts, links.ts, image-claims.ts,
-                     published.ts (all PURE), files.ts (fs). Not named dist/: that name is the
-                     build output
+                     published.ts, page-rules.ts (robots, takedown line, JS budget) (all
+                     PURE), files.ts (fs). Not named dist/: that name is the build output
     authoring/       the maintainer tools behind photos:prep and photos:init:
                      PURE jpeg.ts (JPEG segments), exif-block.ts (the kept EXIF tags, read and
                      written byte-exact), prep-rules.ts (what prep does), prep-report.ts,
@@ -75,6 +84,8 @@ scripts/             maintainer CLIs (photos:check, photos:prep, photos:init, de
                      verify:dist) — thin wrappers over src/lib, run with Node type stripping;
                      cli.ts holds the shared colours and runCli() (readable crash message)
 tests/               Vitest; helpers under tests/helpers/ (fs fixtures are generated at test time)
+e2e/                 Playwright specs (viewer, navigation, site-wide rules) + fixtures.ts;
+                     config in playwright.config.ts
 ```
 
 ## Conventions
@@ -108,6 +119,11 @@ tests/               Vitest; helpers under tests/helpers/ (fs fixtures are gener
   say what is wrong and how to fix it.
 - **Tests:** pure modules get in-memory trees (`tests/helpers/content.ts`); `scan`/`exif` get a
   fixture tree generated with sharp in a temp folder at test time (no binaries committed).
+- **Tests must survive real content.** CI runs `npm test` before every deploy, so no unit test
+  may depend on what else is in `src/albums/`. Tests of the committed demo content look only
+  at the `DEMO_EVENTS` folders and skip when they are deleted (`demo-content.test.ts`); the E2E suite
+  skips itself the same way (`e2e/fixtures.ts`). Real content is `photos:check`'s job.
 - Record any assumption or deviation from the TRD in `docs/DECISIONS.md`.
 - Every milestone ends green: `npm test`, `npm run typecheck`, `npm run photos:check`,
-  `npm run build` + `npm run verify:dist`, and the same build + verify with `BASE_PATH=/`.
+  `npm run build` + `npm run verify:dist`, the same build + verify with `BASE_PATH=/`, and
+  `npm run test:e2e` (stop any server on port 4460 first).
