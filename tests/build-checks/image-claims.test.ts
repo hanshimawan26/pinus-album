@@ -61,4 +61,12 @@ describe('dimensionProblem', () => {
       'is 640×5 but the page says 800 px wide',
     );
   });
+
+  it('checks only the aspect ratio of an SVG, which scales to any size', () => {
+    const logo = { source: 'img', url: '/b/logo.svg', width: 34, height: 34 };
+    expect(dimensionProblem(logo, { width: 688, height: 692 })).toBeUndefined();
+    expect(dimensionProblem({ ...logo, url: '/b/logo.SVG?v=2' }, { width: 688, height: 692 })).toBeUndefined();
+    expect(dimensionProblem(logo, { width: 688, height: 400 })).toBe('is a 688×400 drawing but the page shows it at 34×34, so it is stretched');
+    expect(dimensionProblem({ source: 'img', url: '/b/logo.svg', width: 34 }, { width: 688, height: 400 })).toBeUndefined();
+  });
 });

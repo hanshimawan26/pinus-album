@@ -24,9 +24,9 @@ use only those tokens.
 
 | Token | Value | Role |
 |---|---|---|
-| `--brand-blue` | `#334E97` | Official brand blue. Links, buttons, focus ring, logo ground |
+| `--brand-blue` | `#334E97` | Official brand blue. Links, buttons, focus ring |
 | `--brand-red` | `#EF4C2B` | Official brand red. Accent only (see rules below) |
-| `--brand-yellow` | `#F1B244` | Official brand yellow. Accent only: logo dot, "Draft" badge fill |
+| `--brand-yellow` | `#F1B244` | Official brand yellow. Accent only: "Draft" badge fill |
 | `--color-bg` | `#FAF8F4` | Page background (warm off-white) |
 | `--color-surface-sunken` | `#F1EDE5` | Image placeholders while loading, empty states, inline code |
 | `--color-text` | `#1C1B19` | Body text, headings, card titles |
@@ -78,8 +78,8 @@ Every text/background pair the site uses, measured with the WCAG relative-lumina
   milestone 3. Reserve it for rare emphasis such as a future "new" marker, at large size or
   as a graphic.
 - **Yellow `#F1B244`** measures 1.77:1 on the page background, so it is **never** text or a
-  thin line on the light base. It is used as a fill behind near-black text (9.17:1) and as
-  the logo's dot. On black it reaches 11.19:1.
+  thin line on the light base. It is used as a fill behind near-black text (9.17:1). On black
+  it reaches 11.19:1.
 - The photos carry the colour. The interface does not compete with them by tinting
   surfaces.
 
@@ -143,7 +143,7 @@ Headings use `text-wrap: balance` and paragraphs use `pretty`.
 
 | Component | File | Notes |
 |---|---|---|
-| Logo mark | `src/components/LogoMark.astro`, `public/favicon.svg` | **Placeholder** until the association supplies a logo: a "P" monogram in off-white on a blue rounded square, with a yellow dot. Decorative (`aria-hidden`), since the site title names the link |
+| Logo mark | `src/components/LogoMark.astro`, `public/logo.svg` | The association's logo (a ring in navy, red and yellow around three figures), shown at 34 px as an `<img>` with fixed width and height. The same file is the browser-tab icon. Decorative (`alt=""`), since the site title names the link. The logo's own colours are used as supplied, not the brand tokens |
 | Site header | `SiteHeader.astro` | Mark, "Pinus Community" (700) and the descriptor (muted, 13 px) form a single home link. A hairline sits below. Not sticky |
 | Site footer | `SiteFooter.astro` | Takedown line with a mailto link (TRD §10), then the organisation name and descriptor. Stacked on phones; a single row from 900 px. The takedown line has no width cap and uses `text-wrap: balance`, so it reads as one sentence on desktop and never leaves a short tail |
 | Skip link | `BaseLayout.astro` | "Skip to content": hidden above the viewport until focused, then shown in blue |

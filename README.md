@@ -25,7 +25,7 @@ you save your changes on GitHub.
    [credit a photographer](#credit-a-photographer) · [hide a photo](#hide-a-photo) ·
    [fix a wrong date](#fix-a-wrong-date) · [cover photo](#choose-the-cover-photo) ·
    [order of sections](#change-the-order-of-sections) · [drafts](#prepare-an-event-before-publishing-it-drafts) ·
-   [hide an album](#hide-an-album-without-deleting-it)
+   [hide an album](#hide-an-album-without-deleting-it) · [change the logo](#change-the-logo)
 6. [Take a photo down](#take-a-photo-down)
 7. [When `photos:check` complains](#when-photoscheck-complains)
 8. [Delete the demo content](#delete-the-demo-content)
@@ -419,6 +419,10 @@ Add `cover:` to the album's `index.md`, with the photo's path from that folder:
 cover: day-1/@andi-pratama/IMG_0012.jpg
 ```
 
+If the path starts with `@` (a photo directly in this album's photographer folder), put it
+in double quotes: `cover: "@andi-pratama/IMG_0012.jpg"`. Capital letters must match the
+file name exactly (`.JPG` is not `.jpg`). Without `cover`, the first photo is used.
+
 ### Change the order of sections
 
 Add `order: 1`, `order: 2`, … to each section's `index.md`, or start the folder names with
@@ -429,6 +433,14 @@ numbers (`01-opening`, `02-workshops`). Events on the home page are always newes
 Add `draft: true` to the event's (or a section's) `index.md`. It then shows only in your
 local preview (`npm run dev`, with a yellow "Draft" badge), not on the website. Change it to
 `draft: false` or remove the line to publish.
+
+### Change the logo
+
+The logo in the header and on the browser tab is the file `public/logo.svg`. To change it,
+replace that file with a new one of the same name (in the browser: open the file, then
+**⋯ → Delete file**, commit, and upload the new one with **Add file → Upload files**). Use
+an SVG if you can, so it stays sharp on every screen, and a roughly square logo, because the
+header shows it at 34 × 34 pixels.
 
 ### Hide an album without deleting it
 

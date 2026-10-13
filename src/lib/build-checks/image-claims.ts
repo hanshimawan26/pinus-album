@@ -86,12 +86,25 @@ function collectJsonClaims(value: unknown, claims: ImageClaim[]): void {
   for (const item of Object.values(record)) collectJsonClaims(item, claims);
 }
 
+/** An SVG scales to any size, so only its aspect ratio can be wrong (within 2%). */
+const VECTOR_RATIO_TOLERANCE = 0.02;
+const isVector = (url: string) => /\.svg$/i.test(url.replace(/[?#].*$/, ''));
+
 /**
  * What is wrong when a file measuring `actual` is published under `claim`, or undefined.
  * The width must match exactly; the height may differ by 1 px of rounding. A file whose
  * sides are swapped is reported as sideways (an EXIF orientation that was not applied).
+ * An SVG (the logo) is drawn at whatever size the page asks for, so for it only a
+ * stretched aspect ratio is a problem.
  */
 export function dimensionProblem(claim: ImageClaim, actual: { width: number; height: number }): string | undefined {
+  if (isVector(claim.url)) {
+    if (claim.height === undefined) return undefined;
+    const claimedRatio = claim.width / claim.height;
+    const actualRatio = actual.width / actual.height;
+    if (Math.abs(actualRatio / claimedRatio - 1) <= VECTOR_RATIO_TOLERANCE) return undefined;
+    return `is a ${actual.width}×${actual.height} drawing but the page shows it at ${claim.width}×${claim.height}, so it is stretched`;
+  }
   const claimed = claim.height === undefined ? `${claim.width} px wide` : `${claim.width}×${claim.height}`;
   const widthMatches = actual.width === claim.width;
   const heightMatches = claim.height === undefined || Math.abs(actual.height - claim.height) <= 1;

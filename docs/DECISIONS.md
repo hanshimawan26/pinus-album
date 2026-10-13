@@ -242,7 +242,7 @@ each section.
 - **Red and yellow:** red is not used in milestone 3, because it fails AA for small text on
   the light base (3.45:1). Yellow appears only as a fill behind near-black text (the
   dev-only "Draft" badge, 9.17:1) and as the logo's dot.
-- **Logo placeholder:** a "P" monogram in off-white on a blue rounded square, with a yellow
+- **Logo placeholder** (replaced by the real logo after the POC; see the last section): a "P" monogram in off-white on a blue rounded square, with a yellow
   dot. It is drawn as SVG paths, so it does not depend on fonts. The milestone 1 favicon (a
   pine tree) was replaced with the same mark, so the tab icon matches the header. Both are
   placeholders until the association supplies a logo (PRODUCT.md).
@@ -1290,3 +1290,16 @@ Requested by the committee after milestone 6.
   the user. Events without a `date` use their earliest photo's date; set `date` explicitly
   for a reliable order.
 - `DraftBadge` became `StatusBadge` (shows "Draft" and/or "Hidden").
+
+## After the POC — the real logo
+
+- The association's logo is `public/logo.svg`, supplied by the committee. `LogoMark.astro`
+  shows it as an `<img>` (34 px in the header, with width and height set so nothing shifts
+  while it loads) instead of the inline placeholder drawing. An `<img>` keeps the logo a
+  single file a maintainer can replace without touching code, and browsers cache it across
+  pages.
+- The browser-tab icon now points at the same file, and the placeholder `public/favicon.svg`
+  was removed, so replacing `logo.svg` updates both.
+- The logo's own colours (navy `#232E6E`, red `#F7423B`, yellow `#EBB727`, figures
+  `#9B8370`) are kept exactly as supplied. They are close to, but not the same as, the brand
+  tokens in DESIGN.md, which keep the official values from the TRD.
