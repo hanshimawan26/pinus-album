@@ -1,0 +1,21 @@
+# DEMO photos.yaml for Demo Event B (flat event, no sections).
+#
+# The IMG-*-WA*.jpg files sit directly in this folder (no @folder) and this event's
+# index.md has no photographer and no date, so these entries show the remaining cases.
+# @alice-demo photos: photographer from the folder, date from EXIF.
+
+# Photographer from photos.yaml (no @folder) and date from photos.yaml (no EXIF).
+"DSCF0026.jpg":
+  caption: "Derrick males"
+  photographer: hans-himawan
+  date: 2026-10-10
+
+"DSCF9880.JPG":
+  caption: "So wholesome"
+  photographer: hans-himawan
+  date: 2026-10-10
+
+"DSCF9901.JPG":
+  caption: "Mama turun tangan"
+  photographer: hans-himawan
+  date: 2026-10-10

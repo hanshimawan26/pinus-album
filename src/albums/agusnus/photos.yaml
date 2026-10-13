@@ -1,0 +1,16 @@
+# DEMO photos.yaml for Demo Event B (flat event, no sections).
+#
+# The IMG-*-WA*.jpg files sit directly in this folder (no @folder) and this event's
+# index.md has no photographer and no date, so these entries show the remaining cases.
+# @alice-demo photos: photographer from the folder, date from EXIF.
+
+# Photographer from photos.yaml (no @folder) and date from photos.yaml (no EXIF).
+"RYHN6504.JPG":
+  caption: "Juara Agusnus"
+  photographer: rayhan
+  date: 2026-08-22
+
+"RYHN6496.JPG":
+  caption: "Juara Agusnus"
+  photographer: rayhan
+  date: 2026-08-22
