@@ -2,13 +2,18 @@
 
 <!-- impeccable:product-schema 1 -->
 
+> Who the album is for, why it exists, and the brand commitments every design must keep.
+> What the site does is specified in [docs/TRD.md](docs/TRD.md); how it looks, in
+> [DESIGN.md](DESIGN.md); why things were built as they are, in
+> [docs/DECISIONS.md](docs/DECISIONS.md).
+
 ## Platform
 
 web
 
 ## Stack
 
-Astro (latest stable) + TypeScript, plain CSS with CSS variables, `astro:assets` (sharp) for images, PhotoSwipe v5 or a custom `<dialog>` viewer, Vitest. Static output deployed to GitHub Pages via GitHub Actions. No UI framework. Source of truth: [docs/TRD.md](docs/TRD.md) §3.
+Astro (latest stable) + TypeScript, plain CSS with CSS variables, `astro:assets` (sharp) for images, a custom `<dialog>` post viewer, self-hosted fonts, Vitest and Playwright. Static output deployed to GitHub Pages via GitHub Actions. No UI framework. Source of truth: [docs/TRD.md](docs/TRD.md) §3.
 
 ## Users
 
@@ -41,7 +46,7 @@ This is the association's own record of its events, not a feed or a social netwo
 - The site UI is English only. Indonesian or bilingual support is P2.
 - Privacy: no EXIF or GPS data in published images, `noindex` by default, no analytics or cookies, a takedown line in the footer.
 - Size: the repo and the Pages site are each limited to about 1 GB, and Git LFS is not allowed.
-- **Open:** takedown contact email and response time, custom domain, whether to allow search indexing.
+- **Decided:** takedown contact `kontakpinus@gmail.com`. **Open:** takedown response time, custom domain, whether to allow search indexing, and moving the repository to an association account.
 
 ## Brand Commitments
 
@@ -49,7 +54,9 @@ This is the association's own record of its events, not a feed or a social netwo
 - **Official colours:** blue `#334E97`, red `#EF4C2B`, yellow `#F1B244`. These are binding brand colours, but they are **not** the website's primary colours. They work as accents on top of the neutral base. How each one is used in the UI is a design decision and is not decided here.
 - **Neutral base (user-set constraint):** the site's base colours are neutral, such as white, black or beige, and the brand colours sit on top of them. White or beige pairs well with the brand colours.
 - **Photo viewer is black (user-set constraint).** The post viewer's photo area uses a black background.
-- **Blue for interactive accents (user preference).** Blue `#334E97` is the preferred colour for links and buttons. The page base colour (white or beige) is still undecided.
+- **Blue for interactive accents (user preference).** Blue `#334E97` is the colour for links and buttons (on the dark theme, its light tint, because the brand blue itself is unreadable there). The page base is a warm off-white, `#FAF8F4`.
+- **Light by default, dark on request (user decision).** The default theme is the neutral light one above. Visitors whose device is set to dark mode get a dark theme built from the design reference in `design-reference/`. Both themes keep the brand colours as accents.
+- **Visual language (user decision).** Editorial: event names and headings in a serif, small uppercase "eyebrow" labels, and a home page that opens on the newest (or a chosen) event like an exhibition. The details are in [DESIGN.md](DESIGN.md).
 - **Logo:** the official logo is `public/logo.svg` (a ring in navy, red and yellow around three figures). It is used in the header. The browser-tab icon is `public/favicon.svg`, the same logo on a white disc.
 - **Voice:** warm and plain-spoken, written by students for students. Not established beyond the TRD's copy, such as the takedown line.
 

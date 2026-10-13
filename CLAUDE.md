@@ -1,8 +1,18 @@
 # Pinus Community — Digital Photo Album
 
-Static Astro site (TypeScript, plain CSS) deployed to GitHub Pages. The spec is
-[docs/TRD.md](docs/TRD.md), product context is [PRODUCT.md](PRODUCT.md), and assumptions are
-logged in [docs/DECISIONS.md](docs/DECISIONS.md). Read the TRD before changing behaviour.
+Static Astro site (TypeScript, plain CSS) deployed to GitHub Pages. Each document owns one
+topic; the others point to it rather than repeat it:
+
+- [docs/TRD.md](docs/TRD.md): **what the site does** (routes, content model, behaviour,
+  validation). Read it before changing behaviour.
+- [DESIGN.md](DESIGN.md): **how it looks** (tokens, themes, type, components, contrast).
+  Read it before any UI work (see "UI work" below).
+- [PRODUCT.md](PRODUCT.md): who it is for and the binding brand commitments.
+- [docs/DECISIONS.md](docs/DECISIONS.md): assumptions and why things were built as they are.
+- [design-reference/](design-reference/): the reference page the design grew from (its
+  `DESIGN.md` captures its language); inspiration, not a spec.
+
+When they disagree, the topic's owner wins and the other document is fixed in the same change.
 [README.md](README.md) is the maintainers' guide (written for non-developers): keep it in
 step when a command, a content rule or a `photos:check` code changes.
 
@@ -67,11 +77,13 @@ src/
     presentation.ts  PURE: counts, date labels, meta descriptions, JSON-for-<script> escaping
     viewer-data.ts   PURE: per-photo data embedded for the post viewer (TRD §6.5); GridPhoto
                      (a photo with its slug and context on one page)
+    landing.ts       PURE: the home page's landing blocks (TRD §6.2): featured event, chapters
+                     (highlights: or automatic picks), spotlight, more events; no photo twice
     all-photos.ts    PURE: the "All photos" page of an album with sections (TRD §6.3 item 7):
                      which nodes get one, date order, section-path slugs (`day-1/<slug>`)
     photographer-filter.ts  PURE: the filter chips of a grid (TRD §6.3 item 8)
-    images.ts        ASTRO-ONLY: photos → getImage() derivatives (thumb, viewer srcset, covers,
-                     the 1200×630 JPEG link preview)
+    images.ts        ASTRO-ONLY: photos → getImage() derivatives (thumb, viewer srcset, covers
+                     and landing tiles, the home hero, the 1200×630 JPEG link preview)
     image-service.ts ASTRO-ONLY: the site's image service (astro.config `image.service`):
                      Astro's sharp service + the photographer credit on viewer images
     credit/          the credit saved viewer images carry: PURE credit.ts (`© Name`, watermark
@@ -88,9 +100,14 @@ src/
                      which paths the tools may touch)
   content.config.ts  `stories` collection: renders index.md stories with Astro's Markdown
   integrations/      remove-source-copies.ts — deletes copies of original photos from dist/
-  fonts/             Inter-SemiBold.ttf (+ OFL.txt): the watermark font, read at build time only
-  styles/global.css  design tokens (see DESIGN.md) and base styles, imported once by the layout
-  components/        .astro components (one responsibility each)
+  fonts/             Inter-SemiBold.ttf (+ OFL.txt): the watermark font, read at build time only;
+                     Plus Jakarta Sans and Playfair Display (variable WOFF2, Latin, + OFL-*.txt):
+                     the site's text and heading fonts, declared in astro.config.mjs `fonts`
+  styles/global.css  design tokens (Day, and Night in the prefers-color-scheme: dark block; see
+                     DESIGN.md), base styles, `.button`, `.meta`, imported once by the layout
+  components/        .astro components (one responsibility each). Shared design pieces:
+                     Eyebrow (uppercase label above a heading), StatusBadge, icons; home page:
+                     LandingHero, LandingChapter, LandingSpotlight, ShareBanner
   layouts/           BaseLayout.astro (head, skip link, header › main › footer)
   pages/             index.astro, albums/[...path].astro, albums/[...path]/all.astro (All
                      photos), 404.astro — thin; data comes from lib
@@ -105,7 +122,7 @@ scripts/             maintainer CLIs (photos:check, photos:prep, photos:init, de
                      verify:dist) — thin wrappers over src/lib, run with Node type stripping;
                      cli.ts holds the shared colours and runCli() (readable crash message)
 tests/               Vitest; helpers under tests/helpers/ (fs fixtures are generated at test time)
-e2e/                 Playwright specs (viewer, navigation, site-wide rules) + fixtures.ts;
+e2e/                 Playwright specs (viewer, navigation, landing, site-wide rules) + fixtures.ts;
                      config in playwright.config.ts
 ```
 
@@ -138,8 +155,8 @@ e2e/                 Playwright specs (viewer, navigation, site-wide rules) + fi
   The masters in the (public) repository should carry no GPS either: `photos:prep` removes it
   and `photos:check` warns (`location-in-photo`). Hiding a photo must never fail the build
   (a takedown cannot be blocked), so a hidden `cover:` is a warning, not an error.
-- **Design:** visual decisions and colour roles live in `DESIGN.md`; use the tokens in
-  `src/styles/global.css`, never raw colours in components. Page titles use `.page-title`.
+- **Design:** see "UI work" below. In short: `DESIGN.md` decides, `global.css` tokens
+  implement, components only use tokens.
 - **Content errors fail the build** via `loadAlbumsOrThrow()`; pages pass
   `siteLoadOptions(import.meta.env.DEV)` (drafts in dev, hidden albums only with SHOW_HIDDEN),
   never their own options. Validation messages are written for non-developers:
@@ -151,6 +168,34 @@ e2e/                 Playwright specs (viewer, navigation, site-wide rules) + fi
   at the `DEMO_EVENTS` folders and skip when they are deleted (`demo-content.test.ts`); the E2E suite
   skips itself the same way (`e2e/fixtures.ts`). Real content is `photos:check`'s job.
 - Record any assumption or deviation from the TRD in `docs/DECISIONS.md`.
+
+## UI work: use the design system
+
+Before writing or changing any page, component or style, read [DESIGN.md](DESIGN.md) —
+at least "How to use this design system", the token tables and the component you touch. Then:
+
+- **Reuse before you build.** Page title → `.page-title`; label above a heading →
+  `Eyebrow.astro`; button-shaped link → `.button` (`--primary` / `--quiet` / `--glass`);
+  date and counts → `NodeMeta` / `.meta`; empty data → `EmptyState`; draft/hidden →
+  `StatusBadge`. Add a new component only for a new responsibility, and add it to DESIGN.md's
+  component table.
+- **Tokens only, two themes.** No raw colours, sizes or durations in components. Day and
+  Night differ only in token values (`prefers-color-scheme: dark` block in `global.css`); a
+  component never tests the scheme. A new colour = a token with a Night value + measured
+  contrast rows for both themes in DESIGN.md (WCAG AA for text, 3:1 for focus rings and
+  meaningful graphics; measure photo scrims over a pure-white photo).
+- **Type and colour roles.** Headings are Playfair automatically; body and UI are Plus Jakarta
+  Sans. Blue (`--color-link`, `--color-accent`, `--color-focus`) means interactive. Brand red
+  and yellow are never small text on Day; they appear as dots, stripes and fills.
+- **Photo-first rules.** No shadows. Text on a photo only on a `--color-photo-scrim*` scrim,
+  with the text on its solid part. Credits are never dropped; absent data disappears.
+- **Images:** every `<img>` has `width`/`height`, `alt` and a `sizes` from `image-sizes.ts`
+  that matches the CSS; derivatives only through `images.ts`.
+- **Check it:** 360 / 768 / 1280 px in both themes (DevTools → Rendering → emulate
+  `prefers-color-scheme`), no horizontal scroll, keyboard focus visible. Update DESIGN.md in
+  the same change, and the README if maintainers see something new.
+- Pages that need no interactivity ship no JavaScript (the home page has none; the viewer
+  script comes only with `PhotoGrid`).
 - Every milestone ends green: `npm test`, `npm run typecheck`, `npm run photos:check`,
   `npm run build` + `npm run verify:dist`, the same build + verify with `BASE_PATH=/`, and
   `npm run test:e2e` (stop any server on port 4460 first).

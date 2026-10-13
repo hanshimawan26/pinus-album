@@ -1423,3 +1423,115 @@ Three P1 items, asked for by the user together.
 the All photos page, the chips with the viewer, link preview tags, no horizontal scroll on
 the All photos page) are green. Checked by eye at 360 and 1280 px on Pinus ORI (118 photos,
 8 photographers).
+
+## Night theme and web fonts (design reference)
+
+The user supplied a design reference (`design-reference/`: a dark "community archive" page
+exported from Stitch) and asked for its design language to be captured and mapped onto the
+site. Decisions, as the user chose them:
+
+- **The reference becomes the dark theme, not the default.** It fills the TRD's P1 "dark
+  mode via `prefers-color-scheme`" item. The light Day theme stays the default, so the
+  neutral light base (TRD §6.1, PRODUCT.md) still holds for everyone without dark mode on.
+  Only colour tokens change in `@media (prefers-color-scheme: dark)`; no component tests the
+  scheme. There is no manual toggle (it would need JavaScript on every page and a stored
+  preference; P2 if asked for).
+- **Deviation from TRD §6.1 ("system font stack by default"):** the site now self-hosts
+  Plus Jakarta Sans (text and UI) and Playfair Display (headings), both SIL OFL, Latin
+  subset, variable WOFF2 in `src/fonts/` (27 + 38 KB preloaded; the 30 KB italic loads only
+  where italic text appears). Self-hosted through Astro's `fonts` config with the local
+  provider: no request to Google (privacy, TRD §10), no network at build time, and
+  metric-matched fallbacks keep CLS near zero during the swap.
+- **The reference was captured from what it renders, not from its exported DESIGN.md**,
+  which listed a different palette, radii and gutters. `design-reference/DESIGN.md` was
+  rewritten accordingly.
+- **Re-tuned, not copied:** brand blue is 2.36:1 on the Night page, so Night's interactive
+  colour is its light tint `#A9B9E6` (already the viewer's focus colour; the reference's own
+  blue is a similar `#B0C7F1`). The reference's pinkish muted text `#E4BEBC` became a cool
+  slate `#A3ADC8`. The reference's coral buttons, shadows, glass, text over photos, masonry
+  grid and 16 px grid gaps were not adopted (DESIGN.md, "From the reference", gives each
+  reason).
+- **New tokens:** `--color-accent` (fill of a pressed or primary control; it was
+  `--brand-blue` directly, which fails on Night), `--color-on-brand-yellow` (the Draft
+  badge's text, dark in both themes), `--font-display`, `--font-emoji`, `--text-xl`.
+  `--text-lg` is now 18 px (was 19) and the page title grows to 48 px (was 44).
+- **Logo on Night:** the header shows `favicon.svg` (the logo on a white disc) through a
+  `<picture>` source, because the navy ring of `logo.svg` disappears on the dark page.
+- **`THEME_COLOR_DARK`** (`#0b1326`) joins `THEME_COLOR`; the layout emits one
+  `theme-color` per scheme, and the unit test checks both against `global.css`.
+
+## Home page landing, eyebrows and aligned documents
+
+The user asked for a landing page in the spirit of the design reference, kept the album list,
+adopted the reference's uppercase labels, and asked for the documents to stop contradicting
+each other. Decisions (the user chose the first three):
+
+- **Home = landing + the existing list below** (`/` unchanged, no new routes). The event cards
+  are the same component and still satisfy the P0 acceptance item; the page's h1 "Photo
+  albums" stays (visually hidden once the hero is there).
+- **The landing follows the device theme** like every page; only the hero's text sits on its
+  photo, on a scrim made solid behind all text (≥ 9.9:1 over a white photo). The same rule
+  covers the photographer's name on landing tiles (first draft measured 4.28:1 with a plain
+  fade, so the scrim was made solid under the text).
+- **Photos are curated with an automatic fallback:** `highlights:` in index.md (paths like
+  `cover:`, best first). Validated like `cover:`: a path that matches no photo is an error
+  (`missing-highlight`); a hidden photo or one in an unpublished section is only a warning
+  (`highlight-not-shown`), because a takedown must never fail the build. Without a list, a
+  chapter shows the album's cover, then photos spread evenly over it in date order. All of
+  this is in the pure, unit-tested `src/lib/landing.ts`.
+- **`featured: true`** (added after a look at the real content): with "newest first", the
+  9-photo Committee Bonding became the hero while the 118-photo Pinus Orientation was last.
+  An event can now pin itself to the hero; a section with it, or several events with it, get
+  a `featured-ignored` warning (the newest featured event wins). The content itself was not
+  changed; the committee decides.
+- **No JavaScript on the home page:** a landing photo links to `albums/<path>/#<slug>`, which
+  opens the viewer on the album page. The spotlight reuses the viewer's image files (with the
+  watermark); landing tiles reuse the card-cover crops. Only the hero adds new files (the
+  whole photo, 800–2000 px, no watermark: the hero names the photographer in its text).
+- **Spotlight without curation:** the first captioned photo of the featured event, else the
+  photo in the middle of it (the first photo is often a warm-up shot).
+- **Share banner** asks members to email their photos to the committee (`CONTACT_EMAIL`), as
+  the user asked. The reference's uploads, likes, prints, follow buttons, EXIF telemetry and
+  slideshow were left out: they do not exist here (TRD non-goals).
+- **Eyebrows** (`Eyebrow.astro`) on every page title and home block: 12 px rather than the
+  reference's 11 px for phones; muted text with the colour in a dot, because brand red and
+  yellow fail as small text on the light theme.
+- **Buttons** became a shared `.button` utility (primary / quiet / glass) rather than
+  per-component styles.
+- **Documents aligned:** the TRD now says what the site does and points to DESIGN.md for every
+  visual decision (its old "Instagram-like, system fonts" bullet contradicted the current
+  design); its index.md example, validation lists, home page section, backlog status and
+  resolved questions (logo, contact email) were brought up to date. PRODUCT.md records the
+  decided base colour, the light/dark decision and the editorial direction. DESIGN.md was
+  rewritten as a current-state spec (milestone history lives here, in DECISIONS.md) and opens
+  with the rules for new UI work; CLAUDE.md points every UI change at it.
+- **Fix: the hero overflowed the page column** (reported by the user). On phones it was
+  pulled to the screen edges with negative margins, like the photo grid; the hero and the
+  spotlight stage now stay inside the column at every width. Its frame shape is now a minimum
+  height computed from the column width (`max(32rem, width / aspect)`) instead of
+  `aspect-ratio` plus a fixed `min-height`, which would have clipped a long title rather than
+  growing. The landing grids use `minmax(0, 1fr)` tracks so long content cannot widen them.
+  An E2E test checks that every landing block stays inside the column.
+- **Photo credits look like credits** (asked by the user): a name on or beside a photo could
+  be read as the name of someone in it. `PhotoCredit.astro` puts a camera outline before the
+  name and sets it quieter: weight 500, 70% white on a photo scrim (5.83:1 over a white photo,
+  AA; 60% would have been 4.76:1, too close), muted text on the page. A camera rather than ©,
+  because it says "taken by" without reading as a legal notice. The spotlight lost its
+  initials avatar for the same reason. The viewer's header (avatar + name, Instagram-style)
+  is unchanged.
+- **Viewer and credits, second round** (asked by the user):
+  - Landing credits are smaller (11 px on phone tiles, 12 px elsewhere on the landing; new
+    token `--text-xs`), with a thinner scrim band: they were the most eye-catching text on a
+    phone.
+  - The hero eyebrow always says "Featured event" (the user found "Latest event" wrong once an
+    older event is pinned); `Landing.pinned` was removed with it.
+  - **Acai Workshop has `featured: true`** (content change requested by the user).
+  - The viewer's header drops the Instagram-style initials avatar for the camera outline
+    before the name ("Photo by Name" for screen readers). `initials` left the viewer's JSON;
+    the content model keeps it.
+  - On phones the black photo area fills the height between header and caption and the photo
+    is centred in it (it used to sit right under the header).
+  - On touch phones (`max-width: 599px` and `pointer: coarse`) the arrows are visually hidden,
+    because swiping is how people move there and the arrows covered much of the photo. They
+    are clipped, not removed: VoiceOver/TalkBack users still get "Next photo"/"Previous
+    photo" (swiping is not available to them), and a keyboard focus shows them again.

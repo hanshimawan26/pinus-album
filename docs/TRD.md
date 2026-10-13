@@ -3,7 +3,14 @@
 **Pinus Community** — Indonesian Students Association at NUS · Proof of Concept
 
 > **Naming:** "Pinus Community" is the primary name (site title, header, footer, page titles). "Indonesian Students Association at NUS" is the subheading/descriptor.
-Version 0.1 (draft) · 12 Oct 2026
+Version 0.2 · 13 Oct 2026 (0.1: 12 Oct 2026)
+
+> **Where things are decided.** This TRD says *what the site does*: routes, content model,
+> behaviour, validation, privacy. [PRODUCT.md](../PRODUCT.md) says *who it is for and why*,
+> and holds the binding brand commitments. [DESIGN.md](../DESIGN.md) says *how it looks*:
+> every visual decision (colours, type, spacing, components) lives there, not here.
+> [DECISIONS.md](DECISIONS.md) records how and why things were built the way they were.
+> When two documents disagree, the owner of the topic wins, and the other is fixed.
 
 ---
 
@@ -119,10 +126,16 @@ src/albums/
 title: "Pergelaran 2026"
 date: 2026-09-20                  # single date, or start of a range
 endDate: 2026-09-23               # optional
+venue: "UTown Green"               # optional; shown on the album page and the home page
 cover: day-1/@andi-pratama/IMG_0012.jpg   # optional; path relative to this folder; default = first photo
+highlights:                       # optional; photos for the home page, best first (paths like cover)
+  - day-1/@andi-pratama/IMG_0012.jpg
+featured: true                    # optional, events only; pins this event to the home page hero
 photographer: andi-pratama        # optional default credit for photos in this node with no other credit
 order: 1                          # optional; see ordering below
+sort: filename                    # optional; photo order by file name instead of date
 draft: false                      # true = shown in dev, excluded from production build
+hidden: false                     # true = not published (kept for reference); see README
 ---
 
 A few short paragraphs of Markdown telling the story of the event or section.
@@ -191,8 +204,8 @@ Each photo gets a stable slug for deep links: the path relative to its node, wit
 
 Implemented as a build-time loader plus the `photos:check` script (§9).
 
-- **Errors (fail the build):** invalid YAML or frontmatter; `photos.yaml` key that matches no file; ambiguous bare filename in `photos.yaml`; duplicate photo slug in a node; duplicate sibling node slugs; unsupported image format; `cover` that does not exist.
-- **Warnings (printed, do not fail):** photo with no photographer; photo with no date; EXIF date outside the node's own `date`/`endDate` range (usually a wrong camera clock); image over 2 MB; node with no cover; total content size over 700 MB.
+- **Errors (fail the build):** invalid YAML or frontmatter; `photos.yaml` key that matches no file; ambiguous bare filename in `photos.yaml`; duplicate photo slug in a node; duplicate sibling node slugs; unsupported image format; `cover` or a `highlights` entry that does not exist.
+- **Warnings (printed, do not fail):** photo with no photographer; photo with no date; EXIF date outside the node's own `date`/`endDate` range (usually a wrong camera clock); image over 2 MB; node with no cover; a `cover` or `highlights` photo that is not shown (hidden, or in a draft or hidden section: a takedown must never fail the build); `featured: true` on a section or on more than one event; GPS position in a master file; total content size over 700 MB.
 
 ---
 
@@ -200,7 +213,7 @@ Implemented as a build-time loader plus the `photos:check` script (§9).
 
 | Route | Page | Priority |
 |---|---|---|
-| `/` | Home: grid of top-level events | P0 |
+| `/` | Home: landing blocks, then every top-level event (§6.2) | P0 (landing: after the POC) |
 | `/albums/<...path>/` | Album page for any node at any depth (`[...path]` static route) | P0 |
 | `/albums/<...path>/#<photo-slug>` | Same page, viewer open on that photo | P0 |
 | `/photographers/` and `/photographers/<slug>/` | All photos by one photographer, across events | P2 |
@@ -216,12 +229,21 @@ URLs are lowercase slugs with a trailing slash. All internal links must go throu
 
 - Header: logo placeholder, site title "Pinus Community" (descriptor "Indonesian Students Association at NUS"), link home. Footer: org name, contact/takedown line (§10).
 - Mobile-first. Must work from 360 px to 1440 px wide with no horizontal scroll.
-- Visual style: clean, light, Instagram-like minimalism. Neutral base palette (white, black, or beige) for backgrounds, surfaces and text. The official brand colours are accents, not the primary colours, and are exposed as CSS variables: blue `#334E97`, red `#EF4C2B`, yellow `#F1B244`. Which colour plays which UI role (accent, links, highlights) is a design decision recorded in `DESIGN.md`; text using them must still meet WCAG AA.
-- System font stack by default. Dark mode via `prefers-color-scheme` is P1.
+- Visual design: specified in [DESIGN.md](../DESIGN.md), which owns every visual decision. The binding constraints it must respect come from [PRODUCT.md](../PRODUCT.md): the default (light) theme has a neutral base (white, black or beige) with the official brand colours (blue `#334E97`, red `#EF4C2B`, yellow `#F1B244`) as accents, exposed as CSS variables; the viewer's photo area is black; all text meets WCAG AA.
+- Dark theme via `prefers-color-scheme` (built after the POC, see DESIGN.md "Night theme"). Fonts are self-hosted (no request to a font service, §10).
 
-### 6.2 Home (P0)
+### 6.2 Home (P0; landing blocks after the POC)
 
-Grid of event cards, newest first. Each card: cover image, title, date (or date range), and photo count (including all descendant sections). Cards for events with sections also show the section count.
+Top to bottom (visual design: DESIGN.md "Landing"; the rules are in `src/lib/landing.ts`):
+
+1. **Hero:** the featured event — the event with `featured: true`, else the newest event with photos — with its cover, title, date, venue, the start of its story, counts (photos, photographers, sections), and links to its album and its "All photos" page. The cover's photographer is named.
+2. **Chapters:** one per section of the featured event (an event without sections gets one "highlights" chapter), each with up to five photos.
+3. **Photo spotlight:** one photo of the featured event (its first `highlights` photo; else its first captioned photo; else a photo from the middle), with its caption, photographer and date.
+4. **More events:** the next three events, one chapter each.
+5. **All events (P0):** grid of event cards, newest first. Each card: cover image, title, date (or date range), and photo count (including all descendant sections). Cards for events with sections also show the section count.
+6. **Share banner:** invites members to send their photos to the committee (the contact email, §10).
+
+Chapter photos are the album's `highlights` (§4.3), else picked automatically: the cover, then photos spread evenly over the album in date order. No photo appears twice on the page. Every landing photo links to itself in its album (`/albums/<path>/#<photo-slug>`), so the home page needs no JavaScript. With no photos at all, the page shows "Photo albums" and an empty state.
 
 ### 6.3 Album page (P0)
 
@@ -252,12 +274,12 @@ Mobile (portrait):
 
 ```
 ┌──────────────────────┐
-│ (AP) Andi Pratama  ✕ │   avatar = initials in a circle
-│      20 Sep 2026     │
+│ 📷 Andi Pratama    ✕ │   camera outline = "photo by"
+│    20 Sep 2026       │
 ├──────────────────────┤
-│                      │
-│      [ photo ]       │   fits width, original aspect ratio
-│                      │
+│                      │   black area fills the screen height
+│      [ photo ]       │   photo centred, original aspect ratio
+│                      │   (no arrows on touch phones: swipe)
 ├──────────────────────┤
 │ Opening dance by the │   caption: 3-line clamp + "more"
 │ committee 💃         │
@@ -269,8 +291,8 @@ Desktop (≥ 900 px): photo on the left on a black background, details panel (ab
 
 ```
 ┌────────────────────────────────────────┬─────────────────┐
-│                                        │ (AP) Andi Pratama│
-│              [ photo ]                 │      20 Sep 2026 │
+│                                        │ 📷 Andi Pratama  │
+│              [ photo ]                 │    20 Sep 2026   │
 │   ‹                                ›   │ ──────────────── │
 │                                        │ Opening dance... │
 │                                 3 / 24 │ Day 1 · Pergel.. │
@@ -282,7 +304,8 @@ Behaviour:
 - Prev/next via buttons, **← / →** keys, and touch swipe. Close via ✕, **Esc**, backdrop click, or browser Back.
 - Counter "n / total".
 - Preloads the next and previous images.
-- Photographer line: avatar circle with initials plus name. If the photographer has an `instagram` handle, the name links to it (opens in a new tab with `rel="noopener noreferrer"`).
+- Photographer line: a camera outline icon plus the name (read as "Photo by Name"), so the name is not mistaken for someone pictured. If the photographer has an `instagram` handle, the name links to it (opens in a new tab with `rel="noopener noreferrer"`).
+- On touch phones the prev/next buttons are hidden visually (swipe instead) but remain available to screen readers and keyboards.
 - Caption area is **not rendered** when there is no caption. Photographer or date rows are not rendered when absent.
 - **Deep links:** opening a photo updates the URL hash to `#<photo-slug>` (replace state while navigating). Loading a URL with a valid hash opens the viewer on that photo. An invalid hash is ignored.
 - Focus is trapped inside the viewer while open, and returns to the originating tile on close.
@@ -422,6 +445,8 @@ Work in this order. Each milestone ends with a commit and a short note on how to
 
 **P1 backlog (after the above):** "view all photos" aggregate grid, photographer filter chips, IPTC/XMP caption and photographer fallback, low-quality image placeholders, dark mode, Open Graph tags (cover image per album), Playwright E2E.
 
+**Status (13 Oct 2026):** P0 milestones 1–6 are done. Done from P1: "view all photos", photographer filter chips, dark mode, Open Graph tags, Playwright E2E, and the IPTC/XMP caption and photographer fallback (`embedded` sources). Added after the POC: the home page landing blocks (§6.2) and the photographer credit on saved viewer images. Open: low-quality image placeholders.
+
 ---
 
 ## 14. Assumptions and open questions
@@ -433,10 +458,10 @@ Claude Code: use the default and keep going. Record anything you assume in `docs
 | 1 | What do the existing photo folders look like today (names, nesting)? | Per-event folders containing one folder per photographer. Adapt the `@` convention if the real structure differs |
 | 2 | Language of the site UI | English only. Indonesian or bilingual support is P2 |
 | 3 | Viewer style | Instagram-profile grid plus post-style overlay viewer (§6.4–6.5). A scrolling feed view is not built |
-| 4 | Branding: org name, logo, colours | **Resolved:** name "Pinus Community" (descriptor "Indonesian Students Association at NUS"); official colours blue `#334E97`, red `#EF4C2B`, yellow `#F1B244`. Logo: placeholder until supplied |
+| 4 | Branding: org name, logo, colours | **Resolved:** name "Pinus Community" (descriptor "Indonesian Students Association at NUS"); official colours blue `#334E97`, red `#EF4C2B`, yellow `#F1B244`; official logo `public/logo.svg` |
 | 5 | Public repo and search indexing | Public repo, `noindex` site |
 | 6 | Custom domain | None. Use `github.io` |
-| 7 | Contact and response time for photo takedown | Placeholder email in the footer |
+| 7 | Contact and response time for photo takedown | **Resolved:** `kontakpinus@gmail.com` (repository variable `CONTACT_EMAIL` overrides it). Response time still open |
 | 8 | Photographer credit style: full name or handle, link to Instagram? | Name from `photographers.yaml`, Instagram link optional |
 | 9 | Who writes captions, and are they comfortable editing YAML? | Yes, via the README steps. A CMS such as Decap is P2 |
 | 10 | Exact event dates and whether a section's date should override a photo's EXIF date | EXIF wins, and `photos:check` warns on out-of-range dates |
