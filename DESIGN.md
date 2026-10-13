@@ -143,7 +143,7 @@ Headings use `text-wrap: balance` and paragraphs use `pretty`.
 
 | Component | File | Notes |
 |---|---|---|
-| Logo mark | `src/components/LogoMark.astro`, `public/logo.svg` | The association's logo (a ring in navy, red and yellow around three figures), shown at 34 px as an `<img>` with fixed width and height. The same file is the browser-tab icon. Decorative (`alt=""`), since the site title names the link. The logo's own colours are used as supplied, not the brand tokens |
+| Logo mark | `src/components/LogoMark.astro`, `public/logo.svg` | The association's logo (a ring in navy, red and yellow around three figures), shown at 34 px as an `<img>` with fixed width and height. The browser-tab icon is `public/favicon.svg`: the same logo on a white disc, so it stays visible on dark tab bars. Decorative (`alt=""`), since the site title names the link. The logo's own colours are used as supplied, not the brand tokens |
 | Site header | `SiteHeader.astro` | Mark, "Pinus Community" (700) and the descriptor (muted, 13 px) form a single home link. A hairline sits below. Not sticky |
 | Site footer | `SiteFooter.astro` | Takedown line with a mailto link (TRD §10), then the organisation name and descriptor. Stacked on phones; a single row from 900 px. The takedown line has no width cap and uses `text-wrap: balance`, so it reads as one sentence on desktop and never leaves a short tail |
 | Skip link | `BaseLayout.astro` | "Skip to content": hidden above the viewport until focused, then shown in blue |

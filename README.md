@@ -436,8 +436,9 @@ local preview (`npm run dev`, with a yellow "Draft" badge), not on the website. 
 
 ### Change the logo
 
-The logo in the header and on the browser tab is the file `public/logo.svg`. To change it,
-replace that file with a new one of the same name (in the browser: open the file, then
+The logo in the header is the file `public/logo.svg`, and the small icon on the browser tab
+is `public/favicon.svg` (the logo on a white circle, so it also shows on dark tab bars). To
+change either, replace the file with a new one of the same name (in the browser: open the file, then
 **⋯ → Delete file**, commit, and upload the new one with **Add file → Upload files**). Use
 an SVG if you can, so it stays sharp on every screen, and a roughly square logo, because the
 header shows it at 34 × 34 pixels.

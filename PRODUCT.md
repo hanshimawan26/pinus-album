@@ -50,7 +50,7 @@ This is the association's own record of its events, not a feed or a social netwo
 - **Neutral base (user-set constraint):** the site's base colours are neutral, such as white, black or beige, and the brand colours sit on top of them. White or beige pairs well with the brand colours.
 - **Photo viewer is black (user-set constraint).** The post viewer's photo area uses a black background.
 - **Blue for interactive accents (user preference).** Blue `#334E97` is the preferred colour for links and buttons. The page base colour (white or beige) is still undecided.
-- **Logo:** the official logo is `public/logo.svg` (a ring in navy, red and yellow around three figures). It is used in the header and as the browser-tab icon.
+- **Logo:** the official logo is `public/logo.svg` (a ring in navy, red and yellow around three figures). It is used in the header. The browser-tab icon is `public/favicon.svg`, the same logo on a white disc.
 - **Voice:** warm and plain-spoken, written by students for students. Not established beyond the TRD's copy, such as the takedown line.
 
 ## Evidence on Hand

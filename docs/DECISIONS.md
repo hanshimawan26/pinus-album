@@ -1298,8 +1298,10 @@ Requested by the committee after milestone 6.
   while it loads) instead of the inline placeholder drawing. An `<img>` keeps the logo a
   single file a maintainer can replace without touching code, and browsers cache it across
   pages.
-- The browser-tab icon now points at the same file, and the placeholder `public/favicon.svg`
-  was removed, so replacing `logo.svg` updates both.
+- The browser-tab icon is `public/favicon.svg`: the committee's version of the logo on a
+  white disc (supplied as `pinus logo white bg.svg`, renamed because spaces in a web address
+  are fragile). The white ground keeps the navy part visible on dark browser tab bars. It
+  replaced the placeholder favicon.
 - The logo's own colours (navy `#232E6E`, red `#F7423B`, yellow `#EBB727`, figures
   `#9B8370`) are kept exactly as supplied. They are close to, but not the same as, the brand
   tokens in DESIGN.md, which keep the official values from the TRD.
