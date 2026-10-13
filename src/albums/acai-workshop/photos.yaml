@@ -5,13 +5,9 @@
 # @alice-demo photos: photographer from the folder, date from EXIF.
 
 # Photographer from photos.yaml (no @folder) and date from photos.yaml (no EXIF).
-"DSCF0026.jpg":
-  caption: "Derrick males"
-  photographer: hans-himawan
-  date: 2026-10-10
 
 "DSCF9880.JPG":
-  caption: "So wholesome"
+  caption: "Hey Siri, define teamwork"
   photographer: hans-himawan
   date: 2026-10-10
 

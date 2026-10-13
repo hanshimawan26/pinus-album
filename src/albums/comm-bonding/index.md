@@ -6,4 +6,4 @@ sort: filename
 cover: "@hans-himawan/DSCF0065.JPG"
 ---
 
-**Full committee bonding.** UTown Green
+**Full committee bonding.** Pizza, frisbee, and volleyball.
