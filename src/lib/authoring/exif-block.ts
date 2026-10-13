@@ -17,6 +17,10 @@
  *
  * Text values are copied as raw bytes, never decoded and re-encoded, so a name with
  * accents survives any number of runs unchanged.
+ *
+ * The image pipeline uses the same writer for the photographer credit in published viewer
+ * images (`buildCreditTiff`: Artist and Copyright only, see credit/credit.ts), and
+ * `npm run verify:dist` reads it back with `readCredit`.
  */
 
 /** Written into Software when photos:prep writes a file. */
@@ -47,6 +51,7 @@ const TAG = {
   orientation: 0x0112,
   software: 0x0131,
   artist: 0x013b,
+  copyright: 0x8298,
   exifIfd: 0x8769,
   gpsIfd: 0x8825,
   dateTimeOriginal: 0x9003,
@@ -263,6 +268,15 @@ export function buildExifApp1(tags: KeptTags): Uint8Array | undefined {
   if (exif.length > 0) ifd0.push({ tag: TAG.exifIfd, type: LONG, count: 1, bytes: new Uint8Array(4), pointer: 'exif' });
   if (ifd0.length === 0) return undefined;
 
+  const tiff = writeTiff(ifd0, exif);
+  const app1 = new Uint8Array(6 + tiff.length);
+  app1.set([0x45, 0x78, 0x69, 0x66, 0, 0]); // "Exif\0\0"
+  app1.set(tiff, 6);
+  return app1;
+}
+
+/** A little-endian TIFF block; entries must be in ascending tag order. */
+function writeTiff(ifd0: readonly OutEntry[], exif: readonly OutEntry[]): Uint8Array {
   const ifdSize = (entries: readonly OutEntry[]) => 2 + entries.length * 12 + 4;
   const ifd0Offset = 8;
   const exifOffset = ifd0Offset + ifdSize(ifd0);
@@ -295,12 +309,51 @@ export function buildExifApp1(tags: KeptTags): Uint8Array | undefined {
     });
     view.setUint32(offset + 2 + entries.length * 12, 0, true); // no next IFD (no thumbnail)
   };
-  // TIFF wants entries in ascending tag order; the pushes above already are.
+  // TIFF wants entries in ascending tag order; the callers push them that way.
   writeIfd(ifd0Offset, ifd0);
   if (exif.length > 0) writeIfd(exifOffset, exif);
+  return tiff;
+}
 
-  const app1 = new Uint8Array(6 + tiff.length);
-  app1.set([0x45, 0x78, 0x69, 0x66, 0, 0]); // "Exif\0\0"
-  app1.set(tiff, 6);
-  return app1;
+// ---------------------------------------------------------------------------------------
+// Photographer credit (published viewer images)
+// ---------------------------------------------------------------------------------------
+
+/** The credit tags, as UTF-8 text. */
+export interface CreditTags {
+  artist: string;
+  copyright: string;
+}
+
+/** A TIFF block (the body of a WebP EXIF chunk) holding only Artist and Copyright, as UTF-8. */
+export function buildCreditTiff(credit: CreditTags): Uint8Array {
+  return writeTiff([asciiEntry(TAG.artist, encoder.encode(credit.artist)), asciiEntry(TAG.copyright, encoder.encode(credit.copyright))], []);
+}
+
+export interface CreditFacts {
+  artist?: string;
+  copyright?: string;
+  /** Any tag besides Artist and Copyright (or an unreadable block, or a thumbnail IFD). */
+  hasOtherTags: boolean;
+}
+
+/** Artist and Copyright from a TIFF block, and whether it holds anything else. Never throws. */
+export function readCredit(tiff: Uint8Array): CreditFacts {
+  const facts: CreditFacts = { hasOtherTags: false };
+  try {
+    const reader = new TiffReader(tiff);
+    const ifd0Offset = reader.firstIfd;
+    const entries = reader.ifd(ifd0Offset);
+    const decoder = new TextDecoder();
+    for (const entry of entries) {
+      const value = entry.type === ASCII ? cleanText(entry.value) : undefined;
+      if (entry.tag === TAG.artist && value) facts.artist = decoder.decode(value);
+      else if (entry.tag === TAG.copyright && value) facts.copyright = decoder.decode(value);
+      else facts.hasOtherTags = true;
+    }
+    if (reader.u32(ifd0Offset + 2 + reader.u16(ifd0Offset) * 12) !== 0) facts.hasOtherTags = true;
+  } catch {
+    facts.hasOtherTags = tiff.length > 0;
+  }
+  return facts;
 }

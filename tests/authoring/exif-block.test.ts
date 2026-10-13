@@ -3,7 +3,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import exifr from 'exifr';
 import { describe, expect, it } from 'vitest';
-import { buildExifApp1, cleanText, MAX_TEXT_BYTES, PREP_MARKER, readTiff, textBytes } from '../../src/lib/authoring/exif-block.ts';
+import {
+  buildCreditTiff,
+  buildExifApp1,
+  cleanText,
+  MAX_TEXT_BYTES,
+  PREP_MARKER,
+  readCredit,
+  readTiff,
+  textBytes,
+} from '../../src/lib/authoring/exif-block.ts';
 import { exifTiffOf, parseJpeg } from '../../src/lib/authoring/jpeg.ts';
 import { readImageInfo } from '../../src/lib/content/exif.ts';
 import { bytesText, makeJpeg } from '../helpers/images.ts';
@@ -111,5 +120,23 @@ describe('text values', () => {
     const long = textBytes('é'.repeat(MAX_TEXT_BYTES))!;
     expect(long.length).toBeLessThanOrEqual(MAX_TEXT_BYTES);
     expect(bytesText(long)).toBe('é'.repeat(long.length / 2));
+  });
+});
+
+describe('photographer credit (published viewer images)', () => {
+  it('writes only Artist and Copyright as UTF-8, readable by exifr and by readCredit', async () => {
+    const tiff = buildCreditTiff({ artist: 'Andi Pratamà', copyright: '© Andi Pratamà' });
+    expect(await exifr.parse(tiff, { reviveValues: false, translateValues: false })).toEqual({
+      Artist: 'Andi Pratamà',
+      Copyright: '© Andi Pratamà',
+    });
+    expect(readCredit(tiff)).toEqual({ artist: 'Andi Pratamà', copyright: '© Andi Pratamà', hasOtherTags: false });
+  });
+
+  it('reports any other tag, and an unreadable block', async () => {
+    const withDate = buildExifApp1({ artist: text('Andi'), dateTimeOriginal: text('2026:09:20 10:00:00') })!.subarray(6);
+    expect(readCredit(withDate)).toEqual({ artist: 'Andi', hasOtherTags: true });
+    expect(readCredit(await tiffOf({ width: 8, height: 8, gps: true })).hasOtherTags).toBe(true);
+    expect(readCredit(text('not a TIFF block')).hasOtherTags).toBe(true);
   });
 });

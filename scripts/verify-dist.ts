@@ -1,7 +1,9 @@
 /**
  * `npm run verify:dist` — checks the built site in dist/ (run after `npm run build`):
  *
- *   1. Privacy (TRD §7, §10): no published image carries EXIF, GPS, XMP or IPTC metadata.
+ *   1. Privacy (TRD §7, §10): no published image carries EXIF, GPS, XMP or IPTC metadata,
+ *      except the viewer images of credited photos, which carry exactly their photographer's
+ *      credit (EXIF Artist and Copyright, nothing else; see src/lib/credit/).
  *   2. Privacy: no file in dist/ is a byte-for-byte copy of a source photo in src/albums/
  *      (sources keep their EXIF/GPS data).
  *   3. Links (TRD §12.3): every internal href/src/srcset (including the viewer's JSON data
@@ -29,7 +31,11 @@ import { gzipSync } from 'node:zlib';
 import { ALBUMS_DIR, ALLOW_INDEXING, BASE_PATH, SITE } from '../src/lib/config.ts';
 import { loadAlbums, siteLoadOptions } from '../src/lib/content/index.ts';
 import { findSourceCopies, listFiles, relativePosix } from '../src/lib/build-checks/files.ts';
+import { readCredit } from '../src/lib/authoring/exif-block.ts';
+import { creditProblem, viewerImageCredits } from '../src/lib/build-checks/credits.ts';
 import { scanImageMetadata } from '../src/lib/build-checks/image-metadata.ts';
+import type { Credit } from '../src/lib/credit/credit.ts';
+import { webpExif } from '../src/lib/credit/webp-exif.ts';
 import { dimensionProblem, extractImageClaims, type ImageClaim } from '../src/lib/build-checks/image-claims.ts';
 import { extractCssReferences, extractHtmlReferences, resolveReference, sitePathOf, type Reference } from '../src/lib/build-checks/links.ts';
 import { extractScripts, JS_BUDGET_GZIP_BYTES, kilobytes, pageProblems, scriptBudgetProblem } from '../src/lib/build-checks/page-rules.ts';
@@ -50,25 +56,58 @@ interface Failure {
   message: string;
 }
 
-async function checkImageMetadata(files: readonly string[]): Promise<{ checked: number; failures: Failure[] }> {
+/** The credit each viewer image must carry (absolute dist/ path → credit, undefined for none). */
+async function expectedCredits(files: readonly string[]): Promise<Map<string, Credit | undefined>> {
+  const credits = new Map<string, Credit | undefined>();
+  for (const file of files) {
+    if (!file.endsWith('.html')) continue;
+    let images;
+    try {
+      images = viewerImageCredits(await readFile(file, 'utf8'));
+    } catch {
+      continue; // Invalid inline JSON is reported by the link check.
+    }
+    const fromSitePath = sitePathOf(relativePosix(DIST_DIR, file), BASE_PATH);
+    for (const image of images) {
+      const resolution = resolveReference(image.url, fromSitePath, BASE_PATH);
+      const found = resolution.kind === 'internal' ? existingInDist(resolution.candidates) : undefined;
+      if (found !== undefined) credits.set(join(DIST_DIR, found), image.credit); // broken links: the link check
+    }
+  }
+  return credits;
+}
+
+async function checkImageMetadata(
+  files: readonly string[],
+  credits: ReadonlyMap<string, Credit | undefined>,
+): Promise<{ checked: number; credited: number; failures: Failure[] }> {
   const failures: Failure[] = [];
   const images = files.filter((file) => IMAGE_PATTERN.test(file));
+  let credited = 0;
   for (const file of images) {
     const bytes = await readFile(file);
-    const found = new Set<string>(scanImageMetadata(bytes).blocks);
+    const { blocks } = scanImageMetadata(bytes);
+    // exifr cannot read WebP (every derivative); for other formats it also catches tags in
+    // blocks the structural scan does not know. Credited images are always WebP.
+    const extra: string[] = [];
     if (EXIFR_PATTERN.test(file)) {
       const parsed = await exifr
         .parse(bytes, { tiff: true, exif: true, gps: true, xmp: true, iptc: true, icc: false, jfif: false, ihdr: false })
         .catch(() => undefined);
-      if (parsed && Object.keys(parsed).length > 0) found.add('EXIF/XMP/IPTC tags (exifr)');
+      if (parsed && Object.keys(parsed).length > 0) extra.push('EXIF/XMP/IPTC tags (exifr)');
       const gps = await exifr.gps(bytes).catch(() => undefined);
-      if (gps) found.add('GPS position');
+      if (gps) extra.push('GPS position');
     }
-    if (found.size > 0) {
-      failures.push({ file: relativePosix(DIST_DIR, file), message: `contains metadata: ${[...found].join(', ')}` });
-    }
+    const expected = credits.get(file);
+    const tiff = blocks.includes('EXIF') ? webpExif(bytes) : undefined;
+    const problem =
+      extra.length > 0
+        ? `contains metadata: ${[...blocks, ...extra].join(', ')}`
+        : creditProblem(expected, { blocks, credit: tiff ? readCredit(tiff) : undefined });
+    if (problem) failures.push({ file: relativePosix(DIST_DIR, file), message: problem });
+    else if (expected) credited++;
   }
-  return { checked: images.length, failures };
+  return { checked: images.length, credited, failures };
 }
 
 async function checkSourceCopies(): Promise<Failure[]> {
@@ -240,7 +279,7 @@ async function main(): Promise<number> {
   console.log(bold(`verify:dist — dist/ built for base path "${BASE_PATH}"\n`));
   const files = await listFiles(DIST_DIR);
 
-  const metadata = await checkImageMetadata(files);
+  const metadata = await checkImageMetadata(files, await expectedCredits(files));
   const copies = await checkSourceCopies();
   const links = await checkLinks(files);
   const dimensions = await checkImageDimensions(files);
@@ -248,7 +287,7 @@ async function main(): Promise<number> {
   const unused = checkUnusedImages(files, links.referenced);
   const pages = await checkPageRules(files);
 
-  printFailures('Images with metadata', metadata.failures);
+  printFailures('Images with metadata (or without their photographer credit)', metadata.failures);
   printFailures('Copies of original photos', copies);
   printFailures('Broken or misplaced links', links.failures);
   printFailures('Images whose size does not match the page', dimensions.failures);
@@ -268,7 +307,7 @@ async function main(): Promise<number> {
     console.log(dim('Hint: run verify:dist with the same ALLOW_INDEXING and CONTACT_EMAIL as the build.\n'));
   }
   const summary =
-    `${metadata.checked} images checked for metadata, ${files.length} files checked for copies of originals, ` +
+    `${metadata.checked} images checked for metadata (${metadata.credited} carry a photographer credit), ${files.length} files checked for copies of originals, ` +
     `${links.checked} internal links checked, ${dimensions.checked} image sizes checked, ` +
     `${published.checked} published albums compared with their pages, ${pages.checked} pages checked for robots ` +
     `(${ALLOW_INDEXING ? 'index' : 'noindex'}), takedown line and JavaScript ` +

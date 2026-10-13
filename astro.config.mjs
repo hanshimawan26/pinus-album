@@ -19,5 +19,7 @@ export default defineConfig({
     // The whole stylesheet is ~6 KB: inlining it saves a render-blocking request on phones.
     inlineStylesheets: 'always',
   },
+  // Astro's sharp service plus the photographer credit on viewer images (src/lib/credit/).
+  image: { service: { entrypoint: './src/lib/image-service.ts' } },
   integrations: [removeSourceCopies({ sourceDir: ALBUMS_DIR })],
 });

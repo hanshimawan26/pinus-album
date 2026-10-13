@@ -381,6 +381,13 @@ a caption simply shows no caption.
   [step 7](#7-add-new-photographers-optional)). Without an entry, "their-name" is shown as
   "Their Name".
 
+**The credit travels with the photo.** When someone saves a photo from the viewer, the
+photographer's name comes with it: a small "© Their Name" in the bottom-right corner of the
+picture, and the name in the file's details (Artist and Copyright). The website adds both
+when it is built; your photo files in `src/albums/` are never changed. Fixing a name in
+`photographers.yaml` fixes every watermark at the next publish. Photos without a
+photographer get no watermark, and the small grid tiles and album covers never have one.
+
 ### Hide a photo
 
 Add `hidden: true` to the photo's entry in `photos.yaml`:
@@ -712,7 +719,7 @@ no UI framework. Start with these documents:
 | `npm run photos:prep -- <folder> [--dry-run] [--force]` | Makes JPEGs web-ready in place (≤ 2400 px, quality 85, upright, GPS removed). Idempotent |
 | `npm run photos:init -- <album-folder> [--dry-run]` | Appends empty `caption` entries to `photos.yaml` for photos without one |
 | `npm run demo:images` | Regenerates the demo images (deterministic) |
-| `npm run verify:dist` | Checks `dist/` after a build: no EXIF/GPS, no copies of originals, no broken links, image sizes and orientation, no drafts, hidden albums or hidden photos, robots meta, takedown line, JS only on photo pages and within 60 KB gzipped. Use the same `BASE_PATH`, `ALLOW_INDEXING`, `CONTACT_EMAIL` and `SHOW_HIDDEN` as the build |
+| `npm run verify:dist` | Checks `dist/` after a build: no EXIF/GPS (viewer images carry only their photographer credit), no copies of originals, no broken links, image sizes and orientation, no drafts, hidden albums or hidden photos, robots meta, takedown line, JS only on photo pages and within 60 KB gzipped. Use the same `BASE_PATH`, `ALLOW_INDEXING`, `CONTACT_EMAIL` and `SHOW_HIDDEN` as the build |
 | `npm test` | Unit tests (Vitest, `tests/`) |
 | `npm run test:e2e` | Browser tests (Playwright, `e2e/`) against a fresh production build |
 | `npm run typecheck` | `astro check` |

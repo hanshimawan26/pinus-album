@@ -1315,3 +1315,31 @@ Requested by the committee after milestone 6.
   to it; the footer and sibling nav keep the neutral hairline.
 - The default `CONTACT_EMAIL` is now the association's real address, `kontakpinus@gmail.com`,
   instead of the `example.com` placeholder. The repository variable still overrides it.
+
+## After the POC — photographer credit on saved photos
+
+- **Viewer images carry the photographer's credit**, so a saved photo keeps it: a small
+  `© Name` watermark in the bottom-right corner and EXIF Artist (`Name`) and Copyright
+  (`© Name`). Agreed with the user: viewer images only, `© Name`, plus the EXIF tags.
+- **Deviation from TRD §7 and §10** ("published derivatives contain no EXIF"): credited
+  viewer images now carry one EXIF block holding exactly those two tags, nothing else (no
+  date, camera or GPS). `verify:dist` checks each viewer image against its photo's
+  photographer in the page's viewer data and still rejects any other metadata on any image.
+- **Thumbnails and album covers carry neither.** At 240–480 px the text would be unreadable
+  and clutter the grid, and a cover's 4:3 crop would cut it off.
+- **No photographer, no watermark** (absent data disappears, TRD §4.6). The name is the
+  display name from `photographers.yaml` (else the title-cased slug), as in the viewer.
+- **Built, never stored:** a custom image service (`src/lib/image-service.ts`) wraps Astro's
+  sharp service and draws the credit while making the derivatives. The masters in
+  `src/albums/` are untouched, the credit is part of the file hash (a renamed photographer
+  gives new files at the next build), and the dev server passes it in its image URL.
+- **Font:** Inter SemiBold (SIL Open Font License 1.1, `src/fonts/`), loaded from the file
+  so the watermark looks the same on Windows and on the Linux CI runner. White at 85 %
+  opacity over a soft dark shadow; the font size is 2.4 % of the image's short edge (at least
+  14 px), so every srcset width looks the same; a very long name shrinks to fit.
+- **EXIF written by our code, not sharp's `withExif`:** libvips turns non-ASCII text into
+  ASCII (`©` → `(C)`, `à` → `a`) and adds tags of its own. `webp-exif.ts` writes the
+  chunk byte-exact with the same TIFF writer photos:prep uses (UTF-8 text).
+- **Limits, accepted:** the repository is public, so the unwatermarked masters can still be
+  downloaded from GitHub; a corner watermark can be cropped. It deters casual re-posting,
+  not a determined copier.

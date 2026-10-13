@@ -27,7 +27,8 @@ step when a command, a content rule or a `photos:check` code changes.
   Both tools read paths relative to the terminal's folder (`INIT_CWD`), else the project.
 - `npm run demo:images` — regenerate the placeholder demo images (deterministic, idempotent;
   also restores a demo image that was changed by hand)
-- `npm run verify:dist` — after a build: no EXIF/GPS in published images, no copies of source
+- `npm run verify:dist` — after a build: no EXIF/GPS in published images (viewer images of
+  credited photos carry exactly their EXIF Artist/Copyright credit), no copies of source
   photos, no broken internal links, every image file the size (and orientation) its page
   claims, album pages exactly the published albums (no drafts, hidden albums or photos), no unused
   images in `_astro/`, and on every page the robots meta for `ALLOW_INDEXING`, the footer's
@@ -64,17 +65,23 @@ src/
     presentation.ts  PURE: counts, date labels, meta descriptions, JSON-for-<script> escaping
     viewer-data.ts   PURE: per-photo data embedded for the post viewer (TRD §6.5)
     images.ts        ASTRO-ONLY: photos → getImage() derivatives (thumb, viewer srcset, covers)
+    image-service.ts ASTRO-ONLY: the site's image service (astro.config `image.service`):
+                     Astro's sharp service + the photographer credit on viewer images
+    credit/          the credit saved viewer images carry: PURE credit.ts (`© Name`, watermark
+                     size/position), webp-exif.ts (EXIF chunk into WebP); watermark.ts (sharp:
+                     draws the text with the font in src/fonts, writes EXIF Artist/Copyright)
     build-checks/    checks of the built site: image-metadata.ts, links.ts, image-claims.ts,
                      published.ts, page-rules.ts (robots, takedown line, JS budget) (all
                      PURE), files.ts (fs). Not named dist/: that name is the build output
     authoring/       the maintainer tools behind photos:prep and photos:init:
                      PURE jpeg.ts (JPEG segments), exif-block.ts (the kept EXIF tags, read and
-                     written byte-exact), prep-rules.ts (what prep does), prep-report.ts,
+                     written byte-exact; also the credit's Artist/Copyright block), prep-rules.ts (what prep does), prep-report.ts,
                      photos-yaml.ts (appends photos.yaml entries); prep.ts (sharp, bytes in/out,
                      no fs); prep-files.ts, init-node.ts and target.ts (fs; target.ts decides
                      which paths the tools may touch)
   content.config.ts  `stories` collection: renders index.md stories with Astro's Markdown
   integrations/      remove-source-copies.ts — deletes copies of original photos from dist/
+  fonts/             Inter-SemiBold.ttf (+ OFL.txt): the watermark font, read at build time only
   styles/global.css  design tokens (see DESIGN.md) and base styles, imported once by the layout
   components/        .astro components (one responsibility each)
   layouts/           BaseLayout.astro (head, skip link, header › main › footer)
@@ -113,6 +120,9 @@ e2e/                 Playwright specs (viewer, navigation, site-wide rules) + fi
   copied into `dist/` (they still contain EXIF). Never read a property of an imported image
   (`.src`, `.width`, …): Astro then keeps the original in `dist/`. Pass it only to
   `getImage()` in `images.ts`; sizes come from the content engine. `verify:dist` enforces it.
+  The one exception to "no metadata": viewer images of credited photos carry a `© Name`
+  watermark and EXIF Artist/Copyright (nothing else), written by `image-service.ts`;
+  thumbnails and covers carry neither.
   The masters in the (public) repository should carry no GPS either: `photos:prep` removes it
   and `photos:check` warns (`location-in-photo`). Hiding a photo must never fail the build
   (a takedown cannot be blocked), so a hidden `cover:` is a warning, not an error.

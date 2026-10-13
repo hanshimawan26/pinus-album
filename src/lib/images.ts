@@ -4,7 +4,8 @@
  * the published derivatives. Sizes and loading policy come from the pure `image-sizes.ts`.
  *
  * Privacy (TRD §7, §10): sharp drops EXIF/GPS from every derivative and applies the EXIF
- * orientation first, so derivatives are upright and metadata-free. Two rules keep original
+ * orientation first, so derivatives are upright and metadata-free (viewer images of credited
+ * photos then get back only EXIF Artist/Copyright, see `viewerImageFor`). Two rules keep original
  * files (which still carry EXIF/GPS) out of `dist/`:
  *
  * 1. Never read a property of an imported image (`.src`, `.width`, …) here or in a page.
@@ -71,7 +72,11 @@ export async function thumbnailFor(photo: Photo): Promise<ResponsiveImage> {
   return { src: image.src, srcset: image.srcSet.attribute, sizes: THUMBNAIL_SIZES, width: edge, height: edge };
 }
 
-/** Viewer image: srcset 800/1200/1600/2000 px WebP, never wider than the source (TRD §7). */
+/**
+ * Viewer image: srcset 800/1200/1600/2000 px WebP, never wider than the source (TRD §7).
+ * Credited photos carry the photographer's name: a `© Name` watermark in the bottom-right
+ * corner and EXIF Artist/Copyright (image-service.ts), so a saved copy keeps the credit.
+ */
 export async function viewerImageFor(photo: Photo): Promise<ViewerImage> {
   const widths = viewerWidths(photo.width);
   const width = viewerFallbackWidth(widths);
@@ -79,7 +84,8 @@ export async function viewerImageFor(photo: Photo): Promise<ViewerImage> {
   // `cover` outputs exactly the size each srcset entry claims (Astro rounds every entry's
   // height from this aspect ratio), cropping at most 1 px of rounding. `contain` would
   // fit inside that box and come out 1 px narrower than its `w` descriptor.
-  const image = await getImage({ src: sourceOf(photo), width, height, widths, fit: 'cover', format: OUTPUT_FORMAT });
+  const credit = photo.photographer?.name;
+  const image = await getImage({ src: sourceOf(photo), width, height, widths, fit: 'cover', format: OUTPUT_FORMAT, credit });
   return { src: image.src, srcset: image.srcSet.attribute, sizes: VIEWER_SIZES, width, height };
 }
 
