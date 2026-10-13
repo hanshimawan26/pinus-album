@@ -285,6 +285,29 @@ describe('warnings (TRD §4.8)', () => {
     expect(build(tree, true).root.children[0]?.cover?.file).toBe('src/albums/event/day-4/@alice/IMG_1.jpg');
   });
 
+  it('cover inside a hidden section: a warning, and the site falls back', () => {
+    const tree = sourceTree([
+      clean('event', {
+        index: index('date: 2026-09-20\ncover: day-4/@alice/IMG_1.jpg'),
+        children: [clean('day-4', { index: index('title: "Day 4"\ndate: 2026-09-20\nhidden: true') })],
+      }),
+    ]);
+    const { root, issues } = build(tree, true);
+    expect(issues).toEqual([expect.objectContaining({ level: 'warning', code: 'cover-not-shown', file: 'src/albums/event/index.md' })]);
+    expect(issues[0]?.message).toContain('"Day 4", which is hidden');
+    expect(root.children[0]?.cover?.file).toBe('src/albums/event/@alice/IMG_1.jpg');
+  });
+
+  it('cover inside a hidden section of a hidden album: nothing to warn about', () => {
+    const issues = issuesFor([
+      clean('event', {
+        index: index('date: 2026-09-20\nhidden: true\ncover: day-4/@alice/IMG_1.jpg'),
+        children: [clean('day-4', { index: index('date: 2026-09-20\nhidden: true') })],
+      }),
+    ]);
+    expect(codes(issues)).not.toContain('cover-not-shown');
+  });
+
   it('cover inside a draft section of a draft album: nothing to warn about', () => {
     const issues = issuesFor([
       clean('event', {

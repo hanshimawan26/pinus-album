@@ -218,7 +218,9 @@ a:hover {
    front. The line is moved one separator to the left and that strip is clipped, so the first
    item of every line (also after wrapping on a narrow card) starts without a dot. The dot is
    decorative: its alternative text is empty, so screen readers do not read "dot". The clip
-   creates a stacking context; AlbumCard lifts its link overlay above it. */
+   creates a stacking context; AlbumCard lifts its link overlay above it. Each item is itself
+   a flex row (dot, then text), so an item that wraps on its own, such as a long venue, wraps
+   after its dot instead of into the clipped strip. */
 .meta {
   --meta-separator: 1.25em;
   display: flex;
@@ -228,10 +230,14 @@ a:hover {
   color: var(--color-text-muted);
 }
 
+.meta > * {
+  display: flex;
+}
+
 .meta > *::before {
   content: '·';
   content: '·' / '';
-  display: inline-block;
+  flex: none;
   width: var(--meta-separator);
   text-align: center;
   color: var(--color-text-muted);

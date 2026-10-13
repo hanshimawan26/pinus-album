@@ -1,0 +1,52 @@
+---
+/**
+ * "Draft" / "Hidden" labels. Only ever visible while previewing: drafts are shown in
+ * `npm run dev` only, hidden albums only with SHOW_HIDDEN. Neither is published.
+ * Badges sit inside headings, so a real space before each keeps the accessible name
+ * readable: "Demo Event A Hidden", not "Demo Event AHidden".
+ */
+import type { AlbumNode } from '../lib/content/types.ts';
+
+interface Props {
+  node: Pick<AlbumNode, 'draft' | 'hidden'>;
+}
+
+const { node } = Astro.props;
+const badges = [
+  ...(node.draft ? [{ label: 'Draft', variant: 'draft' }] : []),
+  ...(node.hidden ? [{ label: 'Hidden', variant: 'hidden' }] : []),
+];
+---
+
+{
+  badges.map(({ label, variant }) => (
+    <>
+      {' '}
+      <span class={`badge badge--${variant}`}>{label}</span>
+    </>
+  ))
+}
+
+<style>
+  .badge {
+    display: inline-block;
+    margin-inline-start: var(--space-1);
+    padding: 0.1em 0.55em;
+    border-radius: var(--radius-full);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: var(--leading-snug);
+    letter-spacing: 0;
+    vertical-align: 0.2em;
+  }
+
+  .badge--draft {
+    background: var(--brand-yellow);
+  }
+
+  .badge--hidden {
+    background: var(--color-surface-sunken);
+    box-shadow: inset 0 0 0 1px var(--color-border);
+  }
+</style>

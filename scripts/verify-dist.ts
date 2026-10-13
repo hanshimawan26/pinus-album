@@ -9,14 +9,15 @@
  *   4. Image sizes (TRD §12.3): every published image is as wide as its srcset descriptor says
  *      and has the aspect ratio the page declares, so portrait photos are upright.
  *   5. Published content (TRD §4.3, §4.4): there is a page for every published album and none
- *      for a draft, each page's viewer data lists exactly the album's visible photos (no
+ *      for a draft or a hidden album, each page's viewer data lists exactly the album's
+ *      visible photos (no
  *      hidden ones), and every image in _astro/ is used by a page, so nothing derived from an
  *      unpublished photo is left behind.
  *   6. Page rules (TRD §10, §11): every page has the robots meta that ALLOW_INDEXING asks for
  *      (noindex by default) and the footer's takedown line linking to CONTACT_EMAIL; only
  *      pages with photos load JavaScript, and no page loads more than 60 KB gzipped.
  *
- * Use the same BASE_PATH, ALLOW_INDEXING and CONTACT_EMAIL as the build. Exit code 1 if anything fails.
+ * Use the same BASE_PATH, ALLOW_INDEXING, CONTACT_EMAIL and SHOW_HIDDEN as the build. Exit code 1 if anything fails.
  * Runs directly with Node's type stripping: `node scripts/verify-dist.ts`.
  */
 import exifr from 'exifr';
@@ -26,7 +27,7 @@ import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { ALBUMS_DIR, ALLOW_INDEXING, BASE_PATH, SITE } from '../src/lib/config.ts';
-import { loadAlbums } from '../src/lib/content/index.ts';
+import { loadAlbums, siteLoadOptions } from '../src/lib/content/index.ts';
 import { findSourceCopies, listFiles, relativePosix } from '../src/lib/build-checks/files.ts';
 import { scanImageMetadata } from '../src/lib/build-checks/image-metadata.ts';
 import { dimensionProblem, extractImageClaims, type ImageClaim } from '../src/lib/build-checks/image-claims.ts';
@@ -116,9 +117,9 @@ async function checkLinks(files: readonly string[]): Promise<{ checked: number; 
   return { checked, failures, referenced };
 }
 
-/** Album pages match the published albums exactly (no drafts, no hidden photos). */
+/** Album pages match the published albums exactly (no drafts, no hidden albums or photos). */
 async function checkPublishedContent(files: readonly string[]): Promise<{ checked: number; failures: Failure[] }> {
-  const albums = await loadAlbums({ includeDrafts: false });
+  const albums = await loadAlbums(siteLoadOptions(false));
   const expected = [...albums.nodes.values()]
     .filter((node) => node.depth > 0)
     .map((node) => ({ path: node.slugPath.join('/'), photoSlugs: node.photos.map((photo) => photo.slug) }));
@@ -259,6 +260,9 @@ async function main(): Promise<number> {
     metadata.failures.length + copies.length + links.failures.length + dimensions.failures.length + published.failures.length + unused.length + pages.failures.length;
   if (links.failures.some((failure) => failure.message.includes('outside the site'))) {
     console.log(dim(`Hint: run verify:dist with the same BASE_PATH as the build (now "${BASE_PATH}").\n`));
+  }
+  if (published.failures.length > 0) {
+    console.log(dim('Hint: run verify:dist with the same SHOW_HIDDEN as the build.\n'));
   }
   if (pages.failures.some((failure) => /robots|mailto/.test(failure.message))) {
     console.log(dim('Hint: run verify:dist with the same ALLOW_INDEXING and CONTACT_EMAIL as the build.\n'));

@@ -112,11 +112,16 @@ export interface IndexMeta {
   title?: string;
   date?: LocalDateTime;
   endDate?: LocalDateTime;
+  /** Where the event took place, e.g. "UTown Green". Shown on the album page. */
+  venue?: string;
   cover?: string;
   /** Photographer slug. */
   photographer?: string;
   order?: number;
+  /** Shown in `npm run dev` only, never published. */
   draft: boolean;
+  /** Not shown anywhere (dev included) unless SHOW_HIDDEN is set. */
+  hidden: boolean;
   sort: PhotoSort;
 }
 
@@ -263,8 +268,11 @@ export interface AlbumNode {
   date?: AlbumDate;
   endDate?: AlbumDate;
   dateSource?: 'index.md' | 'photos';
+  venue?: string;
   story?: string;
   draft: boolean;
+  /** True only while previewing with SHOW_HIDDEN (hidden nodes are otherwise left out). */
+  hidden: boolean;
   order?: number;
   prefix?: number;
   sort: PhotoSort;

@@ -27,6 +27,13 @@ export const ALBUMS_DIR = 'src/albums';
  */
 export const DEMO_EVENTS: readonly string[] = ['demo-event-a', 'demo-event-b'];
 
+/**
+ * Preview albums marked `hidden: true` in index.md (`npm run dev:hidden`). Off by
+ * default, so hidden albums stay out of the site everywhere. The E2E tests turn it on to
+ * build the (hidden) demo albums.
+ */
+export const SHOW_HIDDEN = /^(1|true|yes)$/i.test(env.SHOW_HIDDEN ?? '');
+
 /** EXIF dates have no zone; interpret and display them in this IANA zone (TRD §4.6). */
 export const TIMEZONE = env.TIMEZONE || 'Asia/Singapore';
 

@@ -6,19 +6,19 @@
 import { getEntry, render } from 'astro:content';
 import AlbumCardList from '../../components/AlbumCardList.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
-import DraftBadge from '../../components/DraftBadge.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
 import EmptyState from '../../components/EmptyState.astro';
 import NodeMeta from '../../components/NodeMeta.astro';
 import PhotoGrid from '../../components/PhotoGrid.astro';
 import SiblingNav from '../../components/SiblingNav.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { loadAlbumsOrThrow, pathTo, siblingsOf, slugPathKey } from '../../lib/content/index.ts';
+import { loadAlbumsOrThrow, pathTo, siblingsOf, siteLoadOptions, slugPathKey } from '../../lib/content/index.ts';
 import { startsNearTop } from '../../lib/image-sizes.ts';
 import { markdownToPlainText, nodeDescription } from '../../lib/presentation.ts';
 import { viewerContext } from '../../lib/viewer-data.ts';
 
 export async function getStaticPaths() {
-  const albums = await loadAlbumsOrThrow({ includeDrafts: import.meta.env.DEV });
+  const albums = await loadAlbumsOrThrow(siteLoadOptions(import.meta.env.DEV));
   return [...albums.nodes.values()]
     .filter((node) => node.depth > 0)
     .map((node) => ({ params: { path: node.slugPath.join('/') }, props: { key: slugPathKey(node.slugPath) } }));
@@ -31,7 +31,7 @@ interface Props {
 // Look the node up again rather than passing it as a prop, so `astro dev` shows fresh
 // content after a file changes (loadAlbums is memoised and rebuilds only on change).
 const { key } = Astro.props;
-const albums = await loadAlbumsOrThrow({ includeDrafts: import.meta.env.DEV });
+const albums = await loadAlbumsOrThrow(siteLoadOptions(import.meta.env.DEV));
 const node = albums.nodes.get(key);
 if (!node) {
   throw new Error(`The album "${key}" no longer exists. Reload the home page.`);
@@ -56,7 +56,7 @@ const hasPhotos = node.photos.length > 0;
     <header class="album-header">
       <h1 class="page-title">
         {node.title}
-        {node.draft && <DraftBadge />}
+        <StatusBadge node={node} />
       </h1>
       <NodeMeta node={node} size="page" />
     </header>

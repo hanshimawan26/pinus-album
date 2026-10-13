@@ -13,7 +13,7 @@ import sharp from 'sharp';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { DEMO_IMAGES, renderDemoImage } from '../../scripts/demo-images.ts';
 import { ALBUMS_DIR, DEMO_EVENTS } from '../../src/lib/config.ts';
-import { loadAlbums, photosInSubtree, siblingsOf, type AlbumNode, type Albums, type Photo } from '../../src/lib/content/index.ts';
+import { loadAlbums, photosInSubtree, siblingsOf, siteLoadOptions, type AlbumNode, type Albums, type Photo } from '../../src/lib/content/index.ts';
 import { formatDate, formatDateRange } from '../../src/lib/dates.ts';
 
 const demoPresent = DEMO_EVENTS.every((event) => existsSync(`${ALBUMS_DIR}/${event}`));
@@ -25,21 +25,37 @@ const demoEvents = (tree: Albums): AlbumNode[] => tree.root.children.filter((eve
 const demoNodes = (tree: Albums): AlbumNode[] => [...tree.nodes.entries()].filter(([path]) => isDemoPath(path)).map(([, node]) => node);
 const demoPhotos = (tree: Albums): Photo[] => demoEvents(tree).flatMap((event) => photosInSubtree(event));
 
-/** As `astro dev` sees it (drafts included). */
+/** As `astro dev` sees it with SHOW_HIDDEN (drafts and the hidden demo albums included). */
 let albums: Albums;
-/** As the production build sees it (no drafts). */
+/** As the E2E build sees it: production (no drafts) with SHOW_HIDDEN. */
 let published: Albums;
 let photos: Photo[];
 const photo = (file: string) => photos.find((p) => p.file === `src/albums/${file}`);
 
 beforeAll(async () => {
   if (!demoPresent) return;
-  albums = await loadAlbums({ includeDrafts: true });
-  published = await loadAlbums({ includeDrafts: false });
+  albums = await loadAlbums({ includeDrafts: true, includeHidden: true });
+  published = await loadAlbums({ includeDrafts: false, includeHidden: true });
   photos = demoPhotos(albums); // visible photos (drafts included, hidden ones not)
 });
 
 describe.skipIf(!demoPresent)('demo content', () => {
+  it('is hidden from the website, in dev and in production, unless SHOW_HIDDEN is set', async () => {
+    for (const dev of [false, true]) {
+      const site = await loadAlbums(siteLoadOptions(dev, false));
+      expect(demoEvents(site)).toEqual([]);
+      expect(demoNodes(site)).toEqual([]);
+    }
+    expect(demoEvents(published).every((event) => event.hidden)).toBe(true);
+    expect(demoEvents(await loadAlbums(siteLoadOptions(false, true)))).toHaveLength(2);
+  });
+
+  it('has a venue on Demo Event A only', () => {
+    const [eventA, eventB] = demoEvents(published);
+    expect(eventA?.venue).toBe('Demo Venue, Auditorium Hall 2, University Town Campus');
+    expect(eventB?.venue).toBeUndefined();
+  });
+
   it('has zero errors', () => {
     expect(albums.errors.filter((issue) => isDemoFile(issue.file))).toEqual([]);
   });

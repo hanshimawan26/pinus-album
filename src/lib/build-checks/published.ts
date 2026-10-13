@@ -1,6 +1,6 @@
 /**
  * Does the built site publish exactly the published albums? PURE: compares what the content
- * engine says should be on the site (production: no drafts, no hidden photos) with the
+ * engine says should be on the site (production: no drafts, no hidden albums or photos) with the
  * album pages found in dist/ and the photos in their viewer data.
  *
  * This is the end-to-end proof for TRD §4.3 (`draft: true` is excluded from production) and
@@ -73,7 +73,7 @@ export function comparePublished(expected: readonly ExpectedAlbum[], built: read
   }
   for (const page of built) {
     if (!expectedPaths.has(page.path)) {
-      problems.push({ path: page.path, message: 'has a page in dist/, but no published album has this address (a draft, or a deleted album?)' });
+      problems.push({ path: page.path, message: 'has a page in dist/, but no published album has this address (a draft, a hidden album, or a deleted album? Check that SHOW_HIDDEN matches the build)' });
     }
   }
   return problems;

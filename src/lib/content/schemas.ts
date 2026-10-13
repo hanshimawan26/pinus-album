@@ -85,13 +85,14 @@ function photographerField(field: string) {
 // index.md frontmatter
 // ---------------------------------------------------------------------------------------
 
-export const INDEX_FIELDS = ['title', 'date', 'endDate', 'cover', 'photographer', 'order', 'draft', 'sort'] as const;
+export const INDEX_FIELDS = ['title', 'date', 'endDate', 'venue', 'cover', 'photographer', 'order', 'draft', 'hidden', 'sort'] as const;
 
 export const indexFrontmatterSchema = z
   .strictObject({
     title: textField('title'),
     date: dateField('date', false),
     endDate: dateField('endDate', false),
+    venue: textField('venue'),
     cover: textField('cover'),
     photographer: photographerField('photographer'),
     order: z
@@ -99,6 +100,7 @@ export const indexFrontmatterSchema = z
       .nullish()
       .transform((value) => value ?? undefined),
     draft: booleanField('draft'),
+    hidden: booleanField('hidden'),
     sort: z
       .enum(['date', 'filename'], { error: '"sort" must be either date or filename' })
       .nullish()
@@ -276,7 +278,7 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
 // Public parsers
 // ---------------------------------------------------------------------------------------
 
-export const DEFAULT_INDEX_META: IndexMeta = { draft: false, sort: 'date' };
+export const DEFAULT_INDEX_META: IndexMeta = { draft: false, hidden: false, sort: 'date' };
 
 /** Parse an `index.md`: validated frontmatter plus the Markdown story (raw). */
 export function parseIndexMd(text: string): ParseResult<{ meta: IndexMeta; story?: string }> {
@@ -294,8 +296,8 @@ export function parseIndexMd(text: string): ParseResult<{ meta: IndexMeta; story
   }
   const result = indexFrontmatterSchema.safeParse(data);
   if (!result.success) return { ok: false, problems: describeZodIssues(result.error, INDEX_FIELDS) };
-  const { draft, sort, ...rest } = result.data;
-  const meta: IndexMeta = { draft: draft ?? false, sort: sort ?? 'date' };
+  const { draft, hidden, sort, ...rest } = result.data;
+  const meta: IndexMeta = { draft: draft ?? false, hidden: hidden ?? false, sort: sort ?? 'date' };
   for (const [key, value] of Object.entries(rest)) {
     if (value !== undefined) Object.assign(meta, { [key]: value });
   }

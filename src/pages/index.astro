@@ -3,10 +3,10 @@
 import AlbumCardList from '../components/AlbumCardList.astro';
 import EmptyState from '../components/EmptyState.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { loadAlbumsOrThrow } from '../lib/content/index.ts';
+import { loadAlbumsOrThrow, siteLoadOptions } from '../lib/content/index.ts';
 import { countLabel } from '../lib/presentation.ts';
 
-const albums = await loadAlbumsOrThrow({ includeDrafts: import.meta.env.DEV });
+const albums = await loadAlbumsOrThrow(siteLoadOptions(import.meta.env.DEV));
 const events = albums.root.children;
 ---
 

@@ -1262,3 +1262,31 @@ uncredited photo and the error state were reviewed.
   returns to the right tile (TRD §12.3), not only the Esc and ✕ tests.
 - Small clean-ups: one `existingInDist()` helper in `verify-dist.ts` instead of three copies
   of the lookup, and a leftover duplicate comment above `.meta` removed.
+
+## After the POC — venue and hidden albums
+
+Requested by the committee after milestone 6.
+
+- **`venue` in `index.md`** (optional text, e.g. `venue: "UTown Green"`). Shown only on the
+  album page, after the date in the meta line ("18–20 Sep 2026 · UTown Green · 35 photos").
+  Home and section cards are unchanged, by the user's choice.
+- **`hidden: true` in `index.md`** hides an album or section, with everything inside it,
+  from the website **and** from `npm run dev`. It is the album-level counterpart of the photo
+  `hidden` field in `photos.yaml`. `draft: true` keeps its meaning: off the website, but
+  visible in the local preview. `photos:check` still validates hidden albums. A `cover:`
+  inside a hidden section gives the same `cover-not-shown` warning as one inside a draft.
+- **`SHOW_HIDDEN=true`** includes hidden albums (with a grey "Hidden" badge) to preview
+  them. `npm run dev:hidden` (scripts/dev-hidden.ts) sets it, because `VAR=value cmd` does not
+  work in PowerShell. `siteLoadOptions(dev)` in `src/lib/content/index.ts` is the single place that decides
+  what the site publishes (drafts only in dev, hidden albums only with SHOW_HIDDEN), and the
+  pages and `verify:dist` both use it so they always agree. Set it only locally, never as a
+  repository variable.
+- **The demo albums are hidden** (`hidden: true` in `demo-event-a` and `demo-event-b`), so
+  they stay in the repository as a reference without appearing on the site. The unit tests
+  load them with `includeHidden`, and the E2E build sets `SHOW_HIDDEN=true`
+  (playwright.config.ts), so the TRD §12 demo coverage is unchanged. A new test asserts that
+  they are absent from the site by default, in dev and production.
+- **Event order on the home page is unchanged:** newest `date` first (TRD §4.3), confirmed by
+  the user. Events without a `date` use their earliest photo's date; set `date` explicitly
+  for a reliable order.
+- `DraftBadge` became `StatusBadge` (shows "Draft" and/or "Hidden").

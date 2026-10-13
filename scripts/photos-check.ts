@@ -27,16 +27,16 @@ function printGroup(title: string, issues: readonly Issue[], colour: (text: stri
 }
 
 async function main(): Promise<number> {
-  // Validation always covers everything, drafts and hidden photos included, so problems
-  // surface before a draft is published. (includeDrafts only shapes the published tree,
-  // which this script does not use.)
+  // Validation always covers everything, drafts and hidden albums and photos included, so
+  // problems surface before they are published. (The load options only shape the published
+  // tree, which this script does not use.)
   const albums = await loadAlbums();
   const { stats, errors, warnings } = albums;
 
   console.log(bold(`photos:check — ${ALBUMS_DIR}`));
   console.log(
     dim(
-      `${plural(stats.nodes, 'album')} (${stats.draftNodes} draft), ${plural(stats.photos, 'photo')} ` +
+      `${plural(stats.nodes, 'album')} (${stats.draftNodes} draft, ${stats.hiddenNodes} hidden), ${plural(stats.photos, 'photo')} ` +
         `(${stats.hiddenPhotos} hidden), ${(stats.totalBytes / 1024 / 1024).toFixed(1)} MB, dates in ${TIMEZONE}\n`,
     ),
   );

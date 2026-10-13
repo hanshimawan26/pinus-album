@@ -52,7 +52,7 @@ Every text/background pair the site uses, measured with the WCAG relative-lumina
 | Foreground | Background | Ratio | Use | Result |
 |---|---|---|---|---|
 | `#1C1B19` text | `#FAF8F4` bg | 16.23:1 | Body, headings | AAA |
-| `#1C1B19` text | `#F1EDE5` sunken | 14.74:1 | Empty-state headings, inline code in stories | AAA |
+| `#1C1B19` text | `#F1EDE5` sunken | 14.74:1 | Empty-state headings, inline code in stories, "Hidden" badge (preview only) | AAA |
 | `#5F5A52` muted | `#FAF8F4` bg | 6.45:1 | Meta lines, footer | AA (AAA for large) |
 | `#5F5A52` muted | `#F1EDE5` sunken | 5.86:1 | Empty-state text, placeholder icons | AA |
 | `#334E97` link | `#FAF8F4` bg | 7.39:1 | Links, breadcrumbs, sibling nav | AAA |
@@ -148,13 +148,13 @@ Headings use `text-wrap: balance` and paragraphs use `pretty`.
 | Site footer | `SiteFooter.astro` | Takedown line with a mailto link (TRD §10), then the organisation name and descriptor. Stacked on phones; a single row from 900 px. The takedown line has no width cap and uses `text-wrap: balance`, so it reads as one sentence on desktop and never leaves a short tail |
 | Skip link | `BaseLayout.astro` | "Skip to content": hidden above the viewport until focused, then shown in blue |
 | Breadcrumbs | `Breadcrumbs.astro` | `nav[aria-label=Breadcrumb] > ol`. Blue links separated by muted chevrons. The current page is muted text with `aria-current="page"` |
-| Node meta | `NodeMeta.astro`, `.meta` in `global.css` | The "date · N photos · N sections" line shared by album page headers, cards and the home intro; `<time datetime>` only for single days. Each item carries its own muted "·" (1.25em wide, centred); the strip left of the line is clipped, so a line that wraps on a narrow card never starts with a dot. The dot is decorative (empty alternative text), so screen readers skip it |
+| Node meta | `NodeMeta.astro`, `.meta` in `global.css` | The "date · N photos · N sections" line shared by album page headers, cards and the home intro; the album page also shows the `venue` after the date ("18–20 Sep 2026 · UTown Green · 35 photos"), cards never do. `<time datetime>` only for single days. Each item carries its own muted "·" (1.25em wide, centred); the strip left of the line is clipped, so a line that wraps on a narrow card never starts with a dot. Each item is a flex row (dot, then text), so an item that wraps on its own (a long venue) continues after its dot, not inside the clipped strip. The dot is decorative (empty alternative text), so screen readers skip it |
 | Album card | `AlbumCard.astro`, `AlbumCardList.astro` | 4:3 cover (radius 10), title, then meta "date · N photos · N sections". The title link is stretched over the whole card (its overlay sits at `z-index: 1` inside an isolated card, above the clipped meta line), and the cover has `alt=""` because the title already names the link. Event cards use 1/2/3 columns; section cards use 2/3/4 |
 | Photo grid | `PhotoGrid.astro` | Square tiles in 3/4/5 columns with 3 px gaps, edge to edge on phones. Each tile is a `<button>` named by the photo's alt text, with `data-index` and `aria-haspopup="dialog"`. The viewer data is embedded as JSON (`#viewer-data`), and the grid renders the post viewer |
 | Post viewer | `PostViewer.astro`, `src/scripts/viewer/` | See "Post viewer" below |
 | Sibling nav | `SiblingNav.astro` | "‹ Day 1 · Day 3 ›", centred below a hairline. Screen readers hear "Previous section: Day 1". A side without a sibling is left out |
 | Empty state | `EmptyState.astro` | Sunken panel with an outline photo pictogram, a heading and one plain sentence. Used for "No albums yet", "No photos here yet" and the 404 page. When it carries the page's h1 (404), the heading uses the shared `.page-title` style so it matches every other page title |
-| Draft badge | `DraftBadge.astro` | Yellow pill with near-black text. It only appears in `npm run dev`, because drafts are not published |
+| Status badge | `StatusBadge.astro` | Pills after a title. "Draft": yellow with near-black text, only in `npm run dev` (drafts are not published). "Hidden": sunken fill with a hairline border and near-black text, only in `npm run dev:hidden` (SHOW_HIDDEN; hidden albums are never published). A real space before the badge keeps the heading's accessible name readable: "Demo Event A Hidden" |
 | Icons | `ChevronIcon.astro`, `CloseIcon.astro`, `ImageIcon.astro` | Drawn SVG with a 1.5–1.75 px round stroke in `currentColor`. Decorative |
 
 ### Post viewer (milestone 4)
@@ -233,7 +233,8 @@ Instagram post layout (TRD §6.5). It is a native `<dialog>` opened with `showMo
 - **An album with photos and sections** shows the section cards first, then its own photos
   under a visible "Photos" heading.
 - **Draft sections** carry the yellow "Draft" badge in `npm run dev` and do not exist in the
-  published site.
+  published site. **Hidden albums** (`hidden: true`) exist in neither, except in
+  `npm run dev:hidden`, where they carry the grey "Hidden" badge.
 
 ## Polish and handover (milestone 6)
 

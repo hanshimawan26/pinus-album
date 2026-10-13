@@ -7,12 +7,12 @@
  * (path + size + modification time).
  */
 import { relative, resolve, sep } from 'node:path';
-import { ALBUMS_DIR, TIMEZONE } from '../config.ts';
+import { ALBUMS_DIR, SHOW_HIDDEN, TIMEZONE } from '../config.ts';
 import { isValidTimeZone } from '../dates.ts';
 import { readImageInfo } from './exif.ts';
 import { buildModel } from './model.ts';
 import { scanAlbums } from './scan.ts';
-import { buildTree, indexNodes } from './tree.ts';
+import { buildTree, indexNodes, type TreeOptions } from './tree.ts';
 import type { AlbumNode, ContentModel, ImageInfo, Issue, ModelNode, Photographer, SourceNode, SourceTree } from './types.ts';
 import { lookupPhotographer } from './resolve.ts';
 import { validateContent } from './validate.ts';
@@ -25,6 +25,8 @@ export interface LoadOptions {
   root?: string;
   /** Include draft nodes (dev). Default false (production). */
   includeDrafts?: boolean;
+  /** Include nodes with `hidden: true` (preview only). Default false. */
+  includeHidden?: boolean;
   /** IANA zone for EXIF dates and display. Default: TIMEZONE from config. */
   timeZone?: string;
 }
@@ -40,7 +42,7 @@ export interface Albums {
   issues: readonly Issue[];
   errors: readonly Issue[];
   warnings: readonly Issue[];
-  stats: { nodes: number; photos: number; hiddenPhotos: number; draftNodes: number; totalBytes: number };
+  stats: { nodes: number; photos: number; hiddenPhotos: number; draftNodes: number; hiddenNodes: number; totalBytes: number };
   /** Every node and photo, drafts and hidden photos included (for the authoring tools and checks). */
   model: ContentModel;
 }
@@ -104,10 +106,11 @@ function fingerprint(tree: SourceTree): string {
 }
 
 function countModel(model: ContentModel): Albums['stats'] {
-  const stats = { nodes: 0, photos: 0, hiddenPhotos: 0, draftNodes: 0, totalBytes: model.totalBytes };
+  const stats = { nodes: 0, photos: 0, hiddenPhotos: 0, draftNodes: 0, hiddenNodes: 0, totalBytes: model.totalBytes };
   const visit = (node: ModelNode) => {
     if (node.depth > 0) stats.nodes++;
     if (node.meta.draft) stats.draftNodes++;
+    if (node.meta.hidden) stats.hiddenNodes++;
     stats.photos += node.photos.length;
     stats.hiddenPhotos += node.photos.filter((photo) => photo.hidden).length;
     node.children.forEach(visit);
@@ -131,10 +134,10 @@ function collectPhotographers(model: ContentModel, root: AlbumNode): Map<string,
   return photographers;
 }
 
-async function build(includeDrafts: boolean, timeZone: string, tree: SourceTree): Promise<Albums> {
+async function build(tree: SourceTree, timeZone: string, publish: TreeOptions): Promise<Albums> {
   await readAllImageInfo(tree);
   const model = buildModel(tree, timeZone);
-  const root = buildTree(model, { includeDrafts });
+  const root = buildTree(model, publish);
   const issues = validateContent(model);
   return {
     root,
@@ -148,24 +151,32 @@ async function build(includeDrafts: boolean, timeZone: string, tree: SourceTree)
   };
 }
 
+/**
+ * What the website publishes: drafts only in `npm run dev`, hidden albums only when
+ * previewing with SHOW_HIDDEN. Pages and `npm run verify:dist` both use this, so they agree.
+ */
+export function siteLoadOptions(dev: boolean, showHidden: boolean = SHOW_HIDDEN): LoadOptions {
+  return { includeDrafts: dev, includeHidden: showHidden };
+}
+
 const memo = new Map<string, { fingerprint: string; result: Promise<Albums> }>();
 
 /** Load, resolve and validate all albums. Never throws for content problems: see `issues`. */
 export async function loadAlbums(options: LoadOptions = {}): Promise<Albums> {
   const rootAbs = resolve(options.root ?? ALBUMS_DIR);
-  const includeDrafts = options.includeDrafts ?? false;
+  const publish: TreeOptions = { includeDrafts: options.includeDrafts ?? false, includeHidden: options.includeHidden ?? false };
   const timeZone = options.timeZone ?? TIMEZONE;
   if (!isValidTimeZone(timeZone)) {
     throw new Error(`TIMEZONE "${timeZone}" is not a valid time zone name. Use an IANA name such as Asia/Singapore.`);
   }
 
   const tree = await scanAlbums(rootAbs, displayPathOf(rootAbs));
-  const key = JSON.stringify([rootAbs, includeDrafts, timeZone]);
+  const key = JSON.stringify([rootAbs, publish.includeDrafts, publish.includeHidden, timeZone]);
   const print = fingerprint(tree);
   const cached = memo.get(key);
   if (cached && cached.fingerprint === print) return cached.result;
 
-  const result = build(includeDrafts, timeZone, tree);
+  const result = build(tree, timeZone, publish);
   memo.set(key, { fingerprint: print, result });
   result.catch(() => memo.delete(key));
   return result;

@@ -2,6 +2,8 @@
  * Content model → published album tree. PURE.
  *
  * - Drafts: a draft node and its whole subtree are left out unless `includeDrafts` (dev).
+ * - Hidden nodes (`hidden: true` in index.md): left out with their subtree unless
+ *   `includeHidden` (SHOW_HIDDEN), in dev as well as in production.
  * - Hidden photos are left out everywhere (grids, counts, covers, derived dates).
  * - Ordering (TRD §4.3):
  *   - events (top level): newest date first;
@@ -19,6 +21,13 @@ import type { AlbumNode, ContentModel, ModelNode, Photo, PhotoSort } from './typ
 export interface TreeOptions {
   /** Include draft nodes (true in `astro dev`, false in production builds). */
   includeDrafts: boolean;
+  /** Include hidden nodes (only to preview them, with SHOW_HIDDEN). */
+  includeHidden: boolean;
+}
+
+/** Whether a node (and so its subtree) is part of the tree built with these options. */
+export function isPublished(meta: { draft: boolean; hidden: boolean }, options: TreeOptions): boolean {
+  return (options.includeDrafts || !meta.draft) && (options.includeHidden || !meta.hidden);
 }
 
 const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
@@ -74,7 +83,7 @@ function assemble(model: ModelNode, parentPath: readonly string[], options: Tree
   const slugPath = model.depth === 0 ? [] : [...parentPath, model.slug];
   const photos = model.photos.filter((photo) => !photo.hidden).sort(comparePhotos(model.meta.sort));
   const children = model.children
-    .filter((child) => options.includeDrafts || !child.meta.draft)
+    .filter((child) => isPublished(child.meta, options))
     .map((child) => assemble(child, slugPath, options))
     .sort(model.depth === 0 ? compareEvents : compareSections);
 
@@ -86,6 +95,7 @@ function assemble(model: ModelNode, parentPath: readonly string[], options: Tree
     depth: model.depth,
     title: model.title,
     draft: model.meta.draft,
+    hidden: model.meta.hidden,
     sort: model.meta.sort,
     photos,
     children,
@@ -93,6 +103,7 @@ function assemble(model: ModelNode, parentPath: readonly string[], options: Tree
     sectionCount: children.length,
   };
   if (model.story !== undefined) node.story = model.story;
+  if (model.meta.venue !== undefined) node.venue = model.meta.venue;
   if (model.meta.order !== undefined) node.order = model.meta.order;
   if (model.prefix !== undefined) node.prefix = model.prefix;
 
@@ -132,7 +143,8 @@ function derivedDate(node: AlbumNode): AlbumDate | undefined {
 function chooseCover(model: ModelNode, node: AlbumNode): Photo | undefined {
   if (model.coverFile) {
     const chosen = photosInSubtree(node).find((photo) => photo.file === model.coverFile);
-    // A missing cover is a validation error; a hidden one, or one inside an unpublished draft,
+    // A missing cover is a validation error; a hidden one, or one inside an unpublished (draft
+    // or hidden) section,
     // is a warning. Either way, fall back to the default cover.
     if (chosen) return chosen;
   }

@@ -16,10 +16,12 @@ describe('index.md frontmatter', () => {
 title: "Pergelaran 2026"
 date: 2026-09-20
 endDate: 2026-09-23
+venue: "UTown Green"
 cover: day-1/@andi-pratama/IMG_0012.jpg
 photographer: andi-pratama
 order: 1
 draft: false
+hidden: true
 sort: filename
 ---
 
@@ -34,10 +36,12 @@ Second paragraph.
           title: 'Pergelaran 2026',
           date: { year: 2026, month: 9, day: 20, hour: 0, minute: 0, second: 0, hasTime: false },
           endDate: { year: 2026, month: 9, day: 23, hour: 0, minute: 0, second: 0, hasTime: false },
+          venue: 'UTown Green',
           cover: 'day-1/@andi-pratama/IMG_0012.jpg',
           photographer: 'andi-pratama',
           order: 1,
           draft: false,
+          hidden: true,
           sort: 'filename',
         },
         story: 'A **short** story.\n\nSecond paragraph.',
@@ -46,8 +50,8 @@ Second paragraph.
   });
 
   it('applies defaults and accepts an index.md without frontmatter', () => {
-    expect(parseIndexMd('Just a story.')).toEqual({ ok: true, value: { meta: { draft: false, sort: 'date' }, story: 'Just a story.' } });
-    expect(parseIndexMd('---\n---\n')).toEqual({ ok: true, value: { meta: { draft: false, sort: 'date' } } });
+    expect(parseIndexMd('Just a story.')).toEqual({ ok: true, value: { meta: { draft: false, hidden: false, sort: 'date' }, story: 'Just a story.' } });
+    expect(parseIndexMd('---\n---\n')).toEqual({ ok: true, value: { meta: { draft: false, hidden: false, sort: 'date' } } });
   });
 
   it('copes with a byte-order mark and Windows line endings', () => {
@@ -76,7 +80,7 @@ Second paragraph.
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('Unknown field "titel"');
     expect(problems[0]).toContain('Did you mean "title"?');
-    expect(problems[0]).toContain('Allowed fields: title, date, endDate, cover, photographer, order, draft, sort');
+    expect(problems[0]).toContain('Allowed fields: title, date, endDate, venue, cover, photographer, order, draft, hidden, sort');
   });
 
   it('suggests the right field for a wrongly-cased name', () => {
@@ -85,6 +89,8 @@ Second paragraph.
 
   it.each([
     ['draft: yes', '"draft" must be true or false'],
+    ['hidden: "true"', '"hidden" must be true or false'],
+    ['venue: [a, b]', '"venue" must be text'],
     ['sort: newest', '"sort" must be either date or filename'],
     ['order: first', '"order" must be a number'],
     ['date: 20-09-2026', '"date" "20-09-2026" is not a date'],

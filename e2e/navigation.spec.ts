@@ -6,7 +6,8 @@ test('home lists every event with cover, title, date and photo count, newest fir
   await page.goto(PAGES.home);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Photo albums');
   const cards = page.locator('article.card');
-  const titles = await cards.getByRole('heading').allTextContents();
+  // Card titles without their status badge (the demo albums are hidden, built with SHOW_HIDDEN).
+  const titles = await cards.locator('.title .link').allTextContents();
   // Demo Event A (Sep 2026) is newer than Demo Event B (Aug 2026). Real events may sit around them.
   expect(titles.indexOf('Demo Event A')).toBeGreaterThanOrEqual(0);
   expect(titles.indexOf('Demo Event A')).toBeLessThan(titles.indexOf('Demo Event B'));
@@ -50,6 +51,38 @@ test('an event with sections shows section cards, and drafts are not published',
   await expect(page.getByText(/draft/i)).toHaveCount(0);
 });
 
+const DEMO_VENUE = 'Demo Venue, Auditorium Hall 2, University Town Campus';
+
+test('the venue shows on the album page only, and wraps without being cut off', async ({ page }) => {
+  await page.goto(PAGES.eventWithSections);
+  const meta = page.locator('.album-header .meta');
+  const venue = meta.getByText(DEMO_VENUE, { exact: true });
+  await expect(venue).toBeVisible();
+  // Every line of the venue starts inside the visible part of the meta line (after its dot),
+  // also when the venue wraps on a phone.
+  const { lineLefts, visibleLeft } = await venue.evaluate((element) => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const meta = element.closest('.meta')!;
+    const separator = parseFloat(getComputedStyle(meta).getPropertyValue('--meta-separator')) * parseFloat(getComputedStyle(meta).fontSize);
+    return {
+      lineLefts: [...range.getClientRects()].map((rect) => rect.left),
+      visibleLeft: meta.getBoundingClientRect().left + separator,
+    };
+  });
+  for (const left of lineLefts) expect(left).toBeGreaterThanOrEqual(visibleLeft - 0.5);
+
+  await page.goto(PAGES.home);
+  await expect(page.getByText(DEMO_VENUE)).toHaveCount(0);
+});
+
+test('hidden albums carry a readable "Hidden" badge when previewed (SHOW_HIDDEN)', async ({ page }) => {
+  await page.goto(PAGES.eventWithSections);
+  await expect(page.getByRole('heading', { level: 1, name: 'Demo Event A Hidden', exact: true })).toBeVisible();
+  await page.goto(PAGES.home);
+  await expect(page.getByRole('heading', { name: 'Demo Event A Hidden', exact: true })).toBeVisible();
+});
+
 test('breadcrumbs work at every level', async ({ page }) => {
   await page.goto(PAGES.thirdLevel);
   const crumbs = page.getByRole('navigation', { name: 'Breadcrumb' });
@@ -63,7 +96,7 @@ test('breadcrumbs work at every level', async ({ page }) => {
 
   await page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Demo Event A' }).click();
   await expect(page).toHaveURL(/\/pinus-album\/albums\/demo-event-a\/$/);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Demo Event A');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^Demo Event A(?: Hidden)?$/);
 
   await page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Home' }).click();
   await expect(page).toHaveURL(/\/pinus-album\/$/);

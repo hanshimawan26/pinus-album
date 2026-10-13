@@ -1,9 +1,10 @@
 ---
 /**
  * Meta line of an album node: "18–20 Sep 2026 · 35 photos · 3 sections" (TRD §6.2, §6.3).
- * Shared by the album page header and the event and section cards. `<time datetime>` is
- * used only for single days, since a range has no single machine-readable value. Renders
- * nothing when the node has neither a date nor photos.
+ * Shared by the album page header and the event and section cards. The album page also
+ * shows the venue after the date ("18–20 Sep 2026 · UTown Green · 35 photos").
+ * `<time datetime>` is used only for single days, since a range has no single
+ * machine-readable value. Renders nothing when the node has no date, venue or photos.
  */
 import type { AlbumNode } from '../lib/content/types.ts';
 import { nodeCounts, nodeDateLabel, nodeIsoDay } from '../lib/presentation.ts';
@@ -18,12 +19,14 @@ const { node, size } = Astro.props;
 const date = nodeDateLabel(node);
 const isoDay = nodeIsoDay(node);
 const counts = nodeCounts(node);
+const venue = size === 'page' ? node.venue : undefined;
 ---
 
 {
-  (date || counts.length > 0) && (
+  (date || venue || counts.length > 0) && (
     <p class:list={['meta', `meta--${size}`]}>
       {date && (isoDay ? <time datetime={isoDay}>{date}</time> : <span>{date}</span>)}
+      {venue && <span>{venue}</span>}
       {counts.map((count) => (
         <span>{count}</span>
       ))}

@@ -48,7 +48,8 @@ export default defineConfig({
     url: BASE_URL,
     reuseExistingServer: false,
     timeout: 300_000,
-    env: { BASE_PATH, ALLOW_INDEXING: 'false' },
+    // The demo albums are hidden (`hidden: true`); SHOW_HIDDEN builds them for the tests.
+    env: { BASE_PATH, ALLOW_INDEXING: 'false', SHOW_HIDDEN: 'true' },
     stdout: 'ignore',
     stderr: 'pipe',
   },

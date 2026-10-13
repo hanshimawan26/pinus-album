@@ -8,7 +8,7 @@ import type { AlbumNode } from '../lib/content/types.ts';
 import type { CardSize, LoadingHint } from '../lib/image-sizes.ts';
 import { coverImageFor } from '../lib/images.ts';
 import { albumUrl } from '../lib/url.ts';
-import DraftBadge from './DraftBadge.astro';
+import StatusBadge from './StatusBadge.astro';
 import ImageIcon from './ImageIcon.astro';
 import NodeMeta from './NodeMeta.astro';
 
@@ -47,7 +47,7 @@ const Heading = headingLevel === 2 ? 'h2' : 'h3';
   <div class="text">
     <Heading class="title">
       <a class="link" href={albumUrl(node.slugPath)}>{node.title}</a>
-      {node.draft && <DraftBadge />}
+      <StatusBadge node={node} />
     </Heading>
     <NodeMeta node={node} size={size} />
   </div>

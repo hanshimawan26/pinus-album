@@ -197,6 +197,49 @@ describe('drafts', () => {
   });
 });
 
+describe('hidden nodes', () => {
+  const tree = sourceTree([
+    event('shown', '2026-09-20', {
+      children: [{ folder: 'hidden-section', index: index('hidden: true'), images: ['x.jpg'], children: [{ folder: 'inner', images: ['y.jpg'] }] }],
+    }),
+    event('kept-for-reference', '2026-10-01', { index: index('date: 2026-10-01\nhidden: true') }),
+  ]);
+
+  it('excludes hidden nodes and their whole subtree, in production and in dev', () => {
+    for (const includeDrafts of [false, true]) {
+      const { root } = build(tree, includeDrafts);
+      expect(slugs(root.children)).toEqual(['shown']);
+      expect(root.children[0]?.children).toEqual([]);
+      expect(root.photoCount).toBe(1); // only the shown event's own photo
+      expect([...indexNodes(root).keys()]).toEqual(['', 'shown']);
+    }
+  });
+
+  it('includes them when previewing hidden albums (SHOW_HIDDEN)', () => {
+    const { root } = build(tree, false, true);
+    expect(slugs(root.children)).toEqual(['kept-for-reference', 'shown']);
+    expect(root.children[0]?.hidden).toBe(true);
+    expect([...indexNodes(root).keys()]).toContain('shown/hidden-section/inner');
+  });
+
+  it('a hidden draft needs both options to be shown', () => {
+    const both = sourceTree([event('both', '2026-09-20', { index: index('date: 2026-09-20\ndraft: true\nhidden: true') })]);
+    expect(build(both, true).root.children).toEqual([]);
+    expect(build(both, false, true).root.children).toEqual([]);
+    expect(slugs(build(both, true, true).root.children)).toEqual(['both']);
+  });
+});
+
+describe('venue', () => {
+  it('is copied from index.md, and absent when not set', () => {
+    const { root } = build(
+      sourceTree([event('a', '2026-09-20', { index: index('date: 2026-09-20\nvenue: "  UTown Green "') }), event('b', '2026-09-21')]),
+    );
+    expect(root.children.map((node) => node.venue)).toEqual([undefined, 'UTown Green']);
+    expect('venue' in root.children[0]!).toBe(false);
+  });
+});
+
 describe('covers', () => {
   it('uses index.md cover, which may point into a descendant', () => {
     const { root } = build(

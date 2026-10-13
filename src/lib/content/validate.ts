@@ -363,9 +363,10 @@ function pathToPhoto(node: ModelNode, file: string): ModelNode[] | undefined {
 }
 
 /**
- * A cover that exists but is not shown: hidden, or inside a draft section. Warnings, not
- * errors: hiding a photo is how a takedown request is handled (TRD §10), and a takedown must
- * never be blocked by a failing build. The album falls back to its first photo (tree.ts).
+ * A cover that exists but is not shown: hidden, or inside a draft or hidden section.
+ * Warnings, not errors: hiding a photo is how a takedown request is handled (TRD §10), and a
+ * takedown must never be blocked by a failing build. The album falls back to its first
+ * photo (tree.ts).
  */
 function checkCoverShown(node: ModelNode, photo: Photo, cover: string, indexFile: string, list: IssueList): void {
   if (photo.hidden) {
@@ -377,8 +378,19 @@ function checkCoverShown(node: ModelNode, photo: Photo, cover: string, indexFile
     );
     return;
   }
-  if (node.meta.draft) return; // the whole album is unpublished anyway
-  const draft = pathToPhoto(node, photo.file)?.slice(1).find((section) => section.meta.draft);
+  if (node.meta.draft || node.meta.hidden) return; // the whole album is unpublished anyway
+  const sections = pathToPhoto(node, photo.file)?.slice(1) ?? [];
+  const hidden = sections.find((section) => section.meta.hidden);
+  if (hidden) {
+    list.warning(
+      'cover-not-shown',
+      indexFile,
+      `cover: "${cover}" is in "${hidden.title}", which is hidden (hidden: true in its index.md). The website shows ` +
+        'the first published photo as the cover instead. Choose a cover outside the hidden section to avoid this.',
+    );
+    return;
+  }
+  const draft = sections.find((section) => section.meta.draft);
   if (draft) {
     list.warning(
       'cover-not-shown',

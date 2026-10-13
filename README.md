@@ -24,7 +24,8 @@ you save your changes on GitHub.
 5. [Everyday tasks](#everyday-tasks): [caption](#add-or-change-a-caption) ·
    [credit a photographer](#credit-a-photographer) · [hide a photo](#hide-a-photo) ·
    [fix a wrong date](#fix-a-wrong-date) · [cover photo](#choose-the-cover-photo) ·
-   [order of sections](#change-the-order-of-sections) · [drafts](#prepare-an-event-before-publishing-it-drafts)
+   [order of sections](#change-the-order-of-sections) · [drafts](#prepare-an-event-before-publishing-it-drafts) ·
+   [hide an album](#hide-an-album-without-deleting-it)
 6. [Take a photo down](#take-a-photo-down)
 7. [When `photos:check` complains](#when-photoscheck-complains)
 8. [Delete the demo content](#delete-the-demo-content)
@@ -75,8 +76,10 @@ The rules in one breath:
   then its own photos.
 
 The two `demo-*` folders that come with the project are made-up examples with generated
-pictures. Look at them to see every option in action, then
-[delete them](#delete-the-demo-content) once real albums exist.
+pictures. They are [hidden](#hide-an-album-without-deleting-it) (`hidden: true`), so they
+are not on the website, but they stay in the project as a reference for every option. To
+see them, run `npm run dev:hidden`. You can also
+[delete them](#delete-the-demo-content).
 
 ---
 
@@ -166,6 +169,7 @@ Create `src/albums/pergelaran-2026/index.md`. Copy this template and change the 
 title: "Pergelaran 2026"
 date: 2026-09-20
 endDate: 2026-09-23
+venue: "UTown Green"
 ---
 
 A few short paragraphs telling the story of the event. You can use **bold**, *italics* and
@@ -178,13 +182,15 @@ story shown on the page.
 | Setting | What it does | Needed? |
 |---|---|---|
 | `title` | The name shown on the website. Keep the quotes | Recommended (otherwise the folder name is used) |
-| `date` | The day of the event, written `YYYY-MM-DD` | Recommended |
+| `date` | The day of the event, written `YYYY-MM-DD`. The home page lists events by this date, newest first | Recommended (otherwise the date of the earliest photo is used) |
 | `endDate` | The last day, for events of several days | Optional |
+| `venue` | Where it took place, e.g. `"UTown Green"`. Shown next to the date on the album page | Optional |
 | `cover` | The photo shown on the album's card, e.g. `day-1/@andi-pratama/IMG_0012.jpg` (path from this folder) | Optional: the first photo is used |
 | `photographer` | Credit for photos in this album that are not in an `@` folder, e.g. `andi-pratama` | Optional |
 | `order` | A number that sets the position among sections (`1`, `2`, …) | Optional |
 | `sort` | `filename` shows photos in file-name order instead of the time they were taken | Optional |
-| `draft` | `true` hides the album from the website until you change it to `false` | Optional |
+| `draft` | `true` keeps the album off the website, but shows it in your local preview | Optional |
+| `hidden` | `true` hides the album everywhere, also in your local preview, without deleting it | Optional |
 
 Write `true` and `false` (not `yes`/`no`), and dates as `2026-09-20`.
 
@@ -424,6 +430,31 @@ Add `draft: true` to the event's (or a section's) `index.md`. It then shows only
 local preview (`npm run dev`, with a yellow "Draft" badge), not on the website. Change it to
 `draft: false` or remove the line to publish.
 
+### Hide an album without deleting it
+
+Add `hidden: true` to the event's (or a section's) `index.md`:
+
+```markdown
+---
+title: "Pergelaran 2026"
+date: 2026-09-20
+hidden: true
+---
+```
+
+The album and everything inside it then disappear from the website and from the local
+preview, but the files stay in the project. Change it to `hidden: false` or remove the line
+to show it again. `npm run photos:check` still checks hidden albums, so they are ready to
+show at any time.
+
+To look at hidden albums on your computer, start the preview with `npm run dev:hidden`
+instead of `npm run dev` (they get a grey "Hidden" badge).
+
+Draft or hidden? Use `draft` for an album you are still preparing and want to preview, and
+`hidden` for one you want to keep out of sight, such as the demo albums. To take down a
+single photo, see [Hide a photo](#hide-a-photo). Hiding is not a full takedown: see
+[Take a photo down](#take-a-photo-down).
+
 ---
 
 ## Take a photo down
@@ -512,7 +543,7 @@ Each message says what is wrong and how to fix it, and ends with a short code in
 | `large-image` | Warning | A photo is over 2 MB. Run the `photos:prep` command the message shows (on a computer) |
 | `location-in-photo` | Warning | The photo file contains its GPS location (the website never shows it, but the file in the repository does). Run the `photos:prep` command the message shows. If the photo is already committed, the location also stays in the repository's history; only the purge in [Take a photo down](#take-a-photo-down) removes it from there. Remove the location before uploading ([step 5](#5-make-the-photos-web-ready)) |
 | `no-cover` | Warning | An album has no photos yet, so its card is empty |
-| `cover-not-shown` | Warning | `cover:` points to a hidden photo or one in a draft, so another photo is used |
+| `cover-not-shown` | Warning | `cover:` points to a hidden photo, or one in a draft or hidden section, so another photo is used |
 | `content-too-large` | Warning | All photos together are over 700 MB. See [Size limits](#size-limits) |
 | `ignored-file` | Warning | A video or other file the website does not show. Remove it to save space |
 
@@ -520,8 +551,8 @@ Each message says what is wrong and how to fix it, and ends with a short code in
 
 ## Delete the demo content
 
-The project ships with made-up example albums so it works out of the box. Once your first
-real event is in, delete:
+The project ships with made-up example albums. They are already hidden from the website
+(`hidden: true`), so you can keep them as a reference. If you no longer need them, delete:
 
 1. the folders `src/albums/demo-event-a` and `src/albums/demo-event-b`;
 2. the demo entries (`alice-demo`, `budi-demo`, `dewi-demo`) in
@@ -661,13 +692,14 @@ no UI framework. Start with these documents:
 | Command | What it does |
 |---|---|
 | `npm run dev` | Development server with drafts, on <http://localhost:4321/pinus-album/> |
-| `npm run build` | Production build into `dist/` (drafts and hidden photos left out) |
+| `npm run dev:hidden` | The same, with hidden albums too (`SHOW_HIDDEN=true`; works in PowerShell and Git Bash) |
+| `npm run build` | Production build into `dist/` (drafts, hidden albums and hidden photos left out) |
 | `npm run preview` | Serves `dist/` locally |
 | `npm run photos:check` | Validates `src/albums/`; exit code 1 on errors |
 | `npm run photos:prep -- <folder> [--dry-run] [--force]` | Makes JPEGs web-ready in place (≤ 2400 px, quality 85, upright, GPS removed). Idempotent |
 | `npm run photos:init -- <album-folder> [--dry-run]` | Appends empty `caption` entries to `photos.yaml` for photos without one |
 | `npm run demo:images` | Regenerates the demo images (deterministic) |
-| `npm run verify:dist` | Checks `dist/` after a build: no EXIF/GPS, no copies of originals, no broken links, image sizes and orientation, no drafts or hidden photos, robots meta, takedown line, JS only on photo pages and within 60 KB gzipped. Use the same `BASE_PATH`, `ALLOW_INDEXING` and `CONTACT_EMAIL` as the build |
+| `npm run verify:dist` | Checks `dist/` after a build: no EXIF/GPS, no copies of originals, no broken links, image sizes and orientation, no drafts, hidden albums or hidden photos, robots meta, takedown line, JS only on photo pages and within 60 KB gzipped. Use the same `BASE_PATH`, `ALLOW_INDEXING`, `CONTACT_EMAIL` and `SHOW_HIDDEN` as the build |
 | `npm test` | Unit tests (Vitest, `tests/`) |
 | `npm run test:e2e` | Browser tests (Playwright, `e2e/`) against a fresh production build |
 | `npm run typecheck` | `astro check` |

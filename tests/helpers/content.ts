@@ -103,9 +103,9 @@ export function sourceTree(
 export const index = (yaml: string, story = '') => `---\n${yaml}\n---\n${story}`;
 
 /** Run the pure pipeline. */
-export function build(tree: SourceTree, includeDrafts = false) {
+export function build(tree: SourceTree, includeDrafts = false, includeHidden = false) {
   const model = buildModel(tree, TZ);
-  return { model, root: buildTree(model, { includeDrafts }), issues: validateContent(model) };
+  return { model, root: buildTree(model, { includeDrafts, includeHidden }), issues: validateContent(model) };
 }
 
 export const codes = (issues: readonly Issue[]) => issues.map((issue) => issue.code);

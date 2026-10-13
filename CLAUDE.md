@@ -8,7 +8,8 @@ step when a command, a content rule or a `photos:check` code changes.
 
 ## Commands
 
-- `npm run dev` / `npm run build` / `npm run preview` — Astro
+- `npm run dev` / `npm run build` / `npm run preview` — Astro; `npm run dev:hidden` = dev with
+  `SHOW_HIDDEN=true` (albums with `hidden: true`, e.g. the demos, shown with a badge)
 - `npm test` — Vitest unit tests (`tests/**/*.test.ts`)
 - `npm run test:e2e` — Playwright browser tests (`e2e/*.spec.ts`): builds for `/pinus-album/`,
   serves with `astro preview` on port 4460 (`E2E_PORT`), drives the installed Chrome (bundled
@@ -28,10 +29,10 @@ step when a command, a content rule or a `photos:check` code changes.
   also restores a demo image that was changed by hand)
 - `npm run verify:dist` — after a build: no EXIF/GPS in published images, no copies of source
   photos, no broken internal links, every image file the size (and orientation) its page
-  claims, album pages exactly the published albums (no drafts, no hidden photos), no unused
+  claims, album pages exactly the published albums (no drafts, hidden albums or photos), no unused
   images in `_astro/`, and on every page the robots meta for `ALLOW_INDEXING`, the footer's
   takedown line with `CONTACT_EMAIL`, and JavaScript only on photo pages within 60 KB gzipped.
-  Run it with the same `BASE_PATH`, `ALLOW_INDEXING` and `CONTACT_EMAIL` as the build.
+  Run it with the same `BASE_PATH`, `ALLOW_INDEXING`, `CONTACT_EMAIL` and `SHOW_HIDDEN` as the build.
 - Build under a sub-path: `BASE_PATH=/pinus-album/ npm run build`. In Git Bash, prefix
   `MSYS_NO_PATHCONV=1` when passing `BASE_PATH=/`, or MSYS rewrites it into a Windows path.
 
@@ -41,7 +42,8 @@ step when a command, a content rule or a `photos:check` code changes.
 src/
   albums/            content only (event folders, index.md, photos.yaml, @photographer folders)
   lib/               plain TypeScript, unit-tested; framework-free except images.ts (Astro-only)
-    config.ts        env-driven settings (BASE_PATH, TIMEZONE, ALLOW_INDEXING, CONTACT_EMAIL)
+    config.ts        env-driven settings (BASE_PATH, TIMEZONE, ALLOW_INDEXING, CONTACT_EMAIL,
+                     SHOW_HIDDEN)
     url.ts           withBase()/albumUrl() — every internal link goes through these
     slug.ts          slugify, numeric-prefix stripping, title-from-slug, photo/photographer slugs
     dates.ts         EXIF date parsing in TIMEZONE, display formatting, ranges
@@ -53,9 +55,11 @@ src/
       exif.ts        EXIF date / orientation / upright dimensions (build time only)
       resolve.ts     PURE: per-photo metadata precedence (TRD §4.6), photos.yaml key matching
       model.ts       PURE: SourceTree → ContentModel (every node and photo, drafts/hidden included)
-      tree.ts        PURE: ContentModel → published AlbumNode tree: ordering, counts, covers, drafts
+      tree.ts        PURE: ContentModel → published AlbumNode tree: ordering, counts, covers,
+                     drafts, hidden nodes
       validate.ts    PURE: ContentModel → TRD §4.8 errors and warnings (Issue[])
-      index.ts       loadAlbums() / loadAlbumsOrThrow(): scan → exif → model → tree + validate
+      index.ts       loadAlbums() / loadAlbumsOrThrow(): scan → exif → model → tree + validate;
+                     siteLoadOptions(dev) = what the site publishes (pages and verify:dist)
     image-sizes.ts   PURE: derivative widths, crops, `sizes` strings, eager/lazy policy (TRD §7)
     presentation.ts  PURE: counts, date labels, meta descriptions, JSON-for-<script> escaping
     viewer-data.ts   PURE: per-photo data embedded for the post viewer (TRD §6.5)
@@ -115,7 +119,8 @@ e2e/                 Playwright specs (viewer, navigation, site-wide rules) + fi
 - **Design:** visual decisions and colour roles live in `DESIGN.md`; use the tokens in
   `src/styles/global.css`, never raw colours in components. Page titles use `.page-title`.
 - **Content errors fail the build** via `loadAlbumsOrThrow()`; pages pass
-  `includeDrafts: import.meta.env.DEV`. Validation messages are written for non-developers:
+  `siteLoadOptions(import.meta.env.DEV)` (drafts in dev, hidden albums only with SHOW_HIDDEN),
+  never their own options. Validation messages are written for non-developers:
   say what is wrong and how to fix it.
 - **Tests:** pure modules get in-memory trees (`tests/helpers/content.ts`); `scan`/`exif` get a
   fixture tree generated with sharp in a temp folder at test time (no binaries committed).

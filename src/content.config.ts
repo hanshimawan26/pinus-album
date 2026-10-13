@@ -18,9 +18,9 @@ function albumStories(): Loader {
     name: 'album-stories',
     async load({ store, renderMarkdown, generateDigest, watcher, logger }) {
       const sync = async () => {
-        // Drafts included: production pages simply never ask for a draft's story.
+        // Drafts and hidden albums included: pages simply never ask for a story they do not show.
         // Content errors are reported (and fail the build) by the pages, with full messages.
-        const albums = await loadAlbums({ includeDrafts: true });
+        const albums = await loadAlbums({ includeDrafts: true, includeHidden: true });
         store.clear();
         for (const node of albums.nodes.values()) {
           if (node.depth === 0 || !node.story) continue;
