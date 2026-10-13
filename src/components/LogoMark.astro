@@ -1,10 +1,11 @@
 ---
 /**
- * The association's logo, `public/logo.svg`. The browser-tab icon is a separate file,
- * `public/favicon.svg` (the logo on a white disc; see BaseLayout). In the dark theme the
- * header shows favicon.svg too, because the logo's navy ring disappears on the dark page.
- * To change the logo, replace both; keep them square-ish, the header shows them at `size` px.
- * Decorative: the site title next to it names the link, so `alt` is empty.
+ * The association's logo, `public/logo.svg`, shown at `size` px. On the dark theme it sits on
+ * a white rounded rectangle (`--color-logo-plate`, `--logo-plate-inset`), because its navy
+ * ring disappears on the dark page; on the light theme the plate is invisible. The
+ * browser-tab icon is a separate file, `public/favicon.svg` (the logo on a white disc).
+ * To change the logo, replace both; keep them square-ish. Decorative: the site title next to
+ * it names the link, so `alt` is empty.
  */
 import { withBase } from '../lib/url.ts';
 
@@ -14,19 +15,17 @@ interface Props {
 const { size = 32 } = Astro.props;
 ---
 
-<picture>
-  <source srcset={withBase('favicon.svg')} media="(prefers-color-scheme: dark)" />
-  <img class="mark" src={withBase('logo.svg')} width={size} height={size} alt="" decoding="async" />
-</picture>
+<img class="mark" src={withBase('logo.svg')} width={size} height={size} alt="" decoding="async" />
 
 <style>
-  picture {
-    display: contents;
-  }
-
+  /* The plate is the image's own padding and background, so the logo needs no wrapper. */
   .mark {
     flex: none;
     display: block;
+    box-sizing: border-box;
+    padding: var(--logo-plate-inset);
+    border-radius: var(--radius-sm);
+    background: var(--color-logo-plate);
     object-fit: contain;
   }
 </style>

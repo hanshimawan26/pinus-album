@@ -80,6 +80,7 @@ the photo-first look true.
 | `--color-focus` | `#334E97` | Focus ring on the page |
 | `--color-selection` | `#DCE2F2` | Text selection background (blue tint) |
 | `--color-tile-veil` | `rgb(0 0 0 / 0.14)` | Hover veil over a grid tile. Decorative, never behind text |
+| `--color-logo-plate`, `--logo-plate-inset` | `transparent`, `0px` | The header logo's plate: none on Day (see Night) |
 
 ### On a photo (both themes)
 
@@ -178,6 +179,7 @@ brand:
 | `--color-link-hover` | `#C9D4F2` | | |
 | `--color-on-accent` | `#0B1326` | | Dark text on the light-blue fill |
 | `--color-selection` | `#334A6D` | `secondary-container` | |
+| `--color-logo-plate`, `--logo-plate-inset` | `#FFFFFF`, `3px` | | A white rounded rectangle behind the header logo, whose navy ring disappears on the dark page |
 | scrollbar thumb | `#6B7593` | | 4.04:1 (non-text, needs 3:1) |
 
 The photo and viewer tokens do not change. `color-scheme` is `dark`, so the browser's own
@@ -297,7 +299,7 @@ spotlight; landing chapters take turns; the three dots mark the site-wide blocks
 
 | Component | File | Notes |
 |---|---|---|
-| Logo mark | `LogoMark.astro`, `public/logo.svg` | The association's logo (a ring in navy, red and yellow around three figures) at 34 px with fixed width and height. The browser-tab icon is `public/favicon.svg`: the same logo on a white disc. On Night the header shows favicon.svg too (a `<picture>` source), because the navy ring disappears on the dark page. Decorative (`alt=""`): the site title names the link. Its colours are used as supplied |
+| Logo mark | `LogoMark.astro`, `public/logo.svg` | The association's logo (a ring in navy, red and yellow around three figures) at 34 px with fixed width and height. The browser-tab icon is `public/favicon.svg`: the same logo on a white disc. On Night the logo sits on a white rounded rectangle (`--radius-sm`, 3 px inset; the image's own padding and background, set by the logo-plate tokens), because the navy ring disappears on the dark page. Decorative (`alt=""`): the site title names the link. Its colours are used as supplied |
 | Site header | `SiteHeader.astro` | Mark, "Pinus Community" (Playfair 700, 18 px) and the descriptor (muted, 13 px) form one home link. Below it, a 3 px stripe in the three brand colours, a third each. Not sticky |
 | Site footer | `SiteFooter.astro` | Takedown line with a mailto link (TRD §10), then the organisation name and descriptor. Stacked on phones; one row from 900 px; `text-wrap: balance` |
 | Skip link | `BaseLayout.astro` | "Skip to content": hidden above the viewport until focused, then shown on `--color-accent` |

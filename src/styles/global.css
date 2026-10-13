@@ -31,6 +31,11 @@
   --color-selection: #dce2f2;
   --color-tile-veil: rgb(0 0 0 / 0.14);
 
+  /* The header logo's plate: none on Day; on Night a white rounded rectangle, because the
+     logo's navy ring disappears on the dark page (LogoMark.astro). */
+  --color-logo-plate: transparent;
+  --logo-plate-inset: 0px;
+
   /* On a photo (home page hero and landing tiles): the same in both themes, because this
      text sits on a dark scrim over the photo, never on the page. */
   --color-on-photo: #ffffff;
@@ -125,6 +130,8 @@
     --color-on-accent: #0b1326;
     --color-focus: #a9b9e6;
     --color-selection: #334a6d;
+    --color-logo-plate: #ffffff;
+    --logo-plate-inset: 3px;
 
     color-scheme: dark;
     accent-color: #a9b9e6;

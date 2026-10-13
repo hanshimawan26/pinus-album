@@ -1538,3 +1538,7 @@ each other. Decisions (the user chose the first three):
 - **The hero no longer shows the number of photographers** (asked by the user): its stat pills
   are the photo count and, for an event with sections, the section count. The count was used
   nowhere else, so `Landing.photographerCount` was removed too.
+- **Header logo on Night: a rounded rectangle, not a disc** (asked by the user). The header
+  used to swap to favicon.svg (the logo on a white disc). It now always shows logo.svg, on a
+  plate drawn by CSS from two tokens: invisible on Day, a white rounded rectangle
+  (`--radius-sm`, 3 px inset) on Night. favicon.svg stays the browser-tab icon.
