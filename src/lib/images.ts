@@ -22,6 +22,9 @@ import {
   coverHeight,
   coverSizes,
   coverWidths,
+  HERO_WIDTHS,
+  heroSizes,
+  landingTileSizes,
   PREVIEW_IMAGE,
   previewImageSize,
   thumbnailEdge,
@@ -30,6 +33,7 @@ import {
   VIEWER_SIZES,
   viewerFallbackWidth,
   viewerWidths,
+  widthsFor,
   type CardSize,
 } from './image-sizes.ts';
 import type { ViewerImage } from './viewer-data.ts';
@@ -78,8 +82,9 @@ export async function thumbnailFor(photo: Photo): Promise<ResponsiveImage> {
  * Viewer image: srcset 800/1200/1600/2000 px WebP, never wider than the source (TRD §7).
  * Credited photos carry the photographer's name: a `© Name` watermark in the bottom-right
  * corner and EXIF Artist/Copyright (image-service.ts), so a saved copy keeps the credit.
+ * The home page's spotlight uses the same files with its own `sizes`.
  */
-export async function viewerImageFor(photo: Photo): Promise<ViewerImage> {
+export async function viewerImageFor(photo: Photo, sizes: string = VIEWER_SIZES): Promise<ViewerImage> {
   const widths = viewerWidths(photo.width);
   const width = viewerFallbackWidth(widths);
   const height = Math.round((width * photo.height) / photo.width);
@@ -88,16 +93,40 @@ export async function viewerImageFor(photo: Photo): Promise<ViewerImage> {
   // fit inside that box and come out 1 px narrower than its `w` descriptor.
   const credit = photo.photographer?.name;
   const image = await getImage({ src: sourceOf(photo), width, height, widths, fit: 'cover', format: OUTPUT_FORMAT, credit });
-  return { src: image.src, srcset: image.srcSet.attribute, sizes: VIEWER_SIZES, width, height };
+  return { src: image.src, srcset: image.srcSet.attribute, sizes, width, height };
 }
 
 /** Card cover: a 4:3 crop with a srcset sized for event or section cards. */
 export async function coverImageFor(photo: Photo, size: CardSize): Promise<ResponsiveImage> {
+  return coverCrop(photo, coverSizes(size));
+}
+
+/**
+ * A photo of a landing chapter: the same 4:3 crop as a card cover (so the files are shared
+ * with the album cards), drawn as the chapter's lead photo or as one of the others.
+ */
+export async function landingTileImageFor(photo: Photo, lead: boolean): Promise<ResponsiveImage> {
+  return coverCrop(photo, landingTileSizes(lead));
+}
+
+async function coverCrop(photo: Photo, sizes: string): Promise<ResponsiveImage> {
   const widths = coverWidths(photo.width, photo.height);
   const width = widths.find((candidate) => candidate >= 600) ?? widths[widths.length - 1] ?? 1;
   const height = coverHeight(width);
   const image = await getImage({ src: sourceOf(photo), width, height, widths, fit: 'cover', format: OUTPUT_FORMAT });
-  return { src: image.src, srcset: image.srcSet.attribute, sizes: coverSizes(size), width, height };
+  return { src: image.src, srcset: image.srcSet.attribute, sizes, width, height };
+}
+
+/**
+ * Hero photo of the home page: the whole photo (no crop; CSS covers the frame), up to
+ * 2000 px. No watermark: the hero names the photographer in its text, like a card cover.
+ */
+export async function heroImageFor(photo: Photo): Promise<ResponsiveImage> {
+  const widths = widthsFor(photo.width, HERO_WIDTHS);
+  const width = viewerFallbackWidth(widths);
+  const height = Math.round((width * photo.height) / photo.width);
+  const image = await getImage({ src: sourceOf(photo), width, height, widths, fit: 'cover', format: OUTPUT_FORMAT });
+  return { src: image.src, srcset: image.srcSet.attribute, sizes: heroSizes(photo.width / photo.height), width, height };
 }
 
 /** A single image file and its pixel size. */

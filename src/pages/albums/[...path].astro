@@ -9,6 +9,7 @@ import AlbumCardList from '../../components/AlbumCardList.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import StatusBadge from '../../components/StatusBadge.astro';
 import EmptyState from '../../components/EmptyState.astro';
+import Eyebrow from '../../components/Eyebrow.astro';
 import NodeMeta from '../../components/NodeMeta.astro';
 import PhotoGrid from '../../components/PhotoGrid.astro';
 import SiblingNav from '../../components/SiblingNav.astro';
@@ -53,6 +54,9 @@ const contentNearTop = startsNearTop(node.story ? markdownToPlainText(node.story
 const hasSections = node.children.length > 0;
 const hasPhotos = node.photos.length > 0;
 const previewImage = await previewImageFor(node.cover);
+// Eyebrow: where the album sits. An event says so; a section names the album above it.
+const parent = trail.length > 1 ? trail[trail.length - 2] : undefined;
+const eyebrow = parent ? { parts: [parent.title], dot: 'blue' as const } : { parts: ['Event'], dot: 'red' as const };
 ---
 
 <BaseLayout title={node.title} description={nodeDescription(node)} previewImage={previewImage}>
@@ -60,6 +64,7 @@ const previewImage = await previewImageFor(node.cover);
     <Breadcrumbs trail={trail} />
 
     <header class="album-header">
+      <Eyebrow parts={eyebrow.parts} dot={eyebrow.dot} />
       <h1 class="page-title">
         {node.title}
         <StatusBadge node={node} />

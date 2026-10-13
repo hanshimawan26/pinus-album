@@ -175,3 +175,45 @@ export function loadingHint(index: number, options: { nearTop: boolean; highPrio
   if (!options.nearTop || index >= options.eager) return { loading: 'lazy' };
   return index < options.highPriority ? { loading: 'eager', fetchpriority: 'high' } : { loading: 'eager' };
 }
+
+// ---------------------------------------------------------------------------------------
+// Home page landing blocks (Hero.astro, Chapter.astro, Spotlight.astro; keep in step)
+// ---------------------------------------------------------------------------------------
+
+/** Hero frame shape (width / height): portrait on phones, wider from 600 and 900 px. */
+export const HERO_ASPECT = { phone: 4 / 5, sm: 16 / 10, md: 21 / 9 } as const;
+
+/** Hero widths: the photo fills a frame up to the content width (1120 px) at 2x. */
+export const HERO_WIDTHS = [800, 1200, 1600, 2000] as const;
+
+/**
+ * `sizes` for the hero photo of aspect `aspect` (width / height). The photo covers its frame
+ * (`object-fit: cover`), so a photo wider than the frame is drawn wider than the frame:
+ * by `aspect / frame aspect`. Phones show a portrait frame, so a landscape photo is drawn
+ * about twice the screen width there.
+ */
+export function heroSizes(aspect: number): string {
+  const drawn = (frame: number) => Math.max(1, aspect / frame);
+  const vw = (frame: number) => `${Math.ceil(100 * drawn(frame))}vw`;
+  const full = CONTENT_MAX + 2 * 32; // content plus the widest gutters
+  return [
+    `(min-width: ${full}px) ${Math.ceil(CONTENT_MAX * drawn(HERO_ASPECT.md))}px`,
+    `(min-width: ${BREAKPOINTS.md}px) ${vw(HERO_ASPECT.md)}`,
+    `(min-width: ${BREAKPOINTS.sm}px) ${vw(HERO_ASPECT.sm)}`,
+    vw(HERO_ASPECT.phone),
+  ].join(', ');
+}
+
+/**
+ * `sizes` for the photos of a landing chapter, which are 4:3 cover crops drawn with
+ * `object-fit: cover`. The lead photo spans 7 of 12 columns from 900 px and the full width
+ * below; the others are drawn at most ~48% wide from 900 px, and as squares in two columns on
+ * phones (a 4:3 crop in a square is drawn 4/3 as wide as the square: ~67vw).
+ */
+export function landingTileSizes(lead: boolean): string {
+  if (lead) return `(min-width: ${BREAKPOINTS.lg}px) ${Math.ceil((CONTENT_MAX * 7) / 12)}px, (min-width: ${BREAKPOINTS.md}px) 58vw, 100vw`;
+  return `(min-width: ${BREAKPOINTS.lg}px) ${Math.ceil((CONTENT_MAX * 5) / 12 + 80)}px, (min-width: ${BREAKPOINTS.md}px) 48vw, 67vw`;
+}
+
+/** `sizes` for the spotlight photo: 8 of 12 columns from 900 px, the full width below. */
+export const SPOTLIGHT_SIZES = `(min-width: ${BREAKPOINTS.lg}px) ${Math.ceil((CONTENT_MAX * 8) / 12)}px, (min-width: ${BREAKPOINTS.md}px) 66vw, 100vw`;

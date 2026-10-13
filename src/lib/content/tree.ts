@@ -11,6 +11,8 @@
  *   - photos: by date/time, then path; or by path when the node sets `sort: filename`.
  * - Counts: `photoCount` includes all published descendants; `sectionCount` = direct children.
  * - Cover: index.md `cover` → first photo of the node → cover of the first child that has one.
+ * - Highlights: the index.md `highlights` that are shown, in the listed order. Like a cover, a
+ *   hidden one, or one in an unpublished section, is left out (a validation warning).
  * - Date: index.md `date`, else derived (TRD §4.2 rule 7): the earliest of the node's own
  *   photos.yaml/EXIF photo dates and its published children's dates. A photo date that only
  *   fell back to an ancestor's index.md says nothing about this node, so it is not used.
@@ -101,6 +103,8 @@ function assemble(model: ModelNode, parentPath: readonly string[], options: Tree
     children,
     photoCount: photos.length + children.reduce((sum, child) => sum + child.photoCount, 0),
     sectionCount: children.length,
+    highlights: [],
+    featured: model.meta.featured === true,
   };
   if (model.story !== undefined) node.story = model.story;
   if (model.meta.venue !== undefined) node.venue = model.meta.venue;
@@ -121,6 +125,7 @@ function assemble(model: ModelNode, parentPath: readonly string[], options: Tree
 
   const cover = chooseCover(model, node);
   if (cover) node.cover = cover;
+  node.highlights = chooseHighlights(model, node);
   return node;
 }
 
@@ -149,6 +154,13 @@ function chooseCover(model: ModelNode, node: AlbumNode): Photo | undefined {
     if (chosen) return chosen;
   }
   return node.photos[0] ?? node.children.find((child) => child.cover)?.cover;
+}
+
+function chooseHighlights(model: ModelNode, node: AlbumNode): Photo[] {
+  if (!model.highlightFiles) return [];
+  const shown = new Map(photosInSubtree(node).map((photo) => [photo.file, photo]));
+  const chosen = model.highlightFiles.flatMap((file) => (file === undefined ? [] : (shown.get(file) ?? [])));
+  return [...new Set(chosen)];
 }
 
 // ---------------------------------------------------------------------------------------

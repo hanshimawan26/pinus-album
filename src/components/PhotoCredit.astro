@@ -1,0 +1,53 @@
+---
+/**
+ * Photographer credit shown with a photo (DESIGN.md, "Photo credit"): a camera outline, then
+ * the name, set quieter than the text around it, so it reads as "taken by", not as the name of
+ * someone in the picture. Screen readers hear "Photo by Name" (the lead-in is visually hidden).
+ * `onPhoto`: on a photo scrim (landing tiles, the hero), in 70% white.
+ */
+import CameraIcon from './CameraIcon.astro';
+
+interface Props {
+  name: string;
+  onPhoto?: boolean;
+  /** Hidden lead-in for screen readers. */
+  label?: string;
+}
+
+const { name, onPhoto = false, label = 'Photo by' } = Astro.props;
+---
+
+<span class:list={['credit', { 'credit--on-photo': onPhoto }]}>
+  <CameraIcon size={16} />
+  <span class="visually-hidden">{label} </span>
+  <span class="name">{name}</span>
+</span>
+
+<style>
+  .credit {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    max-width: 100%;
+    min-width: 0;
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+
+  .credit--on-photo {
+    color: var(--color-on-photo-credit);
+  }
+
+  .credit :global(.camera-icon) {
+    width: 1.15em;
+    height: 1.15em;
+  }
+
+  /* A long name is cut with "…" rather than wrapping under the icon. */
+  .name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+</style>

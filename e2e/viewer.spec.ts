@@ -8,7 +8,8 @@ import { expect, hashOf, loadedPhotoSize, openFromTile, PAGES, swipe, test, tile
 test.describe('opening a photo', () => {
   test('from the home page, through the album, to a photo with photographer, date and caption', async ({ page }) => {
     await page.goto(PAGES.home);
-    await page.getByRole('link', { name: 'Demo Event A' }).click();
+    // Through the event card in the "All events" list (the landing may link the album too).
+    await page.locator('article.card').getByRole('link', { name: 'Demo Event A' }).click();
     await expect(page).toHaveURL(/\/pinus-album\/albums\/demo-event-a\/$/);
     await page.getByRole('link', { name: 'Day 1', exact: true }).first().click();
     await expect(page).toHaveURL(/\/pinus-album\/albums\/demo-event-a\/day-1\/$/);

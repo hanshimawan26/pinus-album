@@ -1,0 +1,123 @@
+---
+/**
+ * Photo spotlight on the home page (DESIGN.md, "Landing"): one photo large on a black stage,
+ * with where it is from, its caption, photographer and date, and a link that opens it in its
+ * album's viewer. It uses the viewer's own image files (with the photographer's watermark).
+ * Absent data disappears: no caption, no photographer or no date leaves no empty row.
+ */
+import type { PlacedPhoto } from '../lib/landing.ts';
+import { formatDate } from '../lib/dates.ts';
+import { albumUrl } from '../lib/url.ts';
+import { viewerContext, type ViewerImage } from '../lib/viewer-data.ts';
+import Eyebrow from './Eyebrow.astro';
+import PhotoCredit from './PhotoCredit.astro';
+
+interface Props {
+  spotlight: PlacedPhoto;
+  image: ViewerImage;
+}
+
+const { spotlight, image } = Astro.props;
+const { photo, albumPath, titles } = spotlight;
+const href = `${albumUrl(albumPath)}#${photo.slug}`;
+const photographer = photo.photographer;
+---
+
+<section class="spotlight" aria-labelledby="spotlight-title">
+  <a class="stage" href={href} tabindex="-1" aria-hidden="true">
+    <img
+      src={image.src}
+      srcset={image.srcset}
+      sizes={image.sizes}
+      width={image.width}
+      height={image.height}
+      alt=""
+      loading="lazy"
+      decoding="async"
+    />
+  </a>
+  <div class="details">
+    <Eyebrow parts={['Photo spotlight']} dot="yellow" />
+    <h2 id="spotlight-title" class="title">{viewerContext(titles)}</h2>
+    {photo.caption && <p class="caption">{photo.caption}</p>}
+    {
+      (photographer || photo.date) && (
+        <p class="who">
+          {photographer && <PhotoCredit name={photographer.name} />}
+          {photo.date && <time datetime={photo.date.day}>{formatDate(photo.date)}</time>}
+        </p>
+      )
+    }
+    <a class="button button--primary" href={href}>
+      Open photo<span class="visually-hidden">: {photo.alt}</span>
+    </a>
+  </div>
+</section>
+
+<style>
+  .spotlight {
+    display: grid;
+    gap: var(--space-5);
+    align-items: center;
+  }
+
+  /* The photo's own shape, letterboxed on black like the viewer, never taller than ~36rem. */
+  .stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: var(--color-viewer-bg);
+  }
+
+  .stage img {
+    width: 100%;
+    max-height: min(36rem, 80svh);
+    object-fit: contain;
+  }
+
+  .details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .title {
+    font-size: var(--text-xl);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .caption {
+    font-style: italic;
+    white-space: pre-line;
+  }
+
+  .who {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    max-width: 100%;
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+  }
+
+  .who time {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .details .button {
+    margin-top: var(--space-2);
+  }
+
+  @media (min-width: 900px) {
+    .spotlight {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+      gap: var(--space-7);
+    }
+  }
+</style>

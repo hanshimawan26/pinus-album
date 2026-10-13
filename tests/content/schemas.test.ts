@@ -80,7 +80,7 @@ Second paragraph.
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('Unknown field "titel"');
     expect(problems[0]).toContain('Did you mean "title"?');
-    expect(problems[0]).toContain('Allowed fields: title, date, endDate, venue, cover, photographer, order, draft, hidden, sort');
+    expect(problems[0]).toContain('Allowed fields: title, date, endDate, venue, cover, highlights, featured, photographer, order, draft, hidden, sort');
   });
 
   it('suggests the right field for a wrongly-cased name', () => {

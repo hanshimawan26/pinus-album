@@ -118,6 +118,7 @@ function buildNode(source: SourceNode, depth: number, inherited: Inherited, ctx:
   if (expectedDays) node.expectedDays = expectedDays;
   const cover = meta.cover === undefined ? undefined : coverFile(source.dir, meta.cover);
   if (cover !== undefined) node.coverFile = cover;
+  if (meta.highlights) node.highlightFiles = meta.highlights.map((path) => coverFile(source.dir, path));
 
   node.children = source.children.map((child) => buildNode(child, depth + 1, { ancestors, expectedDays }, ctx));
   return node;

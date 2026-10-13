@@ -1,9 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
+  BREAKPOINTS,
+  CONTENT_MAX,
   coverHeight,
   coverSizes,
   coverWidths,
+  heroSizes,
   loadingHint,
   PREVIEW_IMAGE,
   previewImageSize,
@@ -153,5 +156,20 @@ describe('previewImageSize (link preview, 1.91:1)', () => {
     expect(previewImageSize(800, 600)).toEqual({ width: 800, height: 420 });
     expect(previewImageSize(1600, 400)).toEqual({ width: 761, height: 400 });
     expect(previewImageSize(1, 1)).toEqual({ width: 1, height: 1 });
+  });
+});
+
+describe('heroSizes', () => {
+  it('draws a landscape photo wider than the portrait phone frame, by its aspect over the frame aspect', () => {
+    const sizes = heroSizes(3 / 2);
+    // 3:2 in a 4:5 frame: 1.5 / 0.8 = 1.875 → 188vw on phones.
+    expect(sizes.endsWith(', 188vw')).toBe(true);
+    // From 900 px the 21:9 frame is wider than the photo: drawn at the frame width.
+    expect(sizes).toContain(`(min-width: ${BREAKPOINTS.md}px) 100vw`);
+    expect(sizes.startsWith(`(min-width: ${CONTENT_MAX + 64}px) ${CONTENT_MAX}px`)).toBe(true);
+  });
+
+  it('never draws a photo narrower than its frame', () => {
+    expect(heroSizes(1 / 2).endsWith(', 100vw')).toBe(true);
   });
 });

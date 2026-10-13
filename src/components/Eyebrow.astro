@@ -1,0 +1,76 @@
+---
+/**
+ * Eyebrow label above a heading (DESIGN.md, "Eyebrow"): a small uppercase line such as
+ * "LATEST EVENT · 3–6 AUG 2026", led by a brand-colour dot (or the three brand dots).
+ * The dot is decorative; the text is written in normal case and set in capitals by CSS, so
+ * screen readers read it as words. Absent parts are left out.
+ */
+interface Props {
+  parts: readonly (string | undefined)[];
+  dot?: 'red' | 'blue' | 'yellow' | 'brand';
+  /** On a photo scrim (home page hero): white text. */
+  onPhoto?: boolean;
+}
+
+const { parts, dot, onPhoto = false } = Astro.props;
+const text = parts.filter((part): part is string => Boolean(part)).join(' · ');
+const dots = dot === 'brand' ? ['red', 'blue', 'yellow'] : dot ? [dot] : [];
+---
+
+{
+  text && (
+    <p class:list={['eyebrow', { 'eyebrow--on-photo': onPhoto }]}>
+      {dots.length > 0 && (
+        <span class="dots" aria-hidden="true">
+          {dots.map((colour) => (
+            <span class={`dot dot--${colour}`} />
+          ))}
+        </span>
+      )}
+      <span>{text}</span>
+    </p>
+  )
+}
+
+<style>
+  .eyebrow {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    color: var(--color-text-muted);
+    font-size: var(--text-label);
+    font-weight: 700;
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+  }
+
+  .eyebrow--on-photo {
+    color: var(--color-on-photo-muted);
+  }
+
+  .dots {
+    display: inline-flex;
+    flex: none;
+    gap: 0.3em;
+  }
+
+  .dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: var(--radius-full);
+  }
+
+  .dot--red {
+    background: var(--brand-red);
+  }
+
+  /* Brand blue on Day; its light tint on Night, where brand blue is 2.36:1. */
+  .dot--blue {
+    background: var(--color-accent);
+  }
+
+  .dot--yellow {
+    background: var(--brand-yellow);
+  }
+</style>

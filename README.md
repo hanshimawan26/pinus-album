@@ -24,6 +24,7 @@ you save your changes on GitHub.
 5. [Everyday tasks](#everyday-tasks): [caption](#add-or-change-a-caption) ·
    [credit a photographer](#credit-a-photographer) · [hide a photo](#hide-a-photo) ·
    [fix a wrong date](#fix-a-wrong-date) · [cover photo](#choose-the-cover-photo) ·
+   [home page photos](#choose-what-the-home-page-shows) ·
    [order of sections](#change-the-order-of-sections) · [drafts](#prepare-an-event-before-publishing-it-drafts) ·
    [hide an album](#hide-an-album-without-deleting-it) · [change the logo](#change-the-logo)
 6. [Take a photo down](#take-a-photo-down)
@@ -72,8 +73,11 @@ The rules in one breath:
   is left out of the address.
 - **Photos** can be `.jpg`, `.jpeg`, `.png` or `.webp`. iPhone `.heic` photos must be
   converted first (see [step 5](#5-make-the-photos-web-ready)).
-- **The home page** shows every event, newest first. Each event page shows its sections,
-  then its own photos. An event with sections also gets an **All photos** page
+- **The home page** opens on one event, shown large: the newest, or the one you
+  [choose](#choose-what-the-home-page-shows). Below it come that event's sections with a few
+  photos each, one photo in the spotlight, a few more events, then **every event**, newest
+  first, and an invitation to send photos to the committee. Each event page shows its
+  sections, then its own photos. An event with sections also gets an **All photos** page
   (`…/albums/pergelaran-2026/all/`, linked as "View all N photos") with every photo of the
   event in one grid, oldest first.
 - **Above every grid** with photos by two or more photographers, buttons with their names
@@ -193,6 +197,8 @@ story shown on the page.
 | `endDate` | The last day, for events of several days | Optional |
 | `venue` | Where it took place, e.g. `"UTown Green"`. Shown next to the date on the album page | Optional |
 | `cover` | The photo shown on the album's card, e.g. `day-1/@andi-pratama/IMG_0012.jpg` (path from this folder) | Optional: the first photo is used |
+| `highlights` | The best photos for the home page, best first, one per line (see [Choose what the home page shows](#choose-what-the-home-page-shows)) | Optional: the website picks some itself |
+| `featured` | `true` puts this event at the top of the home page, even if a newer event exists. Events only | Optional: the newest event is shown |
 | `photographer` | Credit for photos in this album that are not in an `@` folder, e.g. `andi-pratama` | Optional |
 | `order` | A number that sets the position among sections (`1`, `2`, …) | Optional |
 | `sort` | `filename` shows photos in file-name order instead of the time they were taken | Optional |
@@ -411,9 +417,9 @@ stays in the repository, so you can undo it by deleting the line. If someone ask
 photo to be removed, read [Take a photo down](#take-a-photo-down).
 
 **Prefer hiding to deleting.** If you do delete a photo file, in the same commit also delete
-its entry in `photos.yaml` and change any `cover:` line that names it. Otherwise
-`photos:check` stops the update (`photos-yaml-no-match` or `missing-cover`) and the website
-keeps showing the old version, photo included.
+its entry in `photos.yaml` and change any `cover:` or `highlights:` line that names it.
+Otherwise `photos:check` stops the update (`photos-yaml-no-match`, `missing-cover` or
+`missing-highlight`) and the website keeps showing the old version, photo included.
 
 ### Fix a wrong date
 
@@ -444,6 +450,37 @@ chat. The preview cuts a wide strip (1.91 : 1) from the middle of the photo, so 
 photo with the faces near the centre works best. The home page's preview uses the newest
 event's cover. Chat apps remember a preview for a while: after changing a cover, a link
 that was already shared may show the old picture for a few days.
+
+### Choose what the home page shows
+
+The top of the home page shows **one event large** (its cover photo, title, date and
+counts), then **its sections as "chapters"** with up to five photos each, one photo **in the
+spotlight**, and the next three events with five photos each.
+
+- **Which event is at the top:** the newest one. To put another event there (for example
+  the big yearly event, while smaller ones follow it), add `featured: true` to that event's
+  `index.md`. Remove it again to go back to "newest first". Only one event should have it.
+- **Which photos are shown:** without a list, the website picks them itself: the album's
+  cover, then photos spread evenly over the album. To choose them yourself, list the best
+  ones in the album's `index.md`, best first, with their paths from that folder (like
+  `cover:`):
+
+  ```yaml
+  highlights:
+    - "@andi-pratama/IMG_0012.jpg"
+    - "@sari-wijaya/DSC_0441.jpg"
+    - day-2/@andi-pratama/IMG_0230.jpg
+  ```
+
+  Each line starts with two spaces, a dash and a space. Paths starting with `@` need double
+  quotes. A chapter shows the first five that are not already on the page. In the **featured
+  event**, the first highlight is the **spotlight photo**, so put the very best one first (a
+  photo with a caption works well). Each section's own `index.md` can list highlights for its
+  chapter.
+
+A highlight that is hidden later (for example after a takedown) is simply left out, and
+`photos:check` reminds you to update the list (`highlight-not-shown`). A highlight that names
+a photo that does not exist stops the update (`missing-highlight`), like a wrong `cover:`.
 
 ### Change the order of sections
 
@@ -500,8 +537,8 @@ Someone pictured asked for a photo to be removed. Act quickly and kindly:
    [Hide a photo](#hide-a-photo)) and commit. This is the safest route: it cannot stop the
    update, and if the photo was an album's cover, the album picks another cover by itself.
    - If you would rather **delete the file**, do three things in the same commit: delete the
-     file, delete its entry in `photos.yaml`, and remove or change any `cover:` line in an
-     `index.md` that names it. If you forget one, `photos:check` stops the update and the
+     file, delete its entry in `photos.yaml`, and remove or change any `cover:` or
+     `highlights:` line in an `index.md` that names it. If you forget one, `photos:check` stops the update and the
      website keeps showing the old version, **with the photo**.
 2. **Check that it worked.** In the **Actions** tab, wait for the green tick (a few minutes),
    then open the photo's old link (the album address ending in `#…`): the album opens and
@@ -572,6 +609,7 @@ Each message says what is wrong and how to fix it, and ends with a short code in
 | `unsupported-format` | Error | A file the website cannot show, such as `.heic`. Convert it to JPEG ([step 5](#5-make-the-photos-web-ready)) |
 | `unreadable-image` | Error | A photo file is damaged or not really an image. Export it again |
 | `missing-cover` | Error | `cover:` in `index.md` points to a photo that does not exist (misspelt, or the photo was deleted). Fix the path or remove the line |
+| `missing-highlight` | Error | A line under `highlights:` in `index.md` points to a photo that does not exist. Fix the path or remove the line |
 | `misplaced-file` / `misnamed-file` | Error | An `index.md`, `photos.yaml` or `photographers.yaml` in the wrong place, or with the wrong name (`Photos.yaml`, `photos.yml`, `index.md.txt`). It would be ignored, so a `hidden: true` in it would not work |
 | `no-photographer` | Warning | Nobody is credited for this photo. Put it in an `@` folder or add `photographer:` |
 | `no-date` | Warning | The photo has no date at all. Add `date:` to the album's `index.md` or to the photo in `photos.yaml` |
@@ -580,6 +618,8 @@ Each message says what is wrong and how to fix it, and ends with a short code in
 | `location-in-photo` | Warning | The photo file contains its GPS location (the website never shows it, but the file in the repository does). Run the `photos:prep` command the message shows. If the photo is already committed, the location also stays in the repository's history; only the purge in [Take a photo down](#take-a-photo-down) removes it from there. Remove the location before uploading ([step 5](#5-make-the-photos-web-ready)) |
 | `no-cover` | Warning | An album has no photos yet, so its card is empty |
 | `cover-not-shown` | Warning | `cover:` points to a hidden photo, or one in a draft or hidden section, so another photo is used |
+| `highlight-not-shown` | Warning | A `highlights:` photo is hidden, or in a draft or hidden section, so the home page leaves it out. Remove it from the list |
+| `featured-ignored` | Warning | `featured: true` is in a section's `index.md` (it only works for a whole event), or more than one event has it (the newest of them is shown). Remove the extra lines |
 | `content-too-large` | Warning | All photos together are over 700 MB. See [Size limits](#size-limits) |
 | `ignored-file` | Warning | A video or other file the website does not show. Remove it to save space |
 

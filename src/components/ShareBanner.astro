@@ -1,0 +1,77 @@
+---
+/**
+ * "Share your photos" banner at the end of the home page (DESIGN.md, "Landing"): invites
+ * members who took photos at an event to send them to the committee (CONTACT_EMAIL). The
+ * soft glows in the three brand colours are the reference's "festival light"; they are
+ * decorative and weak enough that text contrast stays that of the plain surface.
+ */
+import { SITE } from '../lib/config.ts';
+import Eyebrow from './Eyebrow.astro';
+
+const subject = encodeURIComponent(`Photos for the ${SITE.name} album`);
+---
+
+<section class="share" aria-labelledby="share-title">
+  <div class="text">
+    <Eyebrow parts={['Share your photos']} dot="brand" />
+    <h2 id="share-title" class="title">Took photos at one of our events?</h2>
+    <p class="body">
+      Send them to the committee and we'll add them to the album, with your name on every photo you took.
+    </p>
+  </div>
+  <a class="button button--primary" href={`mailto:${SITE.contactEmail}?subject=${subject}`}>
+    Email {SITE.contactEmail}
+  </a>
+</section>
+
+<style>
+  .share {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-5);
+    padding: var(--space-6) var(--space-5);
+    border-radius: var(--radius-md);
+    background:
+      radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--brand-red) 12%, transparent), transparent 45%),
+      radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 50%),
+      radial-gradient(circle at 70% 10%, color-mix(in srgb, var(--brand-yellow) 10%, transparent), transparent 40%),
+      var(--color-surface-sunken);
+  }
+
+  .text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    max-width: 40rem;
+  }
+
+  .title {
+    font-size: var(--text-xl);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .body {
+    color: var(--color-text-muted);
+  }
+
+  /* The address can be long: let it wrap rather than widen the page. */
+  .button {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  @media (min-width: 900px) {
+    .share {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-7);
+    }
+
+    .title {
+      font-size: clamp(1.375rem, 1rem + 1vw, 1.75rem);
+    }
+  }
+</style>

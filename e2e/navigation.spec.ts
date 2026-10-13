@@ -72,15 +72,16 @@ test('the venue shows on the album page only, and wraps without being cut off', 
   });
   for (const left of lineLefts) expect(left).toBeGreaterThanOrEqual(visibleLeft - 0.5);
 
+  // Event cards never show it (the home page's landing chapters may).
   await page.goto(PAGES.home);
-  await expect(page.getByText(DEMO_VENUE)).toHaveCount(0);
+  await expect(page.locator('article.card').getByText(DEMO_VENUE)).toHaveCount(0);
 });
 
 test('hidden albums carry a readable "Hidden" badge when previewed (SHOW_HIDDEN)', async ({ page }) => {
   await page.goto(PAGES.eventWithSections);
   await expect(page.getByRole('heading', { level: 1, name: 'Demo Event A Hidden', exact: true })).toBeVisible();
   await page.goto(PAGES.home);
-  await expect(page.getByRole('heading', { name: 'Demo Event A Hidden', exact: true })).toBeVisible();
+  await expect(page.locator('article.card').getByRole('heading', { name: 'Demo Event A Hidden', exact: true })).toBeVisible();
 });
 
 test('breadcrumbs work at every level', async ({ page }) => {

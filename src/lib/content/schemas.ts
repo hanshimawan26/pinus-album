@@ -85,7 +85,22 @@ function photographerField(field: string) {
 // index.md frontmatter
 // ---------------------------------------------------------------------------------------
 
-export const INDEX_FIELDS = ['title', 'date', 'endDate', 'venue', 'cover', 'photographer', 'order', 'draft', 'hidden', 'sort'] as const;
+export const INDEX_FIELDS = ['title', 'date', 'endDate', 'venue', 'cover', 'highlights', 'featured', 'photographer', 'order', 'draft', 'hidden', 'sort'] as const;
+
+/** A list of photo paths (`highlights:`). Blank entries are dropped; an empty list means "not set". */
+function pathListField(field: string) {
+  return z
+    .array(z.union([z.string(), z.number()]), {
+      error: `"${field}" must be a list of photo paths, one per line starting with "- ", for example:
+${field}:
+  - "@andi-pratama/IMG_0012.jpg"`,
+    })
+    .nullish()
+    .transform((value) => {
+      const paths = (value ?? []).map((entry) => String(entry).trim()).filter((entry) => entry !== '');
+      return paths.length > 0 ? paths : undefined;
+    });
+}
 
 export const indexFrontmatterSchema = z
   .strictObject({
@@ -94,6 +109,8 @@ export const indexFrontmatterSchema = z
     endDate: dateField('endDate', false),
     venue: textField('venue'),
     cover: textField('cover'),
+    highlights: pathListField('highlights'),
+    featured: booleanField('featured'),
     photographer: photographerField('photographer'),
     order: z
       .number({ error: '"order" must be a number, for example order: 1' })

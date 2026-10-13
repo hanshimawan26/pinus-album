@@ -6,6 +6,7 @@
  * section, and deep links carry the section path: `#day-1/<photo-slug>` (all-photos.ts).
  */
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import Eyebrow from '../../../components/Eyebrow.astro';
 import PhotoGrid from '../../../components/PhotoGrid.astro';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { allPhotosOf, hasAllPhotosPage } from '../../../lib/all-photos.ts';
@@ -46,6 +47,7 @@ const previewImage = await previewImageFor(node.cover);
     <Breadcrumbs trail={trail} current="All photos" />
 
     <header class="album-header">
+      <Eyebrow parts={['All photos']} dot="yellow" />
       <h1 class="page-title">{node.title}</h1>
       <p class="meta">
         {date && (isoDay ? <time datetime={isoDay}>{date}</time> : <span>{date}</span>)}

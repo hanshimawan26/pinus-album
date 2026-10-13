@@ -115,6 +115,10 @@ export interface IndexMeta {
   /** Where the event took place, e.g. "UTown Green". Shown on the album page. */
   venue?: string;
   cover?: string;
+  /** Photos for the home page, best first (paths relative to this folder, like `cover`). */
+  highlights?: string[];
+  /** Pins an event to the home page hero (events only; the newest event otherwise). */
+  featured?: boolean;
   /** Photographer slug. */
   photographer?: string;
   order?: number;
@@ -218,6 +222,11 @@ export interface ModelNode {
    * tree.ts and validate.ts). Undefined when there is no `cover:` or it leaves the folder.
    */
   coverFile?: string;
+  /**
+   * Repo-relative paths that index.md `highlights:` point to, one per entry (undefined for an
+   * entry that leaves the folder). Undefined when there is no `highlights:`.
+   */
+  highlightFiles?: (string | undefined)[];
   /** Problems found in index.md (invalid YAML or frontmatter). */
   indexProblems: string[];
   /** Problems found in photos.yaml (invalid YAML or entries). */
@@ -285,6 +294,14 @@ export interface AlbumNode {
   /** Number of published direct children. */
   sectionCount: number;
   cover?: Photo;
+  /**
+   * index.md `highlights:` that are shown (visible photos in published albums), in the listed
+   * order, without repeats. Empty when there is no list: the home page then picks photos
+   * itself (landing.ts).
+   */
+  highlights: Photo[];
+  /** index.md `featured: true` (pins an event to the home page hero). */
+  featured: boolean;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -308,6 +325,7 @@ export type IssueCode =
   | 'unsupported-format'
   | 'unreadable-image'
   | 'missing-cover'
+  | 'missing-highlight'
   | 'misplaced-file'
   | 'misnamed-file'
   | 'invalid-file-name'
@@ -318,6 +336,8 @@ export type IssueCode =
   | 'large-image'
   | 'no-cover'
   | 'cover-not-shown'
+  | 'highlight-not-shown'
+  | 'featured-ignored'
   | 'location-in-photo'
   | 'content-too-large'
   | 'ignored-file';

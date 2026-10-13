@@ -12,6 +12,17 @@ export function countLabel(count: number, singular: string, plural = `${singular
   return `${count.toLocaleString('en')} ${count === 1 ? singular : plural}`;
 }
 
+/** A count split for a stat pill, number first: `{ value: "118", label: "photos" }`. */
+export function countParts(count: number, singular: string, plural = `${singular}s`): { value: string; label: string } {
+  return { value: count.toLocaleString('en'), label: count === 1 ? singular : plural };
+}
+
+/** The start of a node's story as one line of plain text (`max` characters), or undefined. */
+export function storyExcerpt(node: Pick<AlbumNode, 'story'>, max: number): string | undefined {
+  const text = node.story ? markdownToPlainText(node.story) : '';
+  return text ? truncateText(text, max) : undefined;
+}
+
 /** `"18–20 Sep 2026"`, or undefined when the node has no date. */
 export function nodeDateLabel(node: Pick<AlbumNode, 'date' | 'endDate'>): string | undefined {
   return node.date ? formatDateRange(node.date, node.endDate) : undefined;

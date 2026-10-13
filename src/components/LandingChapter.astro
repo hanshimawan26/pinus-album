@@ -1,0 +1,263 @@
+---
+/**
+ * A "chapter" of the home page (DESIGN.md, "Landing"): an eyebrow, the album's title and the
+ * start of its story, then up to five photos in a mosaic (a large pair, then a row of three;
+ * on phones one wide photo, then squares in two columns). Each photo links to itself in its
+ * album (`albums/<path>/#<slug>` opens the post viewer there), so the home page needs no
+ * JavaScript. The photographer's credit (PhotoCredit) sits on a small scrim at the bottom of
+ * each photo.
+ */
+import { allPhotosPath, hasAllPhotosPage } from '../lib/all-photos.ts';
+import type { ResponsiveImage } from '../lib/images.ts';
+import type { Chapter } from '../lib/landing.ts';
+import { countLabel, nodeDateLabel, storyExcerpt } from '../lib/presentation.ts';
+import { albumUrl } from '../lib/url.ts';
+import ChevronIcon from './ChevronIcon.astro';
+import Eyebrow from './Eyebrow.astro';
+import PhotoCredit from './PhotoCredit.astro';
+import StatusBadge from './StatusBadge.astro';
+
+interface Props {
+  chapter: Chapter;
+  /** Same order as `chapter.photos`. */
+  images: readonly ResponsiveImage[];
+  /** Brand colour of the eyebrow dot; chapters take turns (red, blue, yellow). */
+  dot: 'red' | 'blue' | 'yellow';
+  id: string;
+}
+
+const { chapter, images, dot, id } = Astro.props;
+const { node, kind, position, photos } = chapter;
+// A highlights chapter follows the hero of its own event: no second title or story.
+const highlights = kind === 'highlights';
+const eyebrow = highlights
+  ? ['From the album', node.title]
+  : position
+    ? [`Section ${position.index} of ${position.total}`, nodeDateLabel(node), node.venue]
+    : [nodeDateLabel(node), node.venue];
+const moreHref = albumUrl(hasAllPhotosPage(node) ? allPhotosPath(node) : node.slugPath);
+---
+
+<section class="chapter" aria-labelledby={id}>
+  <header class="head">
+    <div class="intro">
+      <Eyebrow parts={eyebrow} dot={dot} />
+      {
+        highlights ? (
+          <h3 id={id} class="title">
+            Highlights
+          </h3>
+        ) : (
+          <h3 id={id} class="title">
+            <a class="title-link" href={albumUrl(node.slugPath)}>
+              {node.title}
+            </a>
+            <StatusBadge node={node} />
+          </h3>
+        )
+      }
+      {!highlights && storyExcerpt(node, 160) && <p class="story">{storyExcerpt(node, 160)}</p>}
+    </div>
+    <a class="more" href={moreHref}>
+      View all {countLabel(node.photoCount, 'photo')}
+      <ChevronIcon direction="right" />
+    </a>
+  </header>
+
+  <ul class="bare-list mosaic" role="list" data-count={photos.length}>
+    {
+      photos.map(({ photo, albumPath }, index) => {
+        const image = images[index];
+        return (
+          image && (
+            <li class:list={['tile', { lead: index === 0 }]}>
+              <a class="tile-link" href={`${albumUrl(albumPath)}#${photo.slug}`}>
+                <img
+                  src={image.src}
+                  srcset={image.srcset}
+                  sizes={image.sizes}
+                  width={image.width}
+                  height={image.height}
+                  alt={photo.alt}
+                  loading="lazy"
+                  decoding="async"
+                />
+                {photo.photographer && (
+                  <span class="credit-band">
+                    <PhotoCredit name={photo.photographer.name} onPhoto />
+                  </span>
+                )}
+              </a>
+            </li>
+          )
+        );
+      })
+    }
+  </ul>
+</section>
+
+<style>
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-3) var(--space-5);
+    margin-bottom: var(--space-4);
+  }
+
+  .intro {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: min(100%, 20rem);
+    flex: 1 1 28rem;
+  }
+
+  .title {
+    font-size: var(--text-xl);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .title-link {
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  .title-link:hover {
+    color: var(--color-link);
+    text-decoration-line: underline;
+  }
+
+  .story {
+    max-width: var(--prose-max);
+    color: var(--color-text-muted);
+    font-size: var(--text-md);
+  }
+
+  .more {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding-block: var(--space-1);
+    font-size: var(--text-md);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .more:hover {
+    text-decoration: underline;
+  }
+
+  /* Phones and tablets: the lead photo wide, the others square in two columns. An odd one
+     out at the end spans both columns. */
+  .mosaic {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .tile {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-sunken);
+  }
+
+  .tile.lead,
+  .tile:last-child:nth-child(even) {
+    grid-column: span 2;
+    aspect-ratio: 4 / 3;
+  }
+
+  .tile-link {
+    display: block;
+    height: 100%;
+    color: var(--color-on-photo);
+    text-decoration: none;
+  }
+
+  .tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--duration-slow) var(--ease-out);
+  }
+
+  .tile-link:hover img {
+    transform: scale(1.03);
+  }
+
+  /* Drawn inside the tile, like the photo grid's ring, so it shows on any photo. */
+  .tile-link:focus-visible {
+    outline: none;
+  }
+
+  .tile-link:focus-visible::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 3px solid var(--color-focus);
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 2px var(--color-bg);
+  }
+
+  .credit-band {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    padding: var(--space-5) var(--space-2) var(--space-1);
+    /* Fades only over the empty top padding: the credit always sits on the solid part. */
+    background: linear-gradient(
+      to top,
+      var(--color-photo-scrim-soft) calc(100% - var(--space-5)),
+      var(--color-photo-scrim-clear) 100%
+    );
+    font-size: var(--text-xs);
+    line-height: var(--leading-snug);
+  }
+
+  @media (min-width: 600px) {
+    .credit-band {
+      padding-inline: var(--space-3);
+      padding-bottom: var(--space-2);
+      font-size: var(--text-label);
+    }
+  }
+
+  /* Desktop: 12 columns. A large pair (7 + 5) on a tall row, then the rest share a row. */
+  @media (min-width: 900px) {
+    .mosaic {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      grid-template-rows: clamp(16rem, 26vw, 24rem);
+      grid-auto-rows: clamp(11rem, 17vw, 16rem);
+      gap: var(--space-3);
+    }
+
+    .tile,
+    .tile.lead,
+    .tile:last-child:nth-child(even) {
+      aspect-ratio: auto;
+      grid-column: span 4;
+    }
+
+    .tile.lead {
+      grid-column: span 7;
+    }
+
+    .tile:nth-child(2) {
+      grid-column: span 5;
+    }
+
+    .mosaic[data-count='1'] .tile.lead,
+    .mosaic[data-count='3'] .tile:nth-child(3) {
+      grid-column: span 12;
+    }
+
+    .mosaic[data-count='4'] .tile:nth-child(n + 3) {
+      grid-column: span 6;
+    }
+  }
+</style>

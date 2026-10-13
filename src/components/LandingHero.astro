@@ -1,0 +1,217 @@
+---
+/**
+ * Home page hero (DESIGN.md, "Landing"): the featured event's cover as a large photo, with
+ * its title, date, venue, story line, counts and links on a dark scrim at the bottom.
+ * The only place where page text sits on a photo: the scrim behind the text never gets
+ * lighter than `--color-photo-scrim-soft`, so white text stays ≥ 10:1 on any photo. The
+ * cover's photographer is named in the text (the hero image carries no watermark).
+ */
+import { allPhotosPath, hasAllPhotosPage } from '../lib/all-photos.ts';
+import type { ResponsiveImage } from '../lib/images.ts';
+import type { Landing } from '../lib/landing.ts';
+import { countLabel, countParts, nodeDateLabel, storyExcerpt } from '../lib/presentation.ts';
+import { albumUrl } from '../lib/url.ts';
+import Eyebrow from './Eyebrow.astro';
+import PhotoCredit from './PhotoCredit.astro';
+import StatusBadge from './StatusBadge.astro';
+
+interface Props {
+  landing: Landing;
+  image: ResponsiveImage;
+}
+
+const { landing, image } = Astro.props;
+const { featured: event, hero, photographerCount } = landing;
+const stats = [
+  countParts(event.photoCount, 'photo'),
+  ...(photographerCount > 0 ? [countParts(photographerCount, 'photographer')] : []),
+  ...(event.sectionCount > 0 ? [countParts(event.sectionCount, 'section')] : []),
+];
+const credit = hero.photo.photographer?.name;
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <img
+    class="photo"
+    src={image.src}
+    srcset={image.srcset}
+    sizes={image.sizes}
+    width={image.width}
+    height={image.height}
+    alt={hero.photo.alt}
+    loading="eager"
+    fetchpriority="high"
+    decoding="async"
+  />
+  <div class="content">
+    <div class="text">
+      <Eyebrow parts={['Featured event', nodeDateLabel(event)]} dot="red" onPhoto />
+      <h2 id="hero-title" class="title">
+        {event.title}
+        <StatusBadge node={event} />
+      </h2>
+      {event.venue && <p class="venue">{event.venue}</p>}
+      {storyExcerpt(event, 140) && <p class="story">{storyExcerpt(event, 140)}</p>}
+      <ul class="bare-list stats" role="list">
+        {
+          stats.map(({ value, label }) => (
+            <li class="stat">
+              <strong>{value}</strong> {label}
+            </li>
+          ))
+        }
+      </ul>
+      <div class="actions">
+        <a class="button button--primary" href={albumUrl(event.slugPath)}>Open album</a>
+        {
+          hasAllPhotosPage(event) && (
+            <a class="button button--glass" href={albumUrl(allPhotosPath(event))}>
+              All {countLabel(event.photoCount, 'photo')}
+            </a>
+          )
+        }
+      </div>
+      {
+        credit && (
+          <p class="credit-line">
+            <PhotoCredit name={credit} onPhoto label="Cover photo by" />
+          </p>
+        )
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  /* The frame stays inside the page column at every width. Its shape (4:5, then 16:10 and
+     21:9; HERO_ASPECT in image-sizes.ts) is a minimum height computed from the column width,
+     never a fixed height, so a long title or venue makes the hero taller instead of being
+     cut off. */
+  .hero {
+    --hero-width: min(100vw - 2 * var(--gutter), var(--content-max));
+    --hero-aspect: 4 / 5;
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: max(32rem, var(--hero-width) / (var(--hero-aspect)));
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: var(--color-viewer-bg);
+    color: var(--color-on-photo);
+  }
+
+  .photo {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* The scrim fades in over the empty top padding only: all text sits on the solid part. */
+  .content {
+    padding: var(--space-8) var(--space-4) var(--space-5);
+    background: linear-gradient(
+      to top,
+      var(--color-photo-scrim) 0%,
+      var(--color-photo-scrim-soft) calc(100% - var(--space-8)),
+      var(--color-photo-scrim-clear) 100%
+    );
+  }
+
+  .text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    max-width: 42rem;
+  }
+
+  .title {
+    color: var(--color-on-photo);
+    font-size: var(--text-display);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
+  }
+
+  .venue {
+    font-weight: 600;
+  }
+
+  .venue,
+  .story {
+    color: var(--color-on-photo-muted);
+  }
+
+  .story {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+  }
+
+  .stat {
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-sm);
+    background: var(--color-photo-glass);
+    box-shadow: inset 0 0 0 1px var(--color-photo-glass-edge);
+    color: var(--color-on-photo-muted);
+    font-size: var(--text-sm);
+  }
+
+  .stat strong {
+    color: var(--color-on-photo);
+    font-size: var(--text-base);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+
+  .credit-line {
+    display: flex;
+    font-size: var(--text-label);
+  }
+
+  /* Brand blue fails on the dark scrim: focus rings use the viewer's light blue here. */
+  .hero :focus-visible {
+    outline-color: var(--color-viewer-focus);
+  }
+
+  @media (min-width: 600px) {
+    .hero {
+      --hero-aspect: 16 / 10;
+    }
+
+    .content {
+      padding-inline: var(--space-6);
+      padding-bottom: var(--space-6);
+    }
+  }
+
+  @media (min-width: 900px) {
+    .hero {
+      --hero-aspect: 21 / 9;
+    }
+
+    .content {
+      padding-inline: var(--space-7);
+      padding-bottom: var(--space-7);
+    }
+  }
+</style>

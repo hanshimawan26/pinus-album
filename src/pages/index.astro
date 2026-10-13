@@ -1,39 +1,112 @@
 ---
-/** Home (TRD §6.2): every event, newest first. */
+/**
+ * Home (TRD §6.2): the landing blocks, then every event, newest first.
+ *
+ * Landing (src/lib/landing.ts decides what is shown): the newest event as the hero, its
+ * sections as chapters, a photo spotlight, the next events as chapters, then the full list
+ * of event cards and the "share your photos" banner. No JavaScript: landing photos link to
+ * themselves in their album, where the viewer opens.
+ */
 import AlbumCardList from '../components/AlbumCardList.astro';
 import EmptyState from '../components/EmptyState.astro';
+import Eyebrow from '../components/Eyebrow.astro';
+import LandingChapter from '../components/LandingChapter.astro';
+import LandingHero from '../components/LandingHero.astro';
+import LandingSpotlight from '../components/LandingSpotlight.astro';
+import ShareBanner from '../components/ShareBanner.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { loadAlbumsOrThrow, siteLoadOptions } from '../lib/content/index.ts';
-import { previewImageFor } from '../lib/images.ts';
+import { SPOTLIGHT_SIZES } from '../lib/image-sizes.ts';
+import { heroImageFor, landingTileImageFor, previewImageFor, viewerImageFor } from '../lib/images.ts';
+import { buildLanding, type Chapter } from '../lib/landing.ts';
 import { countLabel } from '../lib/presentation.ts';
 
 const albums = await loadAlbumsOrThrow(siteLoadOptions(import.meta.env.DEV));
 const events = albums.root.children;
 // The link preview shows the newest event's cover.
 const previewImage = await previewImageFor(albums.root.cover);
+
+const landing = buildLanding(albums.root);
+const heroImage = landing ? await heroImageFor(landing.hero.photo) : undefined;
+const spotlightImage = landing?.spotlight ? await viewerImageFor(landing.spotlight.photo, SPOTLIGHT_SIZES) : undefined;
+const imagesOf = (chapter: Chapter) => Promise.all(chapter.photos.map(({ photo }, index) => landingTileImageFor(photo, index === 0)));
+const chapters = landing ? await Promise.all(landing.chapters.map(async (chapter) => ({ chapter, images: await imagesOf(chapter) }))) : [];
+const moreEvents = landing
+  ? await Promise.all(landing.moreEvents.map(async (chapter) => ({ chapter, images: await imagesOf(chapter) })))
+  : [];
+
+// Chapters take turns with the brand colours, like the reference's chapter accents.
+const DOTS = ['red', 'blue', 'yellow'] as const;
+const dotFor = (index: number) => DOTS[index % DOTS.length] ?? 'red';
 ---
 
 <BaseLayout isHome previewImage={previewImage}>
   <div class="container page">
-    <header class="intro">
-      <h1 class="page-title">Photo albums</h1>
-      {
-        events.length > 0 && (
-          <p class="meta">
-            <span>{countLabel(events.length, 'event')}</span>
-            {albums.root.photoCount > 0 && <span>{countLabel(albums.root.photoCount, 'photo')}</span>}
-          </p>
-        )
-      }
-    </header>
+    <h1 class:list={['page-title', { 'visually-hidden': landing }]}>Photo albums</h1>
+
+    {
+      landing && heroImage && (
+        <>
+          <LandingHero landing={landing} image={heroImage} />
+
+          {chapters.length > 0 && (
+            <div class="chapters">
+              {chapters.map(({ chapter, images }, index) => (
+                <LandingChapter chapter={chapter} images={images} dot={dotFor(index + 1)} id={`chapter-${index + 1}`} />
+              ))}
+            </div>
+          )}
+
+          {landing.spotlight && spotlightImage && (
+            <div class="block">
+              <LandingSpotlight spotlight={landing.spotlight} image={spotlightImage} />
+            </div>
+          )}
+
+          {moreEvents.length > 0 && (
+            <section class="block" aria-labelledby="more-heading">
+              <div class="block-intro">
+                <Eyebrow parts={['Recent events']} dot="brand" />
+                <h2 id="more-heading" class="block-heading">
+                  More from our events
+                </h2>
+              </div>
+              <div class="chapters chapters--tight">
+                {moreEvents.map(({ chapter, images }, index) => (
+                  <LandingChapter chapter={chapter} images={images} dot={dotFor(index)} id={`event-${index + 1}`} />
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )
+    }
 
     {
       events.length > 0 ? (
-        <AlbumCardList nodes={events} size="event" headingLevel={2} nearTop />
+        <section class:list={['block', { 'block--first': !landing }]} aria-labelledby="events-heading">
+          <div class="block-intro">
+            <Eyebrow
+              parts={[countLabel(events.length, 'event'), albums.root.photoCount > 0 ? countLabel(albums.root.photoCount, 'photo') : undefined]}
+            />
+            <h2 id="events-heading" class="block-heading">
+              All events
+            </h2>
+          </div>
+          <AlbumCardList nodes={events} size="event" headingLevel={3} nearTop={!landing} />
+        </section>
       ) : (
         <EmptyState title="No albums yet">
           <p>Photos from our events will appear here soon. Check back after the next event.</p>
         </EmptyState>
+      )
+    }
+
+    {
+      landing && (
+        <div class="block">
+          <ShareBanner />
+        </div>
       )
     }
   </div>
@@ -41,22 +114,50 @@ const previewImage = await previewImageFor(albums.root.cover);
 
 <style>
   .page {
-    padding-top: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    padding-top: var(--space-5);
   }
 
-  .intro {
+  .page > .page-title:not(.visually-hidden) {
+    margin-block: var(--space-2) var(--space-6);
+  }
+
+  .chapters {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    margin-top: var(--space-7);
+  }
+
+  .chapters--tight {
+    margin-top: var(--space-6);
+  }
+
+  .block {
+    margin-top: var(--space-9);
+  }
+
+  .block--first {
+    margin-top: 0;
+  }
+
+  .block-intro {
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-5);
+  }
+
+  .block-heading {
+    font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2.25rem);
+    font-weight: 600;
+    letter-spacing: -0.015em;
   }
 
   @media (min-width: 900px) {
     .page {
-      padding-top: var(--space-7);
-    }
-    .intro {
-      margin-bottom: var(--space-7);
+      padding-top: var(--space-6);
     }
   }
 </style>

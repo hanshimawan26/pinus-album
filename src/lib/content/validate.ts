@@ -63,6 +63,7 @@ export function validateContent(model: ContentModel): Issue[] {
     }
   }
   visitNode(model.root, list);
+  checkFeatured(model.root, list);
 
   if (model.totalBytes > CONTENT_WARNING_BYTES) {
     list.warning(
@@ -106,6 +107,7 @@ function visitNode(node: ModelNode, list: IssueList): void {
     }
     checkPhotoSlugs(node, list);
     checkCover(node, list);
+    checkHighlights(node, list);
     checkNoCover(node, list);
     for (const photo of node.photos) checkPhoto(photo, node, list);
   }
@@ -358,6 +360,66 @@ function checkCover(node: ModelNode, list: IssueList): void {
   list.error('missing-cover', indexFile, `cover: "${cover}" does not match any photo in this folder or its sub-folders.${hint}`);
 }
 
+/**
+ * index.md `featured: true` pins an event to the home page hero. On a section it does nothing;
+ * on several events, the home page features the newest of them.
+ */
+function checkFeatured(root: ModelNode, list: IssueList): void {
+  const featured: ModelNode[] = [];
+  const visit = (node: ModelNode) => {
+    if (node.meta.featured && node.source.indexMd) featured.push(node);
+    node.children.forEach(visit);
+  };
+  visit(root);
+  for (const node of featured.filter((candidate) => candidate.depth > 1)) {
+    list.warning(
+      'featured-ignored',
+      node.source.indexMd?.file ?? node.source.dir,
+      '"featured: true" only works for a whole event (a folder directly in src/albums), not for a section. Remove the line, or put it in the index.md of the event.',
+    );
+  }
+  const events = featured.filter((candidate) => candidate.depth === 1);
+  if (events.length > 1) {
+    for (const node of events) {
+      list.warning(
+        'featured-ignored',
+        node.source.indexMd?.file ?? node.source.dir,
+        `More than one event has "featured: true" (${quoteList(events.map((event) => event.title))}). The home page features the newest of them. Remove the line from the others.`,
+      );
+    }
+  }
+}
+
+/** index.md `highlights:`: each entry must name a photo of this album; one that is not shown is a warning. */
+function checkHighlights(node: ModelNode, list: IssueList): void {
+  const entries = node.meta.highlights;
+  const indexFile = node.source.indexMd?.file;
+  if (entries === undefined || indexFile === undefined) return;
+
+  const photos = allModelPhotos(node);
+  entries.forEach((entry, index) => {
+    const target = node.highlightFiles?.[index];
+    const photo = target ? photos.find((p) => p.file === target) : undefined;
+    if (!photo) {
+      const caseMatch = target ? photos.find((p) => p.file.toLowerCase() === target.toLowerCase()) : undefined;
+      const hint = caseMatch
+        ? ` Did you mean "${caseMatch.file.slice(node.source.dir.length + 1)}"? Capital letters matter: the website is built on Linux.`
+        : ' The path is relative to this folder, for example "day-1/@andi-pratama/IMG_0012.jpg". Fix it, or remove the line.';
+      list.error('missing-highlight', indexFile, `highlights: "${entry}" does not match any photo in this folder or its sub-folders.${hint}`);
+      return;
+    }
+    if (node.meta.draft || node.meta.hidden) return; // the whole album is unpublished anyway
+    const reason = notShownReason(node, photo);
+    if (reason) {
+      list.warning(
+        'highlight-not-shown',
+        indexFile,
+        `highlights: "${entry}" ${reason}, so the home page leaves it out. Remove it from the list, or choose another photo.`,
+      );
+    }
+  });
+}
+
 // ---------------------------------------------------------------------------------------
 // Warnings
 // ---------------------------------------------------------------------------------------
@@ -369,6 +431,20 @@ function pathToPhoto(node: ModelNode, file: string): ModelNode[] | undefined {
     const below = pathToPhoto(child, file);
     if (below) return [node, ...below];
   }
+  return undefined;
+}
+
+/**
+ * Why a photo of `node` is not shown although `node` is published: hidden in photos.yaml, or
+ * inside a hidden or draft section. Undefined when it is shown.
+ */
+function notShownReason(node: ModelNode, photo: Photo): string | undefined {
+  if (photo.hidden) return 'is a photo that is hidden in photos.yaml';
+  const sections = pathToPhoto(node, photo.file)?.slice(1) ?? [];
+  const hidden = sections.find((section) => section.meta.hidden);
+  if (hidden) return `is in "${hidden.title}", which is hidden (hidden: true in its index.md)`;
+  const draft = sections.find((section) => section.meta.draft);
+  if (draft) return `is in "${draft.title}", which is a draft (not published yet)`;
   return undefined;
 }
 
