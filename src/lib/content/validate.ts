@@ -7,6 +7,7 @@
  * caught before a draft is published.
  */
 import { formatDate, formatDateRange, isDayWithin } from '../dates.ts';
+import { ALL_PHOTOS_SLUG } from '../slug.ts';
 import type { ContentModel, Issue, IssueCode, ModelNode, Photo, SourceStray } from './types.ts';
 
 /** Images above this size get a warning (TRD §4.8: "image over 2 MB"). */
@@ -259,6 +260,15 @@ function checkSiblingSlugs(node: ModelNode, list: IssueList): void {
   const seen = new Map<string, ModelNode>();
   for (const child of node.children) {
     if (child.slug === '') continue;
+    // Events may be called "all"; a section may not, since …/<event>/all/ shows all photos.
+    if (node.depth > 0 && child.slug === ALL_PHOTOS_SLUG) {
+      list.error(
+        'reserved-folder-name',
+        child.source.dir,
+        `The folder "${child.source.folderName}" would get the web address …/${ALL_PHOTOS_SLUG}/, which is already the ` +
+          `"All photos" page of "${node.title}". Rename the folder, for example to "${ALL_PHOTOS_SLUG}-day".`,
+      );
+    }
     const first = seen.get(child.slug);
     if (!first) {
       seen.set(child.slug, child);

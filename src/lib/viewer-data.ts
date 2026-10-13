@@ -30,6 +30,11 @@ export interface ViewerPhotographer {
 export interface ViewerPhoto {
   /** Deep-link slug (`#<slug>`), unique within the album page (TRD §4.7). */
   slug: string;
+  /**
+   * Where this photo comes from, when the grid mixes sections (the all-photos page):
+   * "Day 2 · Pinus ORI". Replaces the grid's `context` for this photo.
+   */
+  context?: string;
   image: ViewerImage;
   alt: string;
   caption?: string;
@@ -45,8 +50,23 @@ export interface ViewerData {
   photos: ViewerPhoto[];
 }
 
-export function viewerPhoto(photo: Photo, image: ViewerImage): ViewerPhoto {
-  const result: ViewerPhoto = { slug: photo.slug, image, alt: photo.alt };
+/**
+ * A photo as one grid shows it. On its own album page a photo's slug is its own (TRD §4.7);
+ * the all-photos page of an event shows photos from several sections, so there the slug
+ * carries the section path (`day-1/andi-img-0012`) and each photo names its own section.
+ */
+export interface GridPhoto {
+  photo: Photo;
+  slug: string;
+  context?: string;
+}
+
+/** The photos of one album, as its own page shows them. */
+export const gridPhotos = (photos: readonly Photo[]): GridPhoto[] => photos.map((photo) => ({ photo, slug: photo.slug }));
+
+export function viewerPhoto(photo: Photo, image: ViewerImage, placement: Omit<GridPhoto, 'photo'> = { slug: photo.slug }): ViewerPhoto {
+  const result: ViewerPhoto = { slug: placement.slug, image, alt: photo.alt };
+  if (placement.context) result.context = placement.context;
   if (photo.caption) result.caption = photo.caption;
   if (photo.photographer) {
     const { name, initials, instagramUrl } = photo.photographer;

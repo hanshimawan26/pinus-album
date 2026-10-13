@@ -4,11 +4,12 @@
  *
  * A page tells the browser how big each image file is: `<img width height>` describes
  * `src`, and a srcset `800w` descriptor says that file is 800 px wide (with the same aspect
- * ratio). The viewer JSON does the same with `{ src, srcset, width, height }`. Comparing
+ * ratio). The viewer JSON does the same with `{ src, srcset, width, height }`, and the link
+ * preview tags with `og:image`, `og:image:width` and `og:image:height`. Comparing
  * these claims with the published files proves that every derivative is upright (TRD §12.3:
  * portrait phone photos display upright) and that the srcset descriptors are exact.
  */
-import { decodeEntities, inlineJson, markupOnly, parseSrcset } from './links.ts';
+import { decodeEntities, inlineJson, markupOnly, metaProperties, parseSrcset } from './links.ts';
 
 export interface ImageClaim {
   /** Where the claim came from: `img` or `json`. */
@@ -68,7 +69,17 @@ export function extractImageClaims(html: string): ImageClaim[] {
     );
   }
   for (const json of inlineJson(html)) collectJsonClaims(json, claims);
+  claims.push(...previewImageClaims(html));
   return claims;
+}
+
+/** The link preview image: `og:image` is `og:image:width` × `og:image:height`. */
+function previewImageClaims(html: string): ImageClaim[] {
+  const meta = new Map(metaProperties(html).map(({ property, content }) => [property, content]));
+  const url = meta.get('og:image');
+  const width = positiveNumber(meta.get('og:image:width'));
+  const height = positiveNumber(meta.get('og:image:height'));
+  return url && width !== undefined && height !== undefined ? [{ source: 'og:image', url, width, height }] : [];
 }
 
 function collectJsonClaims(value: unknown, claims: ImageClaim[]): void {

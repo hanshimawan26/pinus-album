@@ -7,16 +7,21 @@
  * The post viewer (PostViewer.astro, TRD §6.5) reads the JSON below: `photos[i]` belongs to
  * the tile with `data-index="i"`; its `slug` is the deep-link hash (TRD §4.7).
  * Rendering the viewer here means its script ships only on pages that have photos.
+ *
+ * With two or more credited photographers, filter chips sit above the grid (TRD §6.3 item 8);
+ * each tile carries its photographer's slug as `data-photographer` for them.
  */
-import type { Photo } from '../lib/content/types.ts';
 import { loadingHint } from '../lib/image-sizes.ts';
+import PhotographerFilter from './PhotographerFilter.astro';
 import PostViewer from './PostViewer.astro';
 import { thumbnailFor, viewerImageFor } from '../lib/images.ts';
+import { photographerChips } from '../lib/photographer-filter.ts';
 import { jsonForScript } from '../lib/presentation.ts';
-import { viewerPhoto, type ViewerData } from '../lib/viewer-data.ts';
+import { viewerPhoto, type GridPhoto, type ViewerData } from '../lib/viewer-data.ts';
 
 interface Props {
-  photos: readonly Photo[];
+  /** In display order, with each photo's deep-link slug on this page. */
+  photos: readonly GridPhoto[];
   /** "Day 1 · Demo Event A", shown in the viewer's details panel. */
   context: string;
   /** True when the grid starts in the first viewport, so the first row loads eagerly. */
@@ -25,24 +30,26 @@ interface Props {
 
 const { photos, context, nearTop } = Astro.props;
 const tiles = await Promise.all(
-  photos.map(async (photo) => ({ photo, thumbnail: await thumbnailFor(photo), viewer: await viewerImageFor(photo) })),
+  photos.map(async ({ photo, ...placement }) => ({ photo, placement, thumbnail: await thumbnailFor(photo), viewer: await viewerImageFor(photo) })),
 );
 const viewerData: ViewerData = {
   context,
-  photos: tiles.map(({ photo, viewer }) => viewerPhoto(photo, viewer)),
+  photos: tiles.map(({ photo, placement, viewer }) => viewerPhoto(photo, viewer, placement)),
 };
+const chips = photographerChips(photos.map(({ photo }) => photo));
 // The first row of the widest layout (5 tiles) loads eagerly with high priority: the tiles
 // are all the same size, so any of them can be the largest contentful paint.
 const policy = { nearTop, highPriority: 5, eager: 5 };
 ---
 
+{chips.length > 0 && <PhotographerFilter chips={chips} total={photos.length} />}
 <ul class="bare-list grid" role="list" data-photo-grid>
   {
     tiles.map(({ photo, thumbnail }, index) => {
       const hint = loadingHint(index, policy);
       return (
         <li>
-          <button type="button" class="tile" aria-haspopup="dialog" data-index={index}>
+          <button type="button" class="tile" aria-haspopup="dialog" data-index={index} data-photographer={photo.photographer?.slug}>
             <img
               src={thumbnail.src}
               srcset={thumbnail.srcset}

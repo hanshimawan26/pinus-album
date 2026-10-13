@@ -111,6 +111,14 @@ describe('errors (TRD §4.8)', () => {
     expect(codes(issuesFor([clean('Event'), clean('event')]))).toEqual(['duplicate-node-slug']);
   });
 
+  it('a section whose address would be the event\'s "All photos" page (…/all/)', () => {
+    const issues = issuesFor([clean('event', { children: [clean('day-1'), clean('02-All')] })]);
+    expect(issues).toEqual([expect.objectContaining({ level: 'error', code: 'reserved-folder-name', file: 'src/albums/event/02-All' })]);
+    expect(issues[0]?.message).toContain('"02-All"');
+    // An event may be called "all": its own all-photos page is …/all/all/.
+    expect(issuesFor([clean('all', { children: [clean('day-1')] })])).toEqual([]);
+  });
+
   it('folder name without plain letters or digits (including non-Latin names)', () => {
     expect(codes(issuesFor([clean('event', { children: [clean('!!!')] })]))).toEqual(['invalid-folder-name']);
     const [issue] = issuesFor([clean('event', { children: [clean('日本')] })]);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { build, sourceTree } from './helpers/content.ts';
 import type { AlbumNode, Photo } from '../src/lib/content/types.ts';
-import { viewerContext, viewerPhoto, type ViewerImage } from '../src/lib/viewer-data.ts';
+import { gridPhotos, viewerContext, viewerPhoto, type ViewerImage } from '../src/lib/viewer-data.ts';
 
 const image: ViewerImage = { src: '/x/a.webp', srcset: '/x/a.webp 800w', sizes: '100vw', width: 800, height: 533 };
 
@@ -63,6 +63,21 @@ describe('viewerPhoto', () => {
     const { root: undated } = build(sourceTree([{ folder: 'e', images: ['a.jpg'] }]));
     const photo = (undated.children[0] as AlbumNode).photos[0] as Photo;
     expect(viewerPhoto(photo, image)).not.toHaveProperty('date');
+  });
+
+  it('uses the slug and context of its place on the page (the "All photos" page)', () => {
+    const photo = photos.get('@sari/plain.jpg') as Photo;
+    expect(viewerPhoto(photo, image)).not.toHaveProperty('context');
+    const placed = viewerPhoto(photo, image, { slug: 'day-1/sari-plain', context: 'Day 1 · Event' });
+    expect(placed).toMatchObject({ slug: 'day-1/sari-plain', context: 'Day 1 · Event' });
+  });
+});
+
+describe('gridPhotos', () => {
+  it('places an album\'s photos under their own slugs', () => {
+    const { root } = build(sourceTree([{ folder: 'e', images: ['@a/IMG_1.jpg', '@b/IMG_1.jpg'] }]));
+    const album = root.children[0] as AlbumNode;
+    expect(gridPhotos(album.photos)).toEqual(album.photos.map((photo) => ({ photo, slug: photo.slug })));
   });
 });
 

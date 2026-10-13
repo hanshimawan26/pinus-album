@@ -38,6 +38,12 @@ export function parseFolderName(folderName: string): FolderName {
   return { slug: slugify(folderName) };
 }
 
+/**
+ * The last URL segment of a node's "all photos" page (TRD §6.3 item 7):
+ * `albums/pinus-ori/all/`. A child node may therefore not have this slug (validate.ts).
+ */
+export const ALL_PHOTOS_SLUG = 'all';
+
 /** `"day-1"` → `"Day 1"`, `"andi-pratama"` → `"Andi Pratama"` (TRD §4.2 rule 7, §4.5). */
 export function titleFromSlug(slug: string): string {
   return slug

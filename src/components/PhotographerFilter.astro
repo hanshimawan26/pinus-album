@@ -1,0 +1,115 @@
+---
+/**
+ * Photographer filter chips above a photo grid (TRD §6.3 item 8): "All", then one chip per
+ * photographer with their number of photos, most photos first. Rendered by PhotoGrid only
+ * when at least two photographers are credited. Hidden until the viewer script
+ * (src/scripts/viewer/chips.ts) takes over, since the chips need JavaScript to work.
+ *
+ * Toggle buttons (`aria-pressed`): exactly one is pressed. Pressing a pressed photographer
+ * chip again returns to "All". A live region announces how many photos are left. Each chip
+ * is named "Budi Santoso, 5 photos" by `aria-label`, which starts with its visible text;
+ * building that name from hidden spans gives stray spaces, as the chip is a flex row.
+ * On phones the chips scroll sideways in one row, edge to edge like the grid; from 600px
+ * they wrap.
+ */
+import type { PhotographerChip } from '../lib/photographer-filter.ts';
+import { countLabel } from '../lib/presentation.ts';
+
+interface Props {
+  chips: readonly PhotographerChip[];
+  /** Photos in the grid: the "All" count. */
+  total: number;
+}
+
+const { chips, total } = Astro.props;
+---
+
+<div class="filter" role="group" aria-label="Filter by photographer" data-photo-filter hidden>
+  <button type="button" class="chip" aria-pressed="true" aria-label={`All, ${countLabel(total, 'photo')}`} data-filter="">
+    All <span class="count">{total}</span>
+  </button>
+  {
+    chips.map((chip) => (
+      <button
+        type="button"
+        class="chip"
+        aria-pressed="false"
+        aria-label={`${chip.name}, ${countLabel(chip.count, 'photo')}`}
+        data-filter={chip.slug}
+        data-name={chip.name}
+      >
+        {chip.name} <span class="count">{chip.count}</span>
+      </button>
+    ))
+  }
+</div>
+<p class="visually-hidden" aria-live="polite" data-filter-status></p>
+
+<style>
+  .filter {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+    /* One sideways-scrolling row on phones, edge to edge like the grid below it. */
+    margin-inline: calc(-1 * var(--gutter));
+    padding-inline: var(--gutter);
+    /* Room for the focus ring, which the scroll container would otherwise clip. */
+    padding-block: var(--space-1);
+    overflow-x: auto;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+
+  .filter::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (min-width: 600px) {
+    .filter {
+      flex-wrap: wrap;
+      margin-inline: 0;
+      padding-inline: 0;
+      overflow-x: visible;
+    }
+  }
+
+  .chip {
+    flex: none;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4em;
+    min-height: 2.25rem;
+    padding: var(--space-1) var(--space-3);
+    border: 0;
+    border-radius: var(--radius-full);
+    background: var(--color-surface-sunken);
+    color: var(--color-text);
+    font-size: var(--text-md);
+    font-weight: 600;
+    line-height: var(--leading-snug);
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out);
+  }
+
+  .chip:hover {
+    background: var(--color-border);
+  }
+
+  .chip[aria-pressed='true'] {
+    background: var(--brand-blue);
+    color: var(--color-on-accent);
+  }
+
+  .count {
+    color: var(--color-text-muted);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chip[aria-pressed='true'] .count {
+    color: inherit;
+  }
+</style>

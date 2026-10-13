@@ -4,13 +4,16 @@ import AlbumCardList from '../components/AlbumCardList.astro';
 import EmptyState from '../components/EmptyState.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { loadAlbumsOrThrow, siteLoadOptions } from '../lib/content/index.ts';
+import { previewImageFor } from '../lib/images.ts';
 import { countLabel } from '../lib/presentation.ts';
 
 const albums = await loadAlbumsOrThrow(siteLoadOptions(import.meta.env.DEV));
 const events = albums.root.children;
+// The link preview shows the newest event's cover.
+const previewImage = await previewImageFor(albums.root.cover);
 ---
 
-<BaseLayout isHome>
+<BaseLayout isHome previewImage={previewImage}>
   <div class="container page">
     <header class="intro">
       <h1 class="page-title">Photo albums</h1>

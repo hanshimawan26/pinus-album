@@ -5,15 +5,37 @@
  *
  * This is the end-to-end proof for TRD §4.3 (`draft: true` is excluded from production) and
  * §4.4 (`hidden: true` removes a photo from the site): a draft album must have no page, and
- * a page must not list a hidden photo.
+ * a page must not list a hidden photo. The "All photos" pages are checked the same way.
  */
+import { allPhotosOf, allPhotosPath, hasAllPhotosPage } from '../all-photos.ts';
+import type { AlbumNode } from '../content/types.ts';
 import { inlineJson } from './links.ts';
 
-/** An album the site should publish, keyed by slug path (`demo-event-a/day-1`). */
+/**
+ * An album page the site should publish, keyed by its path below `albums/`: an album
+ * (`demo-event-a/day-1`) or the "All photos" page of an album with sections (`demo-event-a/all`).
+ */
 export interface ExpectedAlbum {
   path: string;
-  /** Slugs of its own visible photos. */
+  /** Deep-link slugs of the visible photos it shows. */
   photoSlugs: readonly string[];
+}
+
+/**
+ * Every album page the published albums call for: one per album (`nodes` without the root)
+ * with its own photos, and an "All photos" page for each album with sections, showing every
+ * photo below it (TRD §6.3 item 7).
+ */
+export function expectedAlbumPages(nodes: Iterable<AlbumNode>): ExpectedAlbum[] {
+  const pages: ExpectedAlbum[] = [];
+  for (const node of nodes) {
+    if (node.depth === 0) continue;
+    pages.push({ path: node.slugPath.join('/'), photoSlugs: node.photos.map((photo) => photo.slug) });
+    if (hasAllPhotosPage(node)) {
+      pages.push({ path: allPhotosPath(node).join('/'), photoSlugs: allPhotosOf(node, []).map((photo) => photo.slug) });
+    }
+  }
+  return pages;
 }
 
 /** An album page found in dist/. */

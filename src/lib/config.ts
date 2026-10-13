@@ -52,6 +52,30 @@ export function normaliseBasePath(raw: string): string {
  */
 export const BASE_PATH = normaliseBasePath(env.BASE_PATH ?? DEFAULT_BASE_PATH);
 
+/**
+ * Default website address: the GitHub Pages site of the current repository. The deploy
+ * workflow passes the real address (`SITE_URL`, from the Pages configuration), so this only
+ * matters for local builds. Change it when the repository moves (README: "Settings").
+ */
+export const DEFAULT_SITE_URL = 'https://hanshimawan26.github.io';
+
+/** `"https://example.org/"` or `"https://example.org/x"` → `"https://example.org"`. */
+export function normaliseSiteUrl(raw: string): string {
+  let url: URL;
+  try {
+    url = new URL(raw.trim());
+  } catch {
+    throw new Error(`SITE_URL "${raw}" is not a web address. Use the site's address, for example https://photos.example.org`);
+  }
+  return url.origin;
+}
+
+/**
+ * The site's origin (`SITE_URL`, TRD §8), without the base path. Link previews need absolute
+ * URLs (Open Graph). Read by astro.config.mjs and by `npm run verify:dist`, so both agree.
+ */
+export const SITE_URL = normaliseSiteUrl(env.SITE_URL || DEFAULT_SITE_URL);
+
 /** Search indexing is off unless explicitly enabled (TRD §10). */
 export const ALLOW_INDEXING = /^(1|true|yes)$/i.test(env.ALLOW_INDEXING ?? '');
 

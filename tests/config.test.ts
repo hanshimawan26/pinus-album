@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { THEME_COLOR } from '../src/lib/config.ts';
+import { normaliseSiteUrl, THEME_COLOR } from '../src/lib/config.ts';
 
 describe('THEME_COLOR', () => {
   it('equals the --color-bg token in global.css, so the browser UI matches the page', () => {
@@ -41,5 +41,17 @@ describe('SHOW_HIDDEN', () => {
       expect(flag).toBe(true);
       expect(site).toEqual({ includeDrafts: false, includeHidden: true });
     }
+  });
+});
+
+describe('normaliseSiteUrl', () => {
+  it('keeps only the origin of SITE_URL', () => {
+    expect(normaliseSiteUrl('https://hanshimawan26.github.io')).toBe('https://hanshimawan26.github.io');
+    expect(normaliseSiteUrl(' https://photos.example.org/ ')).toBe('https://photos.example.org');
+    expect(normaliseSiteUrl('https://hanshimawan26.github.io/pinus-album/')).toBe('https://hanshimawan26.github.io');
+  });
+
+  it('explains a value that is not a web address', () => {
+    expect(() => normaliseSiteUrl('hanshimawan26.github.io')).toThrow(/not a web address/);
   });
 });

@@ -6,6 +6,9 @@ import {
   JS_BUDGET_GZIP_BYTES,
   kilobytes,
   pageProblems,
+  PREVIEW_IMAGE_MAX_BYTES,
+  previewImageSizeProblem,
+  previewProblems,
   robotsContent,
   scriptBudgetProblem,
   TAKEDOWN_TEXT,
@@ -120,5 +123,50 @@ describe('kilobytes', () => {
 describe('TAKEDOWN_TEXT', () => {
   it('is the sentence SiteFooter.astro renders, so the check and the footer stay in step', () => {
     expect(readFileSync('src/components/SiteFooter.astro', 'utf8')).toContain(TAKEDOWN_TEXT);
+  });
+});
+
+describe('previewProblems (link previews)', () => {
+  const URL_ = 'https://hanshimawan26.github.io/pinus-album/albums/x/';
+  const tags = (extra = '', url = URL_) =>
+    `<head><meta property="og:title" content="X"><meta property="og:description" content="About X">` +
+    `<meta property="og:url" content="${url}"><meta name="twitter:card" content="summary">${extra}</head>`;
+  const image = '<meta property="og:image" content="https://hanshimawan26.github.io/pinus-album/_astro/a.jpg">';
+  const size = '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">';
+
+  it('accepts a page with title, description, its own URL and a card type, with or without an image', () => {
+    expect(previewProblems(tags(), URL_)).toEqual([]);
+    expect(previewProblems(tags(image + size), URL_)).toEqual([]);
+  });
+
+  it('reports missing tags', () => {
+    expect(previewProblems('<head></head>', URL_)).toEqual([
+      'has no link preview tag "og:title"',
+      'has no link preview tag "og:description"',
+      'has no link preview tag "og:url"',
+      'has no link preview tag "twitter:card"',
+    ]);
+  });
+
+  it('reports an og:url that is not the page itself', () => {
+    expect(previewProblems(tags('', 'https://hanshimawan26.github.io/pinus-album/'), URL_)).toEqual([
+      `has og:url "https://hanshimawan26.github.io/pinus-album/", but the page's address is ${URL_}`,
+    ]);
+  });
+
+  it('reports an og:image without its size', () => {
+    expect(previewProblems(tags(image), URL_)).toEqual(['has an og:image without og:image:width and og:image:height']);
+  });
+
+  it('wants no preview tags on the 404 page', () => {
+    expect(previewProblems('<head></head>', undefined)).toEqual([]);
+    expect(previewProblems(tags(), undefined)[0]).toContain('the 404 page has no address to share');
+  });
+});
+
+describe('previewImageSizeProblem', () => {
+  it('allows preview images up to 300 KB', () => {
+    expect(previewImageSizeProblem(PREVIEW_IMAGE_MAX_BYTES)).toBeUndefined();
+    expect(previewImageSizeProblem(PREVIEW_IMAGE_MAX_BYTES + 1)).toContain('WhatsApp');
   });
 });

@@ -5,6 +5,8 @@ import {
   coverSizes,
   coverWidths,
   loadingHint,
+  PREVIEW_IMAGE,
+  previewImageSize,
   SHORT_STORY_MAX_CHARS,
   startsNearTop,
   thumbnailEdge,
@@ -137,5 +139,19 @@ describe('startsNearTop (a long story pushes the grid below the fold)', () => {
   it('treats content after a story of a few paragraphs as below the fold', () => {
     expect(startsNearTop(SHORT_STORY_MAX_CHARS + 1)).toBe(false);
     expect(startsNearTop(900)).toBe(false);
+  });
+});
+
+describe('previewImageSize (link preview, 1.91:1)', () => {
+  it('is 1200×630 for a large photo of any shape', () => {
+    expect(previewImageSize(2400, 1600)).toEqual({ width: 1200, height: 630 });
+    expect(previewImageSize(1600, 2400)).toEqual({ width: 1200, height: 630 });
+    expect(PREVIEW_IMAGE).toMatchObject({ width: 1200, height: 630 });
+  });
+
+  it('never upscales: a small source gets the largest 1.91:1 crop inside it', () => {
+    expect(previewImageSize(800, 600)).toEqual({ width: 800, height: 420 });
+    expect(previewImageSize(1600, 400)).toEqual({ width: 761, height: 400 });
+    expect(previewImageSize(1, 1)).toEqual({ width: 1, height: 1 });
   });
 });

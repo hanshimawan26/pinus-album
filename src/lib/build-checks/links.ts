@@ -4,12 +4,18 @@
  *
  * Catches base-path mistakes: on a project site every internal URL must start with the
  * base (`/pinus-album/`); a link to `/albums/x/` would 404 on GitHub Pages.
+ *
+ * Link preview tags (`og:url`, `og:image`) are read by other servers (chat apps, social
+ * sites), so their URLs must be absolute and on the site's own address (`SITE_URL`); a wrong
+ * SITE_URL would make every preview point to another site.
  */
 
 export interface Reference {
-  /** Where the URL came from: an attribute name, `json:<key>` or `css:url`. */
+  /** Where the URL came from: an attribute name, `json:<key>`, `css:url` or `meta:<property>`. */
   source: string;
   url: string;
+  /** Must be an absolute URL on the site's own address (link preview tags). */
+  absolute?: boolean;
 }
 
 const ENTITIES: Record<string, string> = { amp: '&', quot: '"', apos: "'", lt: '<', gt: '>', '#39': "'" };
@@ -47,6 +53,29 @@ const JSON_SCRIPTS = /<script\b[^>]*\btype\s*=\s*["']?application\/(?:ld\+)?json
 const URL_ATTRIBUTES = /\s(href|src|srcset|poster)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/gi;
 const STYLE_ATTRIBUTE = /\sstyle\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
 const JSON_URL_KEYS = new Set(['href', 'src', 'srcset']);
+const META_TAGS = /<meta\b[^>]*>/gi;
+const META_ATTRIBUTES = {
+  property: /\sproperty\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/i,
+  name: /\sname\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/i,
+  content: /\scontent\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/i,
+};
+/** Link preview properties whose value is a URL (Open Graph, X cards). */
+const PREVIEW_URL_PROPERTIES = new Set(['og:url', 'og:image', 'og:image:url', 'og:image:secure_url', 'twitter:image']);
+
+/** `<meta property|name="…" content="…">` pairs of a page, in order (entities decoded). */
+export function metaProperties(html: string): { property: string; content: string }[] {
+  const pairs: { property: string; content: string }[] = [];
+  for (const [tag] of markupOnly(html).matchAll(META_TAGS)) {
+    const property = META_ATTRIBUTES.property.exec(tag) ?? META_ATTRIBUTES.name.exec(tag);
+    const content = META_ATTRIBUTES.content.exec(tag);
+    if (!property || !content) continue;
+    pairs.push({
+      property: decodeEntities(property[1] ?? property[2] ?? property[3] ?? '').toLowerCase(),
+      content: decodeEntities(content[1] ?? content[2] ?? content[3] ?? ''),
+    });
+  }
+  return pairs;
+}
 
 /** The page's markup with every script and style body emptied, so only real tags remain. */
 export const markupOnly = (html: string): string => html.replace(SCRIPT_OR_STYLE, '<$1$2></$1>');
@@ -58,8 +87,9 @@ export function inlineJson(html: string): unknown[] {
 
 /**
  * Every URL a page refers to: `href`, `src`, `srcset` and `poster` attributes; `url()`s in
- * inline `<style>` blocks and `style` attributes (the build inlines every stylesheet); and
- * `href`, `src` and `srcset` values inside inline JSON scripts (the viewer data).
+ * inline `<style>` blocks and `style` attributes (the build inlines every stylesheet);
+ * `href`, `src` and `srcset` values inside inline JSON scripts (the viewer data); and the
+ * link preview URLs (`og:url`, `og:image`, …), marked `absolute`.
  * Throws if an inline JSON script is not valid JSON.
  */
 export function extractHtmlReferences(html: string): Reference[] {
@@ -79,7 +109,20 @@ export function extractHtmlReferences(html: string): Reference[] {
     references.push(...extractCssReferences(decodeEntities(match[1] ?? match[2] ?? '')));
   }
   for (const json of inlineJson(html)) collectJsonUrls(json, references);
+  for (const { property, content } of metaProperties(html)) {
+    if (PREVIEW_URL_PROPERTIES.has(property)) references.push({ source: `meta:${property}`, url: content, absolute: true });
+  }
   return references;
+}
+
+/**
+ * Why `url` cannot be a link preview URL of a site at `origin` (`https://example.org`), or
+ * undefined when it is fine: it must be absolute and on that origin.
+ */
+export function absoluteUrlProblem(url: string, origin: string): string | undefined {
+  if (!SCHEME.test(url.trim())) return `must be an absolute address (${origin}/…), because other sites read it`;
+  if (!url.trim().startsWith(`${origin}/`)) return `points to another site; this site's address (SITE_URL) is ${origin}`;
+  return undefined;
 }
 
 function collectJsonUrls(value: unknown, references: Reference[]): void {
@@ -116,11 +159,13 @@ const SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 
 /**
  * Resolve a URL found on the page served at `fromSitePath` (e.g. `/pinus-album/albums/x/`)
- * to the dist files that could serve it, for a site built with `base`.
+ * to the dist files that could serve it, for a site built with `base`. An absolute URL on
+ * the site's own `origin` (when given) is internal too; other absolute URLs are skipped.
  */
-export function resolveReference(url: string, fromSitePath: string, base: string): Resolution {
-  const trimmed = url.trim();
+export function resolveReference(url: string, fromSitePath: string, base: string, origin?: string): Resolution {
+  let trimmed = url.trim();
   if (trimmed === '') return { kind: 'error', reason: 'empty URL' };
+  if (origin && trimmed.startsWith(`${origin}/`)) trimmed = trimmed.slice(origin.length);
   if (trimmed.startsWith('#') || SCHEME.test(trimmed) || trimmed.startsWith('//')) return { kind: 'skip' };
 
   let sitePath: string;

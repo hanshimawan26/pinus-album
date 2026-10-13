@@ -5,12 +5,16 @@
  *
  * The history rules are pure functions in `history.ts`; this class carries them out.
  *
+ * Positions: the viewer moves through a sequence of the grid's photos, in grid order. That is
+ * every photo, unless the photographer filter (chips.ts) limits it with `showOnly()`; then the
+ * counter, the arrows and deep links cover only the photos left in the grid.
+ *
  * Focus: the close button gets focus on open; Tab cycles inside the dialog; a control that
  * disappears while focused (an arrow at an end, the Instagram link, "more", "Try again")
  * hands focus to a stable control; on close, focus returns to the tile of the photo shown
  * last (scrolled into view if needed).
  */
-import type { ViewerData } from '../../lib/viewer-data.ts';
+import type { ViewerData, ViewerPhoto } from '../../lib/viewer-data.ts';
 import { focusableIn, isRendered, setShown, type ViewerElements } from './dom.ts';
 import { wrapFocus } from './focus-order.ts';
 import { attachSwipe } from './gestures.ts';
@@ -28,11 +32,15 @@ export class PostViewer {
   readonly #elements: ViewerElements;
   readonly #data: ViewerData;
   readonly #tiles: ReadonlyMap<number, HTMLElement>;
-  readonly #slugs: string[];
+  /** Indexes into `#data.photos` (= tile `data-index`) that the viewer moves through. */
+  #sequence: number[];
+  /** Slugs of the photos in `#sequence`, in the same order. */
+  #slugs: string[];
   readonly #display: PhotoDisplay;
   readonly #preloader = new Preloader();
 
-  #index = 0;
+  /** Position of the shown photo in `#sequence`. */
+  #position = 0;
   #captionExpanded = false;
   /** Set when the viewer closes because the URL changed (Back), so history is left alone. */
   #closingFromHistory = false;
@@ -46,23 +54,43 @@ export class PostViewer {
     this.#elements = elements;
     this.#data = data;
     this.#tiles = tiles;
+    this.#sequence = data.photos.map((_, index) => index);
     this.#slugs = data.photos.map((photo) => photo.slug);
     this.#display = new PhotoDisplay(elements.stage, elements.image, elements.error);
     this.#bindEvents();
   }
 
   get #total(): number {
-    return this.#data.photos.length;
+    return this.#sequence.length;
+  }
+
+  #photoAt(position: number): ViewerPhoto | undefined {
+    const index = this.#sequence[position];
+    return index === undefined ? undefined : this.#data.photos[index];
   }
 
   get isOpen(): boolean {
     return this.#elements.dialog.open;
   }
 
-  /** Opens the photo of a clicked tile and adds `#<slug>` to history. */
-  openFromTile(index: number): void {
-    this.#open(index);
-    history.pushState(markedState(history.state), '', withHash(location.href, this.#slugs[this.#index] ?? ''));
+  /** Opens the photo of a clicked tile (its `data-index`) and adds `#<slug>` to history. */
+  openFromTile(tileIndex: number): void {
+    const position = this.#sequence.indexOf(tileIndex);
+    if (position === -1) return;
+    this.#open(position);
+    history.pushState(markedState(history.state), '', withHash(location.href, this.#slugs[this.#position] ?? ''));
+  }
+
+  /**
+   * Limits the viewer to some of the grid's photos (tile indexes, in grid order): the photos
+   * the photographer filter left. The filter sits behind the modal viewer, so this happens
+   * only while it is closed.
+   */
+  showOnly(tileIndexes: readonly number[]): void {
+    if (this.isOpen) return;
+    this.#sequence = tileIndexes.filter((index) => this.#data.photos[index] !== undefined);
+    this.#slugs = this.#sequence.map((index) => this.#data.photos[index]?.slug ?? '');
+    this.#position = 0;
   }
 
   /** On page load: opens the photo named by the URL hash, if any (an invalid hash is ignored). */
@@ -80,8 +108,8 @@ export class PostViewer {
 
   /** Moves `delta` photos forward or back; does nothing past either end. */
   go(delta: number): void {
-    const target = step(this.#index, delta, this.#total);
-    if (target === null || target === this.#index || !this.isOpen) return;
+    const target = step(this.#position, delta, this.#total);
+    if (target === null || target === this.#position || !this.isOpen) return;
     this.#showAndAnnounce(target);
     history.replaceState(history.state, '', withHash(location.href, this.#slugs[target] ?? ''));
   }
@@ -98,9 +126,9 @@ export class PostViewer {
   // Opening, moving, closing
   // -------------------------------------------------------------------------------------
 
-  #open(index: number): void {
+  #open(position: number): void {
     const { dialog, close } = this.#elements;
-    this.#show(clampIndex(index, this.#total));
+    this.#show(clampIndex(position, this.#total));
     if (this.isOpen) return;
     this.#tileToReveal = null;
     lockScroll();
@@ -113,23 +141,23 @@ export class PostViewer {
   }
 
   /** Every move to another photo while open (keys, buttons, swipe, Back/Forward) is announced. */
-  #showAndAnnounce(index: number): void {
-    this.#show(index);
-    const photo = this.#data.photos[index];
-    if (photo) this.#elements.announce.textContent = photoLabel(photo, index, this.#total);
+  #showAndAnnounce(position: number): void {
+    this.#show(position);
+    const photo = this.#photoAt(position);
+    if (photo) this.#elements.announce.textContent = photoLabel(photo, position, this.#total);
   }
 
-  #show(index: number): void {
-    const photo = this.#data.photos[index];
+  #show(position: number): void {
+    const photo = this.#photoAt(position);
     if (!photo) return;
     this.#keepingFocus(() => {
-      this.#index = index;
-      renderPhoto(this.#elements, photo, { index, total: this.#total }, this.#data.context);
+      this.#position = position;
+      renderPhoto(this.#elements, photo, { index: position, total: this.#total }, photo.context ?? this.#data.context);
       this.#display.show(photo.image, photo.alt);
       this.#setCaptionExpanded(false);
     });
-    for (const neighbour of neighbours(index, this.#total)) {
-      const next = this.#data.photos[neighbour];
+    for (const neighbour of neighbours(position, this.#total)) {
+      const next = this.#photoAt(neighbour);
       if (next) this.#preloader.preload(next.image);
     }
   }
@@ -140,7 +168,7 @@ export class PostViewer {
     document.removeEventListener('keydown', this.#onKeydown);
     unlockScroll();
     this.#elements.announce.textContent = '';
-    const tile = this.#tiles.get(this.#index) ?? null;
+    const tile = this.#tiles.get(this.#sequence[this.#position] ?? -1) ?? null;
     if (tile) {
       tile.focus({ preventScroll: true });
       tile.scrollIntoView({ block: 'nearest' });
@@ -159,7 +187,7 @@ export class PostViewer {
   /** Back, Forward, or an edited hash (`popstate`, `hashchange`): make the viewer match the URL. */
   #syncWithLocation = (event: Event): void => {
     const index = this.#indexForLocation();
-    switch (syncAction({ index, isOpen: this.isOpen, current: this.#index })) {
+    switch (syncAction({ index, isOpen: this.isOpen, current: this.#position })) {
       case 'close':
         this.#closingFromHistory = true;
         this.close();
@@ -247,8 +275,8 @@ export class PostViewer {
     const moves: Record<string, () => void> = {
       ArrowLeft: () => this.go(-1),
       ArrowRight: () => this.go(1),
-      Home: () => this.go(-this.#index),
-      End: () => this.go(this.#total - 1 - this.#index),
+      Home: () => this.go(-this.#position),
+      End: () => this.go(this.#total - 1 - this.#position),
     };
     const move = moves[event.key];
     if (move) {
@@ -290,7 +318,7 @@ export class PostViewer {
     });
 
     attachSwipe(stage, image, {
-      ends: () => ({ hasPrevious: hasPrevious(this.#index), hasNext: hasNext(this.#index, this.#total) }),
+      ends: () => ({ hasPrevious: hasPrevious(this.#position), hasNext: hasNext(this.#position, this.#total) }),
       onSwipe: (direction) => this.go(direction === 'next' ? 1 : -1),
     });
 

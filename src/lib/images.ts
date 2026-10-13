@@ -22,6 +22,8 @@ import {
   coverHeight,
   coverSizes,
   coverWidths,
+  PREVIEW_IMAGE,
+  previewImageSize,
   thumbnailEdge,
   thumbnailWidths,
   THUMBNAIL_SIZES,
@@ -96,4 +98,23 @@ export async function coverImageFor(photo: Photo, size: CardSize): Promise<Respo
   const height = coverHeight(width);
   const image = await getImage({ src: sourceOf(photo), width, height, widths, fit: 'cover', format: OUTPUT_FORMAT });
   return { src: image.src, srcset: image.srcSet.attribute, sizes: coverSizes(size), width, height };
+}
+
+/** A single image file and its pixel size. */
+export interface SizedImage {
+  src: string;
+  width: number;
+  height: number;
+}
+
+/**
+ * Link preview image (Open Graph) of a page whose cover is `photo`: a 1200×630 JPEG crop for
+ * chat apps and social sites, with the photo's alt text. Like covers, it carries no metadata
+ * and no credit. Undefined without a cover.
+ */
+export async function previewImageFor(photo: Photo | undefined): Promise<(SizedImage & { alt: string }) | undefined> {
+  if (!photo) return undefined;
+  const { width, height } = previewImageSize(photo.width, photo.height);
+  const image = await getImage({ src: sourceOf(photo), width, height, fit: 'cover', format: 'jpg', quality: PREVIEW_IMAGE.quality });
+  return { src: image.src, width, height, alt: photo.alt };
 }

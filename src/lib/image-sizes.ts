@@ -89,6 +89,22 @@ export function coverWidths(sourceWidth: number, sourceHeight: number): number[]
 export const coverHeight = (width: number): number => Math.round(width / COVER_ASPECT);
 
 /**
+ * Link preview image (Open Graph `og:image`): the size WhatsApp, Telegram, Facebook and X
+ * show as a large card, 1.91:1. JPEG, because not every app shows a WebP preview.
+ */
+export const PREVIEW_IMAGE = { width: 1200, height: 630, quality: 80 } as const;
+
+/**
+ * Size of the link preview crop of a source: 1200×630, or the largest 1.91:1 crop that fits
+ * inside a smaller source (never upscaled). Both sides are at least 1 px.
+ */
+export function previewImageSize(sourceWidth: number, sourceHeight: number): { width: number; height: number } {
+  const { width: maxWidth, height: maxHeight } = PREVIEW_IMAGE;
+  const width = Math.max(1, Math.floor(Math.min(maxWidth, sourceWidth, (sourceHeight * maxWidth) / maxHeight)));
+  return { width, height: Math.max(1, Math.round((width * maxHeight) / maxWidth)) };
+}
+
+/**
  * The post viewer's layout in CSS px, as PostViewer.astro draws it (keep in step):
  * - below 600 px the photo spans the full width;
  * - 600–899 px it sits in a column at most `36rem` wide;

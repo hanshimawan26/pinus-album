@@ -76,3 +76,19 @@ describe('isInstagramUrl', () => {
     expect(isInstagramUrl(undefined)).toBe(false);
   });
 });
+
+describe('parseViewerData: per-photo context (the "All photos" page)', () => {
+  it('keeps a photo\'s own context line', () => {
+    const data = structuredClone(valid);
+    (data.photos[0] as { context?: string }).context = 'Day 2 · Pinus ORI';
+    expect(parseViewerData(JSON.stringify(data))?.photos[0]?.context).toBe('Day 2 · Pinus ORI');
+  });
+
+  it('rejects an empty or non-text context', () => {
+    for (const context of ['', 3]) {
+      const data = structuredClone(valid) as unknown as { photos: Array<Record<string, unknown>> };
+      (data.photos[0] as Record<string, unknown>).context = context;
+      expect(parseViewerData(JSON.stringify(data))).toBeNull();
+    }
+  });
+});

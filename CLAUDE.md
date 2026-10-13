@@ -32,8 +32,10 @@ step when a command, a content rule or a `photos:check` code changes.
   photos, no broken internal links, every image file the size (and orientation) its page
   claims, album pages exactly the published albums (no drafts, hidden albums or photos), no unused
   images in `_astro/`, and on every page the robots meta for `ALLOW_INDEXING`, the footer's
-  takedown line with `CONTACT_EMAIL`, and JavaScript only on photo pages within 60 KB gzipped.
-  Run it with the same `BASE_PATH`, `ALLOW_INDEXING`, `CONTACT_EMAIL` and `SHOW_HIDDEN` as the build.
+  takedown line with `CONTACT_EMAIL`, JavaScript only on photo pages within 60 KB gzipped, and
+  link preview tags (Open Graph) on `SITE_URL`, naming the page itself, image ≤ 300 KB.
+  Album pages include the "All photos" pages (`albums/<path>/all/`).
+  Run it with the same `BASE_PATH`, `SITE_URL`, `ALLOW_INDEXING`, `CONTACT_EMAIL` and `SHOW_HIDDEN` as the build.
 - Build under a sub-path: `BASE_PATH=/pinus-album/ npm run build`. In Git Bash, prefix
   `MSYS_NO_PATHCONV=1` when passing `BASE_PATH=/`, or MSYS rewrites it into a Windows path.
 
@@ -43,8 +45,8 @@ step when a command, a content rule or a `photos:check` code changes.
 src/
   albums/            content only (event folders, index.md, photos.yaml, @photographer folders)
   lib/               plain TypeScript, unit-tested; framework-free except images.ts (Astro-only)
-    config.ts        env-driven settings (BASE_PATH, TIMEZONE, ALLOW_INDEXING, CONTACT_EMAIL,
-                     SHOW_HIDDEN)
+    config.ts        env-driven settings (BASE_PATH, SITE_URL, TIMEZONE, ALLOW_INDEXING,
+                     CONTACT_EMAIL, SHOW_HIDDEN)
     url.ts           withBase()/albumUrl() — every internal link goes through these
     slug.ts          slugify, numeric-prefix stripping, title-from-slug, photo/photographer slugs
     dates.ts         EXIF date parsing in TIMEZONE, display formatting, ranges
@@ -63,8 +65,13 @@ src/
                      siteLoadOptions(dev) = what the site publishes (pages and verify:dist)
     image-sizes.ts   PURE: derivative widths, crops, `sizes` strings, eager/lazy policy (TRD §7)
     presentation.ts  PURE: counts, date labels, meta descriptions, JSON-for-<script> escaping
-    viewer-data.ts   PURE: per-photo data embedded for the post viewer (TRD §6.5)
-    images.ts        ASTRO-ONLY: photos → getImage() derivatives (thumb, viewer srcset, covers)
+    viewer-data.ts   PURE: per-photo data embedded for the post viewer (TRD §6.5); GridPhoto
+                     (a photo with its slug and context on one page)
+    all-photos.ts    PURE: the "All photos" page of an album with sections (TRD §6.3 item 7):
+                     which nodes get one, date order, section-path slugs (`day-1/<slug>`)
+    photographer-filter.ts  PURE: the filter chips of a grid (TRD §6.3 item 8)
+    images.ts        ASTRO-ONLY: photos → getImage() derivatives (thumb, viewer srcset, covers,
+                     the 1200×630 JPEG link preview)
     image-service.ts ASTRO-ONLY: the site's image service (astro.config `image.service`):
                      Astro's sharp service + the photographer credit on viewer images
     credit/          the credit saved viewer images carry: PURE credit.ts (`© Name`, watermark
@@ -85,12 +92,15 @@ src/
   styles/global.css  design tokens (see DESIGN.md) and base styles, imported once by the layout
   components/        .astro components (one responsibility each)
   layouts/           BaseLayout.astro (head, skip link, header › main › footer)
-  pages/             index.astro, albums/[...path].astro, 404.astro — thin; data comes from lib
-  scripts/viewer/    the post viewer (client TS, bundled by Astro, shipped only with PhotoGrid):
+  pages/             index.astro, albums/[...path].astro, albums/[...path]/all.astro (All
+                     photos), 404.astro — thin; data comes from lib
+  scripts/viewer/    the post viewer and the photographer filter (client TS, bundled by Astro,
+                     shipped only with PhotoGrid):
                      PURE navigation.ts, hash.ts, history.ts (history rules), rows.ts (which
-                     rows a photo fills), swipe.ts, focus-order.ts, data.ts (unit-tested);
-                     DOM dom.ts, view.ts, image.ts, gestures.ts, scroll-lock.ts; controller.ts
-                     (state, history, focus); index.ts (entry, used by PostViewer.astro)
+                     rows a photo fills), swipe.ts, focus-order.ts, data.ts, filter.ts
+                     (unit-tested); DOM dom.ts, view.ts, image.ts, gestures.ts, scroll-lock.ts,
+                     chips.ts (filter chips); controller.ts (state, history, focus; moves
+                     through the photos the filter left); index.ts (entry, used by PostViewer.astro)
 scripts/             maintainer CLIs (photos:check, photos:prep, photos:init, demo:images,
                      verify:dist) — thin wrappers over src/lib, run with Node type stripping;
                      cli.ts holds the shared colours and runCli() (readable crash message)
@@ -111,11 +121,13 @@ e2e/                 Playwright specs (viewer, navigation, site-wide rules) + fi
 - **Absent data disappears.** Never render "Unknown" or an empty row (TRD §4.6, §6.5). In
   the viewer, rows without data get the `hidden` attribute (a global rule makes `[hidden]`
   win over component `display`), and user text is set with `textContent`, never `innerHTML`.
-- **Viewer JS budget:** ≤ 60 KB gzipped (TRD §11); it is about 4.8 KB. No viewer library.
+- **Viewer JS budget:** ≤ 60 KB gzipped (TRD §11); it is about 5.1 KB (viewer and filter chips). No viewer library.
   Decisions the viewer makes (history, which rows show) go in its pure modules, not in
   `controller.ts`/`view.ts`, so they are unit-tested. `VIEWER_LAYOUT` in `image-sizes.ts`
   mirrors the viewer's CSS widths (a test reads the CSS to keep them in step).
-- **Links:** never hard-code a leading `/`; use `withBase()` / `albumUrl()`.
+- **Links:** never hard-code a leading `/`; use `withBase()` / `albumUrl()`. Link preview tags
+  (BaseLayout) are the one place with absolute URLs, built from `Astro.site` (= `SITE_URL`).
+  A section may not have the slug `all` (`ALL_PHOTOS_SLUG`): that is its parent's All photos page.
 - **Privacy:** published images must carry no EXIF/GPS, and original source files must not be
   copied into `dist/` (they still contain EXIF). Never read a property of an imported image
   (`.src`, `.width`, …): Astro then keeps the original in `dist/`. Pass it only to

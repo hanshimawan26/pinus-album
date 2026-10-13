@@ -25,6 +25,7 @@ function isPhoto(value: unknown): value is ViewerPhoto {
   if (!isRecord(image) || !isText(image.src) || typeof image.srcset !== 'string' || typeof image.sizes !== 'string') return false;
   if (!isSize(image.width) || !isSize(image.height)) return false;
   if (!optional(value.caption, isText)) return false;
+  if (!optional(value.context, isText)) return false;
   if (photographer !== undefined) {
     if (!isRecord(photographer) || !isText(photographer.name) || typeof photographer.initials !== 'string') return false;
     if (!optional(photographer.instagramUrl, isInstagramUrl)) return false;

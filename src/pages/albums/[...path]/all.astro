@@ -1,0 +1,84 @@
+---
+/**
+ * "All photos" page of an event or section with sections (TRD §6.3 item 7):
+ * `albums/<path>/all/`. Every published photo of the album and its sections in one grid,
+ * oldest first, with the photographer filter. In the viewer each photo names its own
+ * section, and deep links carry the section path: `#day-1/<photo-slug>` (all-photos.ts).
+ */
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import PhotoGrid from '../../../components/PhotoGrid.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { allPhotosOf, hasAllPhotosPage } from '../../../lib/all-photos.ts';
+import { loadAlbumsOrThrow, pathTo, siteLoadOptions, slugPathKey } from '../../../lib/content/index.ts';
+import { previewImageFor } from '../../../lib/images.ts';
+import { allPhotosDescription, countLabel, nodeDateLabel, nodeIsoDay } from '../../../lib/presentation.ts';
+import { viewerContext } from '../../../lib/viewer-data.ts';
+
+export async function getStaticPaths() {
+  const albums = await loadAlbumsOrThrow(siteLoadOptions(import.meta.env.DEV));
+  return [...albums.nodes.values()]
+    .filter(hasAllPhotosPage)
+    .map((node) => ({ params: { path: node.slugPath.join('/') }, props: { key: slugPathKey(node.slugPath) } }));
+}
+
+interface Props {
+  key: string;
+}
+
+// Looked up again rather than passed as a prop, like the album page, so `astro dev` stays fresh.
+const { key } = Astro.props;
+const albums = await loadAlbumsOrThrow(siteLoadOptions(import.meta.env.DEV));
+const node = albums.nodes.get(key);
+if (!node || !hasAllPhotosPage(node)) {
+  throw new Error(`The album "${key}" no longer has sections with photos. Reload its page.`);
+}
+
+const trail = pathTo(albums.root, node.slugPath) ?? [node];
+const titles = trail.map((item) => item.title);
+const photos = allPhotosOf(node, titles);
+const date = nodeDateLabel(node);
+const isoDay = nodeIsoDay(node);
+const previewImage = await previewImageFor(node.cover);
+---
+
+<BaseLayout title={`All photos · ${node.title}`} description={allPhotosDescription(node)} previewImage={previewImage}>
+  <div class="container page">
+    <Breadcrumbs trail={trail} current="All photos" />
+
+    <header class="album-header">
+      <h1 class="page-title">{node.title}</h1>
+      <p class="meta">
+        {date && (isoDay ? <time datetime={isoDay}>{date}</time> : <span>{date}</span>)}
+        <span>All {countLabel(photos.length, 'photo')}</span>
+      </p>
+    </header>
+
+    <section class="block" aria-labelledby="photos-heading">
+      <h2 id="photos-heading" class="visually-hidden">All photos</h2>
+      <PhotoGrid photos={photos} context={viewerContext(titles)} nearTop />
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .page {
+    padding-top: var(--space-5);
+  }
+
+  .album-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-5);
+  }
+
+  .block {
+    margin-top: var(--space-6);
+  }
+
+  @media (min-width: 900px) {
+    .page {
+      padding-top: var(--space-6);
+    }
+  }
+</style>

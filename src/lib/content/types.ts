@@ -303,6 +303,7 @@ export type IssueCode =
   | 'photos-yaml-duplicate'
   | 'duplicate-photo-slug'
   | 'duplicate-node-slug'
+  | 'reserved-folder-name'
   | 'invalid-folder-name'
   | 'unsupported-format'
   | 'unreadable-image'

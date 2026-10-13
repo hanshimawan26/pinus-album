@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { toAlbumDate, type AlbumDate } from '../src/lib/dates.ts';
 import {
+  allPhotosDescription,
   countLabel,
   jsonForScript,
   markdownToPlainText,
@@ -119,5 +120,13 @@ describe('jsonForScript', () => {
   it('keeps emoji and non-Latin text intact', () => {
     const value = { caption: 'Opening dance 💃 — Tari Saman' };
     expect(JSON.parse(jsonForScript(value))).toEqual(value);
+  });
+});
+
+describe('allPhotosDescription', () => {
+  it('names the count, the album and its dates', () => {
+    const node = { title: 'Pinus ORI', date: day('2026-08-03'), endDate: day('2026-08-06'), photoCount: 118 };
+    expect(allPhotosDescription(node)).toBe('All 118 photos from Pinus ORI, 3–6 Aug 2026. Pinus Community, Indonesian Students Association at NUS.');
+    expect(allPhotosDescription({ title: 'Undated', photoCount: 2 })).toMatch(/^All 2 photos from Undated\. /);
   });
 });

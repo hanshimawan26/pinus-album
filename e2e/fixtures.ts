@@ -43,6 +43,7 @@ export const PAGES = {
   sectionWithChildren: 'albums/demo-event-a/day-3/',
   thirdLevel: 'albums/demo-event-a/day-3/closing-photo/',
   flatEvent: 'albums/demo-event-b/',
+  allPhotos: 'albums/demo-event-a/all/',
   notFound: 'this-page-does-not-exist/',
 } as const;
 

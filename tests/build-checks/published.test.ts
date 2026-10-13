@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { albumPathOf, comparePublished, viewerPhotoSlugs } from '../../src/lib/build-checks/published.ts';
+import { albumPathOf, comparePublished, expectedAlbumPages, viewerPhotoSlugs } from '../../src/lib/build-checks/published.ts';
+import { build, index, sourceTree } from '../helpers/content.ts';
+import { indexNodes } from '../../src/lib/content/tree.ts';
 
 const page = (photos: unknown[]) =>
   `<main><script type="application/json" id="viewer-data">${JSON.stringify({ context: 'Day 1', photos })}</script></main>`;
@@ -61,5 +63,30 @@ describe('comparePublished', () => {
   it('reports a photo listed twice', () => {
     const problems = comparePublished([{ path: 'x', photoSlugs: ['a'] }], [{ path: 'x', photoSlugs: ['a', 'a'] }]);
     expect(problems).toEqual([{ path: 'x', message: expect.stringContaining('more than once') }]);
+  });
+});
+
+describe('expectedAlbumPages', () => {
+  it('expects every album with its own photos, plus an "All photos" page for albums with sections', () => {
+    const { root } = build(
+      sourceTree([
+        {
+          folder: 'ori',
+          index: index('date: 2026-08-03'),
+          children: [
+            { folder: 'day-1', images: { '@a/IMG_1.jpg': { exif: '2026:08:03 10:00:00' } } },
+            { folder: 'day-2', images: { '@a/IMG_1.jpg': { exif: '2026:08:04 10:00:00' } } },
+          ],
+        },
+        { folder: 'flat', images: ['@a/IMG_1.jpg'] },
+      ]),
+    );
+    expect(expectedAlbumPages(indexNodes(root).values())).toEqual([
+      { path: 'ori', photoSlugs: [] },
+      { path: 'ori/all', photoSlugs: ['day-1/a-img-1', 'day-2/a-img-1'] },
+      { path: 'ori/day-1', photoSlugs: ['a-img-1'] },
+      { path: 'ori/day-2', photoSlugs: ['a-img-1'] },
+      { path: 'flat', photoSlugs: ['a-img-1'] },
+    ]);
   });
 });

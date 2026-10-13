@@ -1,5 +1,9 @@
 ---
-/** Breadcrumbs (TRD §6.3): Home › Event › Section, the last item is the current page. */
+/**
+ * Breadcrumbs (TRD §6.3): Home › Event › Section, the last item is the current page. A page
+ * below an album (its "All photos" page) passes its own label as `current`:
+ * Home › Event › All photos.
+ */
 import type { AlbumNode } from '../lib/content/types.ts';
 import { albumUrl, withBase } from '../lib/url.ts';
 import ChevronIcon from './ChevronIcon.astro';
@@ -7,11 +11,14 @@ import ChevronIcon from './ChevronIcon.astro';
 interface Props {
   /** Nodes from the event down to the current node (inclusive). */
   trail: readonly AlbumNode[];
+  /** Label of the current page when it is not the last node of the trail. */
+  current?: string;
 }
-const { trail } = Astro.props;
+const { trail, current } = Astro.props;
 const items = [
   { label: 'Home', href: withBase() },
   ...trail.map((node) => ({ label: node.title, href: albumUrl(node.slugPath) })),
+  ...(current ? [{ label: current, href: '' }] : []),
 ];
 ---
 

@@ -73,7 +73,14 @@ The rules in one breath:
 - **Photos** can be `.jpg`, `.jpeg`, `.png` or `.webp`. iPhone `.heic` photos must be
   converted first (see [step 5](#5-make-the-photos-web-ready)).
 - **The home page** shows every event, newest first. Each event page shows its sections,
-  then its own photos.
+  then its own photos. An event with sections also gets an **All photos** page
+  (`…/albums/pergelaran-2026/all/`, linked as "View all N photos") with every photo of the
+  event in one grid, oldest first.
+- **Above every grid** with photos by two or more photographers, buttons with their names
+  let visitors show one photographer's photos at a time. Nothing to set up: they come from
+  the `@` folders and `photographer:` credits.
+- **Sharing a link** in WhatsApp, Telegram or Instagram shows a preview card with the album's
+  title, its description (the start of the story) and its [cover photo](#choose-the-cover-photo).
 
 The two `demo-*` folders that come with the project are made-up examples with generated
 pictures. They are [hidden](#hide-an-album-without-deleting-it) (`hidden: true`), so they
@@ -216,6 +223,8 @@ Opening night at the University Cultural Centre.
 A section without `index.md` still works: "day-1" becomes "Day 1", and its date comes from
 its photos. Sections are listed by `order`, then by a number in front of the folder name,
 then by date.
+
+A section cannot be called `all`: `…/pergelaran-2026/all/` is the event's "All photos" page.
 
 ### 4. Put the photos in `@photographer-name` folders
 
@@ -430,6 +439,12 @@ If the path starts with `@` (a photo directly in this album's photographer folde
 in double quotes: `cover: "@andi-pratama/IMG_0012.jpg"`. Capital letters must match the
 file name exactly (`.JPG` is not `.jpg`). Without `cover`, the first photo is used.
 
+The cover is also the picture in the **link preview** when someone shares the album in a
+chat. The preview cuts a wide strip (1.91 : 1) from the middle of the photo, so a landscape
+photo with the faces near the centre works best. The home page's preview uses the newest
+event's cover. Chat apps remember a preview for a while: after changing a cover, a link
+that was already shared may show the old picture for a few days.
+
 ### Change the order of sections
 
 Add `order: 1`, `order: 2`, … to each section's `index.md`, or start the folder names with
@@ -552,6 +567,7 @@ Each message says what is wrong and how to fix it, and ends with a short code in
 | `duplicate-photo-slug` | Error | Two photos in one album would get the same link (e.g. `IMG_1.jpg` and `IMG_1.png`). Rename one |
 | `duplicate-node-slug` | Error | Two folders would get the same web address (e.g. `day-1` and `01-day-1`). Rename one |
 | `invalid-folder-name` | Error | A folder name has no plain letters or numbers. Use `a–z`, `0–9` and dashes |
+| `reserved-folder-name` | Error | A section folder is called `all`. That address is already used by the event's "All photos" page. Rename the folder, e.g. `all-day` |
 | `invalid-file-name` | Error | A photo name has no plain letters or numbers. Rename it |
 | `unsupported-format` | Error | A file the website cannot show, such as `.heic`. Convert it to JPEG ([step 5](#5-make-the-photos-web-ready)) |
 | `unreadable-image` | Error | A photo file is damaged or not really an image. Export it again |
@@ -653,7 +669,7 @@ After changing one, run the workflow again (**Actions → Run workflow**).
 | `CONTACT_EMAIL` | `kontakpinus@gmail.com` | The address in the footer's "Not comfortable with a photo?" line. Set it only to use a different address |
 | `ALLOW_INDEXING` | `false` | `true` lets Google and other search engines list the website. Off by default because the photos show identifiable students; the committee decides |
 | `TIMEZONE` | `Asia/Singapore` | Time zone for camera dates |
-| `SITE_URL` | detected | The website's address, e.g. `https://photos.example.org`. Only for unusual setups |
+| `SITE_URL` | detected | The website's address, e.g. `https://photos.example.org`. Link previews use it. Only for unusual setups |
 | `BASE_PATH` | detected | The path after the address: `/pinus-album/` on `github.io`, `/` on a custom domain. Only for unusual setups |
 
 ### Custom domain (optional)
@@ -719,7 +735,7 @@ no UI framework. Start with these documents:
 | `npm run photos:prep -- <folder> [--dry-run] [--force]` | Makes JPEGs web-ready in place (≤ 2400 px, quality 85, upright, GPS removed). Idempotent |
 | `npm run photos:init -- <album-folder> [--dry-run]` | Appends empty `caption` entries to `photos.yaml` for photos without one |
 | `npm run demo:images` | Regenerates the demo images (deterministic) |
-| `npm run verify:dist` | Checks `dist/` after a build: no EXIF/GPS (viewer images carry only their photographer credit), no copies of originals, no broken links, image sizes and orientation, no drafts, hidden albums or hidden photos, robots meta, takedown line, JS only on photo pages and within 60 KB gzipped. Use the same `BASE_PATH`, `ALLOW_INDEXING`, `CONTACT_EMAIL` and `SHOW_HIDDEN` as the build |
+| `npm run verify:dist` | Checks `dist/` after a build: no EXIF/GPS (viewer images carry only their photographer credit), no copies of originals, no broken links, image sizes and orientation, no drafts, hidden albums or hidden photos, robots meta, takedown line, JS only on photo pages and within 60 KB gzipped, link preview tags on the site's own address. Use the same `BASE_PATH`, `SITE_URL`, `ALLOW_INDEXING`, `CONTACT_EMAIL` and `SHOW_HIDDEN` as the build |
 | `npm test` | Unit tests (Vitest, `tests/`) |
 | `npm run test:e2e` | Browser tests (Playwright, `e2e/`) against a fresh production build |
 | `npm run typecheck` | `astro check` |
@@ -745,7 +761,7 @@ npm run test:e2e
   (360 px, touch) and desktop (1280 px) sizes. They cover the acceptance checklist: opening a
   photo, absent rows, keys, swipe, Esc/✕/Back/backdrop, focus return, deep links, invalid
   hashes, breadcrumbs, orientation, no horizontal scroll at 360/768/1280 px, robots and the
-  takedown line. They use the demo albums and skip themselves when those are deleted. On CI
+  takedown line, the "All photos" page, the photographer filter and the link preview tags. They use the demo albums and skip themselves when those are deleted. On CI
   (`CI` set) they use Playwright's bundled Chromium instead of Chrome. Without Chrome on your
   computer, run `npx playwright install chromium` once and choose that browser with
   `E2E_BROWSER`:

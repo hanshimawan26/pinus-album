@@ -1,7 +1,8 @@
 ---
 /**
  * Album page for any node at any depth (TRD §5, §6.3): breadcrumbs, title and date, story,
- * section cards, the node's own photo grid, sibling navigation.
+ * section cards (with a link to the "All photos" page), the node's own photo grid, sibling
+ * navigation.
  */
 import { getEntry, render } from 'astro:content';
 import AlbumCardList from '../../components/AlbumCardList.astro';
@@ -11,11 +12,15 @@ import EmptyState from '../../components/EmptyState.astro';
 import NodeMeta from '../../components/NodeMeta.astro';
 import PhotoGrid from '../../components/PhotoGrid.astro';
 import SiblingNav from '../../components/SiblingNav.astro';
+import ChevronIcon from '../../components/ChevronIcon.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { allPhotosPath, hasAllPhotosPage } from '../../lib/all-photos.ts';
 import { loadAlbumsOrThrow, pathTo, siblingsOf, siteLoadOptions, slugPathKey } from '../../lib/content/index.ts';
 import { startsNearTop } from '../../lib/image-sizes.ts';
-import { markdownToPlainText, nodeDescription } from '../../lib/presentation.ts';
-import { viewerContext } from '../../lib/viewer-data.ts';
+import { previewImageFor } from '../../lib/images.ts';
+import { countLabel, markdownToPlainText, nodeDescription } from '../../lib/presentation.ts';
+import { albumUrl } from '../../lib/url.ts';
+import { gridPhotos, viewerContext } from '../../lib/viewer-data.ts';
 
 export async function getStaticPaths() {
   const albums = await loadAlbumsOrThrow(siteLoadOptions(import.meta.env.DEV));
@@ -47,9 +52,10 @@ const Story = storyEntry ? (await render(storyEntry)).Content : undefined;
 const contentNearTop = startsNearTop(node.story ? markdownToPlainText(node.story).length : 0);
 const hasSections = node.children.length > 0;
 const hasPhotos = node.photos.length > 0;
+const previewImage = await previewImageFor(node.cover);
 ---
 
-<BaseLayout title={node.title} description={nodeDescription(node)}>
+<BaseLayout title={node.title} description={nodeDescription(node)} previewImage={previewImage}>
   <div class="container page">
     <Breadcrumbs trail={trail} />
 
@@ -72,9 +78,17 @@ const hasPhotos = node.photos.length > 0;
     {
       hasSections && (
         <section class="block" aria-labelledby="sections-heading">
-          <h2 id="sections-heading" class="block-heading">
-            Sections
-          </h2>
+          <div class="block-head">
+            <h2 id="sections-heading" class="block-heading">
+              Sections
+            </h2>
+            {hasAllPhotosPage(node) && (
+              <a class="all-link" href={albumUrl(allPhotosPath(node))}>
+                View all {countLabel(node.photoCount, 'photo')}
+                <ChevronIcon direction="right" size={16} />
+              </a>
+            )}
+          </div>
           <AlbumCardList nodes={node.children} size="section" headingLevel={3} nearTop={contentNearTop} />
         </section>
       )
@@ -86,7 +100,7 @@ const hasPhotos = node.photos.length > 0;
           <h2 id="photos-heading" class:list={['block-heading', { 'visually-hidden': !hasSections }]}>
             Photos
           </h2>
-          <PhotoGrid photos={node.photos} context={viewerContext(trail.map((item) => item.title))} nearTop={contentNearTop && !hasSections} />
+          <PhotoGrid photos={gridPhotos(node.photos)} context={viewerContext(trail.map((item) => item.title))} nearTop={contentNearTop && !hasSections} />
         </section>
       )
     }
@@ -151,6 +165,35 @@ const hasPhotos = node.photos.length > 0;
 
   .block {
     margin-top: var(--space-7);
+  }
+
+  /* Heading, with the "View all N photos" link on the same line where it fits. */
+  .block-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    column-gap: var(--space-4);
+    row-gap: var(--space-1);
+    margin-bottom: var(--space-4);
+  }
+
+  .block-head .block-heading {
+    margin-bottom: 0;
+  }
+
+  .all-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding-block: var(--space-1);
+    font-size: var(--text-md);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .all-link:hover {
+    text-decoration: underline;
   }
 
   .block-heading {

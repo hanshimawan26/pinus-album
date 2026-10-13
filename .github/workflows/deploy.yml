@@ -69,11 +69,13 @@ jobs:
           TIMEZONE: ${{ vars.TIMEZONE || 'Asia/Singapore' }}
 
       # No EXIF/GPS in published images, no copies of original photos, no broken links,
-      # no drafts or hidden photos, robots/takedown line on every page, JS budget.
-      # Must use the same BASE_PATH (and the job-level variables above) as the build.
+      # no drafts or hidden photos, robots/takedown line on every page, JS budget, link
+      # previews on the site's own address.
+      # Must use the same SITE_URL and BASE_PATH (and the job-level variables above) as the build.
       - name: Verify built site
         run: npm run verify:dist
         env:
+          SITE_URL: ${{ vars.SITE_URL || steps.pages.outputs.origin }}
           BASE_PATH: ${{ vars.BASE_PATH || format('{0}/', steps.pages.outputs.base_path) }}
 
       - name: Upload site

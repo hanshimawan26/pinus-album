@@ -5,7 +5,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { withBase } from '../lib/url.ts';
 ---
 
-<BaseLayout title="Page not found" description="This page does not exist.">
+<BaseLayout title="Page not found" description="This page does not exist." linkPreview={false}>
   <div class="container page">
     <EmptyState title="Page not found" headingLevel={1}>
       <p>The link may be incomplete, or the album may have moved.</p>

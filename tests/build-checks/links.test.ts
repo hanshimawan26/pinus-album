@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { extractCssReferences, extractHtmlReferences, parseSrcset, resolveReference, sitePathOf, srcsetUrls } from '../../src/lib/build-checks/links.ts';
+import {
+  absoluteUrlProblem,
+  extractCssReferences,
+  extractHtmlReferences,
+  metaProperties,
+  parseSrcset,
+  resolveReference,
+  sitePathOf,
+  srcsetUrls,
+} from '../../src/lib/build-checks/links.ts';
 
 describe('extractHtmlReferences', () => {
   it('finds href, src and every srcset URL, decoding entities', () => {
@@ -123,5 +132,49 @@ describe('extractHtmlReferences: inline styles', () => {
 describe('parseSrcset', () => {
   it('reads width descriptors and leaves other descriptors out', () => {
     expect(parseSrcset('a.webp 800w, b.webp 2x, c.webp')).toEqual([{ url: 'a.webp', width: 800 }, { url: 'b.webp' }, { url: 'c.webp' }]);
+  });
+});
+
+describe('link preview URLs', () => {
+  const ORIGIN = 'https://hanshimawan26.github.io';
+  const head = `<head>
+    <meta property="og:url" content="${ORIGIN}/pinus-album/albums/x/">
+    <meta property="og:image" content="${ORIGIN}/pinus-album/_astro/a.jpg">
+    <meta property="og:title" content="A &amp; B">
+    <meta name="twitter:card" content="summary_large_image">
+  </head>`;
+
+  it('reads meta properties and names, decoding entities', () => {
+    expect(metaProperties(head)).toEqual([
+      { property: 'og:url', content: `${ORIGIN}/pinus-album/albums/x/` },
+      { property: 'og:image', content: `${ORIGIN}/pinus-album/_astro/a.jpg` },
+      { property: 'og:title', content: 'A & B' },
+      { property: 'twitter:card', content: 'summary_large_image' },
+    ]);
+  });
+
+  it('extracts og:url and og:image as absolute references (not og:title)', () => {
+    expect(extractHtmlReferences(head)).toEqual([
+      { source: 'meta:og:url', url: `${ORIGIN}/pinus-album/albums/x/`, absolute: true },
+      { source: 'meta:og:image', url: `${ORIGIN}/pinus-album/_astro/a.jpg`, absolute: true },
+    ]);
+  });
+
+  it('requires them to be absolute and on the site\'s own address', () => {
+    expect(absoluteUrlProblem(`${ORIGIN}/pinus-album/_astro/a.jpg`, ORIGIN)).toBeUndefined();
+    expect(absoluteUrlProblem('/pinus-album/_astro/a.jpg', ORIGIN)).toContain('must be an absolute address');
+    expect(absoluteUrlProblem('https://example.github.io/pinus-album/_astro/a.jpg', ORIGIN)).toContain('points to another site');
+    // Same host as a prefix of another host is still another site.
+    expect(absoluteUrlProblem(`${ORIGIN}.evil.example/x`, ORIGIN)).toContain('points to another site');
+  });
+
+  it('resolves absolute URLs on the site\'s own origin like internal ones', () => {
+    expect(resolveReference(`${ORIGIN}/pinus-album/_astro/a.jpg`, '/pinus-album/', '/pinus-album/', ORIGIN)).toEqual({
+      kind: 'internal',
+      sitePath: '/pinus-album/_astro/a.jpg',
+      candidates: ['_astro/a.jpg', '_astro/a.jpg/index.html'],
+    });
+    expect(resolveReference('https://www.instagram.com/x/', '/pinus-album/', '/pinus-album/', ORIGIN)).toEqual({ kind: 'skip' });
+    expect(resolveReference(`${ORIGIN}/pinus-album/_astro/a.jpg`, '/pinus-album/', '/pinus-album/')).toEqual({ kind: 'skip' });
   });
 });

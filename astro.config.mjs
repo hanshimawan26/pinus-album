@@ -1,17 +1,15 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import removeSourceCopies from './src/integrations/remove-source-copies.ts';
-import { ALBUMS_DIR, BASE_PATH } from './src/lib/config.ts';
+import { ALBUMS_DIR, BASE_PATH, SITE_URL } from './src/lib/config.ts';
 
 /**
- * Site URL and base path come from the environment so the same code works as a
- * GitHub Pages project site (`/<repo>/`), a custom domain (`BASE_PATH=/`), or locally.
+ * Site URL and base path come from the environment (src/lib/config.ts) so the same code works
+ * as a GitHub Pages project site (`/<repo>/`), a custom domain (`BASE_PATH=/`), or locally.
  * CI fills both from `actions/configure-pages` (see .github/workflows/deploy.yml).
  */
-const site = process.env.SITE_URL || 'https://example.github.io';
-
 export default defineConfig({
-  site,
+  site: SITE_URL,
   base: BASE_PATH,
   trailingSlash: 'always',
   build: {

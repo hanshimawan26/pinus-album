@@ -58,7 +58,9 @@ Every text/background pair the site uses, measured with the WCAG relative-lumina
 | `#334E97` link | `#FAF8F4` bg | 7.39:1 | Links, breadcrumbs, sibling nav | AAA |
 | `#334E97` link | `#F1EDE5` sunken | 6.72:1 | Link inside an empty state | AA |
 | `#263B75` hover | `#FAF8F4` bg | 10.08:1 | Link hover | AAA |
-| `#FAF8F4` on-accent | `#334E97` blue | 7.39:1 | Skip link, logo letter, future buttons | AAA |
+| `#FAF8F4` on-accent | `#334E97` blue | 7.39:1 | Skip link, logo letter, pressed filter chip | AAA |
+| `#1C1B19` text | `#E4DFD5` border | 12.96:1 | Filter chip name on hover | AAA |
+| `#5F5A52` muted | `#E4DFD5` border | 5.15:1 | Filter chip count on hover | AA |
 | `#1C1B19` text | `#F1B244` yellow | 9.17:1 | "Draft" badge (dev only) | AAA |
 | `#1C1B19` text | `#DCE2F2` selection | 13.28:1 | Selected text | AAA |
 | `#FFFFFF` | `#000000` viewer | 21.00:1 | Viewer error text on the photo area | AAA |
@@ -151,7 +153,10 @@ Headings use `text-wrap: balance` and paragraphs use `pretty`.
 | Breadcrumbs | `Breadcrumbs.astro` | `nav[aria-label=Breadcrumb] > ol`. Blue links separated by muted chevrons. The current page is muted text with `aria-current="page"` |
 | Node meta | `NodeMeta.astro`, `.meta` in `global.css` | The "date · N photos · N sections" line shared by album page headers, cards and the home intro; the album page also shows the `venue` after the date ("18–20 Sep 2026 · UTown Green · 35 photos"), cards never do. `<time datetime>` only for single days. Each item carries its own muted "·" (1.25em wide, centred); the strip left of the line is clipped, so a line that wraps on a narrow card never starts with a dot. Each item is a flex row (dot, then text), so an item that wraps on its own (a long venue) continues after its dot, not inside the clipped strip. The dot is decorative (empty alternative text), so screen readers skip it |
 | Album card | `AlbumCard.astro`, `AlbumCardList.astro` | 4:3 cover (radius 10), title, then meta "date · N photos · N sections". The title link is stretched over the whole card (its overlay sits at `z-index: 1` inside an isolated card, above the clipped meta line), and the cover has `alt=""` because the title already names the link. Event cards use 1/2/3 columns; section cards use 2/3/4 |
-| Photo grid | `PhotoGrid.astro` | Square tiles in 3/4/5 columns with 3 px gaps, edge to edge on phones. Each tile is a `<button>` named by the photo's alt text, with `data-index` and `aria-haspopup="dialog"`. The viewer data is embedded as JSON (`#viewer-data`), and the grid renders the post viewer |
+| Photo grid | `PhotoGrid.astro` | Square tiles in 3/4/5 columns with 3 px gaps, edge to edge on phones. Each tile is a `<button>` named by the photo's alt text, with `data-index`, `data-photographer` and `aria-haspopup="dialog"`. The viewer data is embedded as JSON (`#viewer-data`), and the grid renders the post viewer |
+| Photographer filter | `PhotographerFilter.astro`, `src/scripts/viewer/chips.ts` | Pills above a grid with two or more photographers: "All 118", then each photographer with their photo count, most photos first. Unpressed: sunken fill, near-black name (600), muted count; hover darkens the fill to the border colour. Pressed: brand blue with off-white text, because a chip is a control and blue is the interactive colour. 36 px tall, `--radius-full`, 15 px text, 8 px apart. On phones they scroll sideways in one row, edge to edge like the grid, so the grid stays near the top; from 600 px they wrap. Hidden until the script runs (they need JavaScript). Each chip is named "Name, N photos" (`aria-label`) and is a toggle (`aria-pressed`); a live region says "Showing 5 photos by …" |
+| "View all" link | `albums/[...path].astro` | "View all 118 photos ›" in blue, 15 px, 600, on the same line as the "Sections" heading (right-aligned; it wraps below it on a narrow phone). Only on albums with sections |
+| All photos page | `albums/[...path]/all.astro` | Breadcrumbs ending in "All photos", the album title as the page title, then "date · All N photos", then the filter and the grid. No story, cards or sibling navigation: the page is just the photos |
 | Post viewer | `PostViewer.astro`, `src/scripts/viewer/` | See "Post viewer" below |
 | Sibling nav | `SiblingNav.astro` | "‹ Day 1 · Day 3 ›", centred below a hairline. Screen readers hear "Previous section: Day 1". A side without a sibling is left out |
 | Empty state | `EmptyState.astro` | Sunken panel with an outline photo pictogram, a heading and one plain sentence. Used for "No albums yet", "No photos here yet" and the 404 page. When it carries the page's h1 (404), the heading uses the shared `.page-title` style so it matches every other page title |
@@ -257,3 +262,15 @@ Instagram post layout (TRD §6.5). It is a native `<dialog>` opened with `showMo
   white (too clinical next to the brand colours) and a stronger beige (tints the photos).
 - **Red `#EF4C2B` still has no UI role.** The rules above still apply: if a future "new" marker
   or similar uses it, it must be large text (≥ 24 px, or 18.66 px bold) or a graphic.
+
+## Link previews (after the POC)
+
+- Every page but the 404 carries Open Graph and X card tags, so a link shared in WhatsApp,
+  Telegram or Instagram shows a card: the page title, its description and, for albums and
+  the home page, a large image.
+- The image is the album's cover (the home page uses the newest event's), cropped from the
+  centre to **1200×630** (1.91:1), JPEG at quality 80: not every chat app shows WebP, and
+  WhatsApp skips images over about 300 KB (real covers come out at 60–180 KB). A cover
+  smaller than 1200 px wide gives a smaller crop of the same shape; it is never upscaled.
+- No credit is drawn on it, like card covers: the card is the album's own artwork, and the
+  photographer is credited inside the viewer.

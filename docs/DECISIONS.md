@@ -1343,3 +1343,83 @@ Requested by the committee after milestone 6.
 - **Limits, accepted:** the repository is public, so the unwatermarked masters can still be
   downloaded from GitHub; a corner watermark can be cropped. It deters casual re-posting,
   not a determined copier.
+
+## After the POC — "All photos", photographer filter and link previews (TRD §13 P1)
+
+Three P1 items, asked for by the user together.
+
+### "All photos" page (TRD §6.3 item 7)
+
+- **A page of its own, `albums/<path>/all/`,** linked as "View all N photos" beside the
+  "Sections" heading. Not a toggle on the event page: the event page stays light (story and
+  cards), and the grid can be linked to and shared.
+- **Every album with sections and photos gets one**, events and sections alike (a section
+  with sub-sections too). An album without sections has no such page: its own grid is
+  already all its photos.
+- **Order: oldest first** (TRD: "in date order"). Photos with the same date keep the album's
+  own order (the album's photos, then each section in display order); undated photos come
+  last. A photo dated only by an `index.md` date sorts at midnight of that day, so before
+  that day's timed photos.
+- **Deep links carry the section path:** `#day-1/andi-img-0012`. Photo slugs are unique only
+  within their own album (TRD §4.7), and two sections often have the same file names. Slugs
+  never contain `/`, so these cannot collide, and the album's own photos keep their plain
+  slug. A deep link stays valid as long as the photo stays in that section.
+- **The viewer names each photo's section** ("Day 2 · Pinus ORI") in its context line, since
+  the grid mixes sections (`context` per photo in the viewer data).
+- **Reserved folder name:** a section whose address would be `all` is now an error
+  (`reserved-folder-name`, README updated). An event may still be called `all`.
+- **No sibling navigation or story** on the page: breadcrumbs (Home › Event › All photos)
+  lead back.
+
+### Photographer filter chips (TRD §6.3 item 8)
+
+- **On every grid** (album pages and All photos pages) **with at least two credited
+  photographers.** A filter with one choice filters nothing. Uncredited photos get no chip
+  (absent data disappears) and show under "All".
+- **One photographer at a time**, like the chips on a profile page; pressing the pressed chip
+  again returns to "All". Chips show the photo count, most photos first.
+- **Client-side, in the viewer's bundle** (now 5.1 KB gzipped, was about 4.8 KB): the chips
+  hide the other tiles (`hidden`) and the viewer then moves through the photos left, in grid order: the counter
+  says "2 / 5", the arrows stop at the filtered ends, and focus returns to the right tile.
+  The rules are pure (`filter.ts`); the controller now works on a sequence of tile indexes.
+- **Rendered `hidden` until the script runs**, since they cannot work without JavaScript.
+- **Not in the URL.** A filtered view cannot be shared as a link, and a reload shows all
+  photos again. Kept simple on purpose; a `?by=<photographer>` query could be added later.
+  While filtered, a deep link to a photo that is filtered out is ignored (as an invalid hash).
+- **Accessible names via `aria-label`** ("Budi (Demo), 5 photos"): built from hidden text,
+  Chrome added stray spaces ("Budi (Demo) , 5 photos"), because the chip is a flex row.
+
+### Link previews (Open Graph, X cards)
+
+- **Every page but the 404** has `og:title`, `og:description`, `og:url`, `og:site_name`,
+  `og:type` and `twitter:card`. Album and All photos pages, and the home page, add the cover
+  as `og:image` (`summary_large_image`). The 404 page is served at any unknown address, so it
+  has no address of its own to preview.
+- **Image: the album cover, cropped from the centre to 1200×630, JPEG quality 80.** JPEG
+  because not every chat app shows WebP previews; 1.91:1 because WhatsApp, Facebook and X
+  show that shape as a large card. Never upscaled (a smaller cover gives a smaller crop of
+  the same shape). Like card covers, no metadata and no credit. Real covers come out at
+  60–180 KB, well under WhatsApp's ~300 KB limit, which `verify:dist` now enforces.
+- **The home page uses the newest event's cover.** There is no raster logo, and an event
+  photo says more about the site.
+- **Absolute URLs need the site's address:** `SITE_URL` moved into `config.ts`
+  (shared by `astro.config.mjs` and `verify:dist`). CI passes the address detected by
+  `actions/configure-pages`, now also to the "Verify built site" step. The local default
+  changed from the placeholder `https://example.github.io` to
+  `https://hanshimawan26.github.io`, the repository's current (temporary, per the user)
+  Pages address; when the repository moves to the association's organisation, CI detects
+  the new address by itself, and only local builds still show the old one until
+  `DEFAULT_SITE_URL` is changed.
+- **`verify:dist` checks them:** `og:url` is the page's own address, preview URLs are
+  absolute on `SITE_URL` and exist in `dist/`, `og:image` has the size its tags claim (with
+  the other image claims), and the preview image is at most 300 KB. Preview images count as
+  used, so the unused-image check does not flag them.
+- **`noindex` is unchanged.** Chat apps read Open Graph tags regardless of `robots`.
+
+### Verification
+
+`npm test` (619 tests), `npm run typecheck`, `npm run photos:check`, `npm run build` +
+`npm run verify:dist`, the same with `BASE_PATH=/`, and `npm run test:e2e` (109 passed; new:
+the All photos page, the chips with the viewer, link preview tags, no horizontal scroll on
+the All photos page) are green. Checked by eye at 360 and 1280 px on Pinus ORI (118 photos,
+8 photographers).

@@ -70,3 +70,15 @@ describe('dimensionProblem', () => {
     expect(dimensionProblem({ source: 'img', url: '/b/logo.svg', width: 34 }, { width: 688, height: 400 })).toBeUndefined();
   });
 });
+
+describe('extractImageClaims: link preview image', () => {
+  it('claims og:image at og:image:width × og:image:height', () => {
+    const html = `<meta property="og:image" content="https://x.example/p/_astro/a.jpg">
+      <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">`;
+    expect(extractImageClaims(html)).toEqual([{ source: 'og:image', url: 'https://x.example/p/_astro/a.jpg', width: 1200, height: 630 }]);
+  });
+
+  it('makes no claim without a stated size', () => {
+    expect(extractImageClaims('<meta property="og:image" content="https://x.example/a.jpg">')).toEqual([]);
+  });
+});

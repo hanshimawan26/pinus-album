@@ -8,8 +8,10 @@
  *     contact address.
  *   - JavaScript (TRD §11): only pages with a photo grid load scripts, and the scripts a page
  *     loads stay within the viewer budget (60 KB gzipped).
+ *   - Link previews (TRD §13 P1): every page but the 404 has the Open Graph and X card tags,
+ *     `og:url` names the page itself, and the preview image is small enough for WhatsApp.
  */
-import { markupOnly } from './links.ts';
+import { markupOnly, metaProperties } from './links.ts';
 
 /** TRD §11: viewer JavaScript, gzipped. */
 export const JS_BUDGET_GZIP_BYTES = 60 * 1024;
@@ -91,6 +93,42 @@ export function pageProblems(html: string, policy: PagePolicy): string[] {
     problems.push(`loads JavaScript (${scripts.external.join(', ')}) but has no photos; the viewer belongs only on pages with photos`);
   }
   return problems;
+}
+
+/**
+ * WhatsApp skips a link preview image larger than about 300 KB; the 1200×630 JPEG crops
+ * (images.ts `previewImageFor`) are usually 25–180 KB.
+ */
+export const PREVIEW_IMAGE_MAX_BYTES = 300 * 1024;
+
+/**
+ * Problems with a page's link preview tags (Open Graph, X card). `pageUrl` is the page's
+ * own absolute address, which `og:url` must name; `undefined` for the 404 page, which has
+ * no address of its own and so no preview tags. Whether the URLs exist and the image has
+ * the size the tags claim is checked with the links and image sizes.
+ */
+export function previewProblems(html: string, pageUrl: string | undefined): string[] {
+  const meta = new Map(metaProperties(html).map(({ property, content }) => [property, content]));
+  const previewTags = [...meta.keys()].filter((property) => property.startsWith('og:') || property.startsWith('twitter:'));
+  if (pageUrl === undefined) {
+    return previewTags.length > 0 ? [`has link preview tags (${previewTags.join(', ')}), but the 404 page has no address to share`] : [];
+  }
+  const problems: string[] = [];
+  for (const property of ['og:title', 'og:description', 'og:url', 'twitter:card']) {
+    if (!meta.get(property)) problems.push(`has no link preview tag "${property}"`);
+  }
+  const url = meta.get('og:url');
+  if (url && url !== pageUrl) problems.push(`has og:url "${url}", but the page's address is ${pageUrl}`);
+  if (meta.has('og:image') && !(meta.get('og:image:width') && meta.get('og:image:height'))) {
+    problems.push('has an og:image without og:image:width and og:image:height');
+  }
+  return problems;
+}
+
+/** A problem when the link preview image file is too large for chat apps. */
+export function previewImageSizeProblem(bytes: number, limit = PREVIEW_IMAGE_MAX_BYTES): string | undefined {
+  if (bytes <= limit) return undefined;
+  return `has a link preview image of ${kilobytes(bytes)}, over ${kilobytes(limit)}: WhatsApp would show the link without it`;
 }
 
 /** Lower-cased addresses of the `mailto:` links in some markup. */

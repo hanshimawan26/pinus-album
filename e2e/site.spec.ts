@@ -1,7 +1,7 @@
 /**
  * Site-wide rules on every kind of page: no horizontal scroll at 360, 768 and 1280 px
  * (TRD §6.1, §12.3), `noindex` by default and the takedown line (TRD §10), and the viewer
- * script only on pages with photos (TRD §11).
+ * script only on pages with photos (TRD §11), and link previews (Open Graph).
  */
 import { expect, horizontalOverflow, PAGES, test } from './fixtures.ts';
 
@@ -12,6 +12,7 @@ const ALL_PAGES = [
   ['section with photos and sub-sections', PAGES.sectionWithChildren],
   ['third level, single photo', PAGES.thirdLevel],
   ['flat event', PAGES.flatEvent],
+  ['all photos of an event', PAGES.allPhotos],
   ['not found', PAGES.notFound],
 ] as const;
 
@@ -70,4 +71,33 @@ test('landmarks and skip link', async ({ page }) => {
   const skip = page.getByRole('link', { name: 'Skip to content' });
   await expect(skip).toBeFocused();
   await expect(skip).toBeInViewport();
+});
+
+test.describe('link previews', () => {
+  test('an album page names itself and shows its cover as a 1.91:1 JPEG of at most 1200 px', async ({ page }) => {
+    await page.goto(PAGES.eventWithSections);
+    const meta = (property: string) => page.locator(`meta[property="${property}"]`).getAttribute('content');
+    expect(await meta('og:title')).toBe('Demo Event A');
+    expect(await meta('og:url')).toMatch(/^https:\/\/[^/]+\/pinus-album\/albums\/demo-event-a\/$/);
+    expect(await page.locator('meta[name="twitter:card"]').getAttribute('content')).toBe('summary_large_image');
+
+    // Absolute on the site's address; served here from the same path.
+    const image = await meta('og:image');
+    expect(image).toMatch(/^https:\/\/[^/]+\/pinus-album\/_astro\/.+\.jpg$/);
+    const response = await page.request.get(new URL(new URL(image ?? '').pathname, page.url()).href);
+    expect(response.ok()).toBe(true);
+    expect(response.headers()['content-type']).toBe('image/jpeg');
+    expect((await response.body()).length).toBeLessThan(300 * 1024);
+    // The demo cover is a 1067 px wide portrait, so its crop is 1067×560 (never upscaled);
+    // real photos (2400 px) get the full 1200×630.
+    const width = Number(await meta('og:image:width'));
+    const height = Number(await meta('og:image:height'));
+    expect(width).toBeLessThanOrEqual(1200);
+    expect(width / height).toBeCloseTo(1200 / 630, 2);
+  });
+
+  test('the not-found page has no link preview', async ({ page }) => {
+    await page.goto(PAGES.notFound);
+    await expect(page.locator('meta[property^="og:"]')).toHaveCount(0);
+  });
 });

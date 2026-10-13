@@ -82,6 +82,15 @@ export function nodeDescription(node: Pick<AlbumNode, 'title' | 'story' | 'date'
   return truncateText(`${what}${date ? `, ${date}` : ''}. ${SITE.name}, ${SITE.descriptor}.`, DESCRIPTION_MAX);
 }
 
+/** Meta description of an "All photos" page: "All 118 photos from Pinus ORI, 3–6 Aug 2026. …". */
+export function allPhotosDescription(node: Pick<AlbumNode, 'title' | 'date' | 'endDate' | 'photoCount'>): string {
+  const date = nodeDateLabel(node);
+  return truncateText(
+    `All ${countLabel(node.photoCount, 'photo')} from ${node.title}${date ? `, ${date}` : ''}. ${SITE.name}, ${SITE.descriptor}.`,
+    DESCRIPTION_MAX,
+  );
+}
+
 // Built from char codes so the source stays plain ASCII.
 const UNSAFE_IN_SCRIPT = new RegExp(`[<>&${String.fromCharCode(0x2028, 0x2029)}]`, 'g');
 const BACKSLASH = String.fromCharCode(92);

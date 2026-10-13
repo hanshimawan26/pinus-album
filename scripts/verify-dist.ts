@@ -18,17 +18,20 @@
  *   6. Page rules (TRD §10, §11): every page has the robots meta that ALLOW_INDEXING asks for
  *      (noindex by default) and the footer's takedown line linking to CONTACT_EMAIL; only
  *      pages with photos load JavaScript, and no page loads more than 60 KB gzipped.
+ *   7. Link previews: every page but the 404 has the Open Graph tags, `og:url` is the page's
+ *      own address, the preview URLs are absolute on SITE_URL (checked with the links and
+ *      image sizes above) and the preview image stays under 300 KB.
  *
- * Use the same BASE_PATH, ALLOW_INDEXING, CONTACT_EMAIL and SHOW_HIDDEN as the build. Exit code 1 if anything fails.
+ * Use the same BASE_PATH, SITE_URL, ALLOW_INDEXING, CONTACT_EMAIL and SHOW_HIDDEN as the build. Exit code 1 if anything fails.
  * Runs directly with Node's type stripping: `node scripts/verify-dist.ts`.
  */
 import exifr from 'exifr';
 import sharp from 'sharp';
 import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import { ALBUMS_DIR, ALLOW_INDEXING, BASE_PATH, SITE } from '../src/lib/config.ts';
+import { ALBUMS_DIR, ALLOW_INDEXING, BASE_PATH, SITE, SITE_URL } from '../src/lib/config.ts';
 import { loadAlbums, siteLoadOptions } from '../src/lib/content/index.ts';
 import { findSourceCopies, listFiles, relativePosix } from '../src/lib/build-checks/files.ts';
 import { readCredit } from '../src/lib/authoring/exif-block.ts';
@@ -37,9 +40,9 @@ import { scanImageMetadata } from '../src/lib/build-checks/image-metadata.ts';
 import type { Credit } from '../src/lib/credit/credit.ts';
 import { webpExif } from '../src/lib/credit/webp-exif.ts';
 import { dimensionProblem, extractImageClaims, type ImageClaim } from '../src/lib/build-checks/image-claims.ts';
-import { extractCssReferences, extractHtmlReferences, resolveReference, sitePathOf, type Reference } from '../src/lib/build-checks/links.ts';
-import { extractScripts, JS_BUDGET_GZIP_BYTES, kilobytes, pageProblems, scriptBudgetProblem } from '../src/lib/build-checks/page-rules.ts';
-import { albumPathOf, comparePublished, viewerPhotoSlugs, type BuiltAlbumPage } from '../src/lib/build-checks/published.ts';
+import { absoluteUrlProblem, extractCssReferences, extractHtmlReferences, metaProperties, resolveReference, sitePathOf, type Reference } from '../src/lib/build-checks/links.ts';
+import { extractScripts, JS_BUDGET_GZIP_BYTES, kilobytes, pageProblems, previewImageSizeProblem, previewProblems, scriptBudgetProblem } from '../src/lib/build-checks/page-rules.ts';
+import { albumPathOf, comparePublished, expectedAlbumPages, viewerPhotoSlugs, type BuiltAlbumPage } from '../src/lib/build-checks/published.ts';
 import { bold, dim, green, red, runCli } from './cli.ts';
 
 const DIST_DIR = resolve('dist');
@@ -69,7 +72,7 @@ async function expectedCredits(files: readonly string[]): Promise<Map<string, Cr
     }
     const fromSitePath = sitePathOf(relativePosix(DIST_DIR, file), BASE_PATH);
     for (const image of images) {
-      const resolution = resolveReference(image.url, fromSitePath, BASE_PATH);
+      const resolution = resolveReference(image.url, fromSitePath, BASE_PATH, SITE_URL);
       const found = resolution.kind === 'internal' ? existingInDist(resolution.candidates) : undefined;
       if (found !== undefined) credits.set(join(DIST_DIR, found), image.credit); // broken links: the link check
     }
@@ -138,7 +141,13 @@ async function checkLinks(files: readonly string[]): Promise<{ checked: number; 
     // A stylesheet's relative url()s resolve against the stylesheet itself.
     const fromSitePath = isHtml ? sitePathOf(distRelative, BASE_PATH) : `${BASE_PATH}${distRelative}`;
     for (const reference of references) {
-      const resolution = resolveReference(reference.url, fromSitePath, BASE_PATH);
+      const notOnSite = reference.absolute ? absoluteUrlProblem(reference.url, SITE_URL) : undefined;
+      if (notOnSite) {
+        checked++;
+        failures.push({ file: distRelative, message: `${reference.source} "${reference.url}" ${notOnSite}` });
+        continue;
+      }
+      const resolution = resolveReference(reference.url, fromSitePath, BASE_PATH, SITE_URL);
       if (resolution.kind === 'skip') continue;
       checked++;
       if (resolution.kind === 'error') {
@@ -156,12 +165,13 @@ async function checkLinks(files: readonly string[]): Promise<{ checked: number; 
   return { checked, failures, referenced };
 }
 
-/** Album pages match the published albums exactly (no drafts, no hidden albums or photos). */
+/**
+ * Album pages (and "All photos" pages) match the published albums exactly (no drafts, no
+ * hidden albums or photos).
+ */
 async function checkPublishedContent(files: readonly string[]): Promise<{ checked: number; failures: Failure[] }> {
   const albums = await loadAlbums(siteLoadOptions(false));
-  const expected = [...albums.nodes.values()]
-    .filter((node) => node.depth > 0)
-    .map((node) => ({ path: node.slugPath.join('/'), photoSlugs: node.photos.map((photo) => photo.slug) }));
+  const expected = expectedAlbumPages(albums.nodes.values());
   const built: BuiltAlbumPage[] = [];
   const failures: Failure[] = [];
   for (const file of files) {
@@ -213,7 +223,7 @@ async function checkImageDimensions(files: readonly string[]): Promise<{ checked
     }
     const fromSitePath = sitePathOf(distRelative, BASE_PATH);
     for (const claim of claims) {
-      const resolution = resolveReference(claim.url, fromSitePath, BASE_PATH);
+      const resolution = resolveReference(claim.url, fromSitePath, BASE_PATH, SITE_URL);
       if (resolution.kind !== 'internal') continue; // External, or reported by the link check.
       const found = existingInDist(resolution.candidates);
       if (found === undefined) continue; // Broken links are reported by the link check.
@@ -227,7 +237,19 @@ async function checkImageDimensions(files: readonly string[]): Promise<{ checked
   return { checked, failures };
 }
 
-/** Robots meta, takedown line and JavaScript on every page. Returns the heaviest page's JS. */
+/** The size in bytes of the page's link preview image, or undefined (none, or broken: the link check). */
+async function previewImageBytes(html: string, distRelative: string): Promise<number | undefined> {
+  const url = metaProperties(html).find(({ property }) => property === 'og:image')?.content;
+  if (!url) return undefined;
+  const resolution = resolveReference(url, sitePathOf(distRelative, BASE_PATH), BASE_PATH, SITE_URL);
+  const found = resolution.kind === 'internal' ? existingInDist(resolution.candidates) : undefined;
+  return found === undefined ? undefined : (await stat(join(DIST_DIR, found))).size;
+}
+
+/**
+ * Robots meta, takedown line, JavaScript and link preview tags on every page. Returns the
+ * heaviest page's JS.
+ */
 async function checkPageRules(files: readonly string[]): Promise<{ checked: number; failures: Failure[]; largestJs: number }> {
   const failures: Failure[] = [];
   const gzipSizes = new Map<string, number>();
@@ -241,9 +263,16 @@ async function checkPageRules(files: readonly string[]): Promise<{ checked: numb
     const html = await readFile(file, 'utf8');
     for (const message of pageProblems(html, policy)) failures.push({ file: distRelative, message });
 
+    // GitHub Pages serves 404.html for any unknown address, so it has no address of its own.
+    const pageUrl = distRelative === '404.html' ? undefined : `${SITE_URL}${sitePathOf(distRelative, BASE_PATH)}`;
+    for (const message of previewProblems(html, pageUrl)) failures.push({ file: distRelative, message });
+    const previewBytes = await previewImageBytes(html, distRelative);
+    const tooLarge = previewBytes === undefined ? undefined : previewImageSizeProblem(previewBytes);
+    if (tooLarge) failures.push({ file: distRelative, message: tooLarge });
+
     let pageJs = 0;
     for (const src of extractScripts(html).external) {
-      const resolution = resolveReference(src, sitePathOf(distRelative, BASE_PATH), BASE_PATH);
+      const resolution = resolveReference(src, sitePathOf(distRelative, BASE_PATH), BASE_PATH, SITE_URL);
       if (resolution.kind !== 'internal') continue; // External or broken: the link check reports it.
       const found = existingInDist(resolution.candidates);
       if (found === undefined) continue;
@@ -276,7 +305,7 @@ async function main(): Promise<number> {
     console.log(red('dist/index.html not found. Run "npm run build" first.'));
     return 1;
   }
-  console.log(bold(`verify:dist — dist/ built for base path "${BASE_PATH}"\n`));
+  console.log(bold(`verify:dist — dist/ built for ${SITE_URL}${BASE_PATH}\n`));
   const files = await listFiles(DIST_DIR);
 
   const metadata = await checkImageMetadata(files, await expectedCredits(files));
@@ -293,7 +322,7 @@ async function main(): Promise<number> {
   printFailures('Images whose size does not match the page', dimensions.failures);
   printFailures('Album pages that do not match the published albums', published.failures);
   printFailures('Images no page uses', unused);
-  printFailures('Pages that break a site-wide rule (robots, takedown line, JavaScript)', pages.failures);
+  printFailures('Pages that break a site-wide rule (robots, takedown line, JavaScript, link preview)', pages.failures);
 
   const failed =
     metadata.failures.length + copies.length + links.failures.length + dimensions.failures.length + published.failures.length + unused.length + pages.failures.length;
@@ -303,14 +332,17 @@ async function main(): Promise<number> {
   if (published.failures.length > 0) {
     console.log(dim('Hint: run verify:dist with the same SHOW_HIDDEN as the build.\n'));
   }
+  if ([...links.failures, ...pages.failures].some((failure) => /another site|og:url/.test(failure.message))) {
+    console.log(dim(`Hint: run verify:dist with the same SITE_URL as the build (now "${SITE_URL}").\n`));
+  }
   if (pages.failures.some((failure) => /robots|mailto/.test(failure.message))) {
     console.log(dim('Hint: run verify:dist with the same ALLOW_INDEXING and CONTACT_EMAIL as the build.\n'));
   }
   const summary =
     `${metadata.checked} images checked for metadata (${metadata.credited} carry a photographer credit), ${files.length} files checked for copies of originals, ` +
     `${links.checked} internal links checked, ${dimensions.checked} image sizes checked, ` +
-    `${published.checked} published albums compared with their pages, ${pages.checked} pages checked for robots ` +
-    `(${ALLOW_INDEXING ? 'index' : 'noindex'}), takedown line and JavaScript ` +
+    `${published.checked} album pages compared with the published albums, ${pages.checked} pages checked for robots ` +
+    `(${ALLOW_INDEXING ? 'index' : 'noindex'}), takedown line, link preview and JavaScript ` +
     `(largest ${kilobytes(pages.largestJs)} gzipped, budget ${kilobytes(JS_BUDGET_GZIP_BYTES)}).`;
   if (failed > 0) {
     console.log(red(bold(`✗ ${failed} problem${failed === 1 ? '' : 's'}. ${summary}`)));
