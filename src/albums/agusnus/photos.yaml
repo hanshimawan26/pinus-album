@@ -7,10 +7,8 @@
 # Photographer from photos.yaml (no @folder) and date from photos.yaml (no EXIF).
 "RYHN6504.JPG":
   caption: "Juara Agusnus"
-  photographer: rayhan
   date: 2026-08-22
 
 "RYHN6496.JPG":
   caption: "Juara Agusnus"
-  photographer: rayhan
   date: 2026-08-22
