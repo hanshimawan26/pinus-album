@@ -31,7 +31,7 @@ use only those tokens.
 | `--color-surface-sunken` | `#F1EDE5` | Image placeholders while loading, empty states, inline code |
 | `--color-text` | `#1C1B19` | Body text, headings, card titles |
 | `--color-text-muted` | `#5F5A52` | Meta lines (dates, counts), descriptor, footer, current breadcrumb |
-| `--color-border` | `#E4DFD5` | Hairlines (header, footer, sibling nav). Decorative only |
+| `--color-border` | `#E4DFD5` | Hairlines (footer, sibling nav). Decorative only |
 | `--color-link` | `#334E97` | Links and interactive text (= brand blue) |
 | `--color-link-hover` | `#263B75` | Link hover |
 | `--color-on-accent` | `#FAF8F4` | Text and icons on brand blue |
@@ -74,12 +74,13 @@ Every text/background pair the site uses, measured with the WCAG relative-lumina
   photo) use the text colour, or white on black, instead. Blue is too dark on black (2.68:1).
 - **Red `#EF4C2B`** measures 3.45:1 on the page background. That passes only for large text
   (24 px, or 18.66 px bold) and for graphics. It must **never** be used for small text on the
-  light base. On near-black it reaches 4.70:1 and on black 5.74:1. It has no role in
-  milestone 3. Reserve it for rare emphasis such as a future "new" marker, at large size or
-  as a graphic.
+  light base. On near-black it reaches 4.70:1 and on black 5.74:1. Its one use is the
+  header stripe (a graphic). Reserve it otherwise for rare emphasis such as a future "new"
+  marker, at large size or as a graphic.
 - **Yellow `#F1B244`** measures 1.77:1 on the page background, so it is **never** text or a
   thin line on the light base. It is used as a fill behind near-black text (9.17:1). On black
-  it reaches 11.19:1.
+  it reaches 11.19:1. The exception is the header stripe, where it sits beside red and blue as
+  one decorative band (3 px) and carries no meaning on its own.
 - The photos carry the colour. The interface does not compete with them by tinting
   surfaces.
 
@@ -144,7 +145,7 @@ Headings use `text-wrap: balance` and paragraphs use `pretty`.
 | Component | File | Notes |
 |---|---|---|
 | Logo mark | `src/components/LogoMark.astro`, `public/logo.svg` | The association's logo (a ring in navy, red and yellow around three figures), shown at 34 px as an `<img>` with fixed width and height. The browser-tab icon is `public/favicon.svg`: the same logo on a white disc, so it stays visible on dark tab bars. Decorative (`alt=""`), since the site title names the link. The logo's own colours are used as supplied, not the brand tokens |
-| Site header | `SiteHeader.astro` | Mark, "Pinus Community" (700) and the descriptor (muted, 13 px) form a single home link. A hairline sits below. Not sticky |
+| Site header | `SiteHeader.astro` | Mark, "Pinus Community" (700) and the descriptor (muted, 13 px) form a single home link. Below it, a 3 px stripe in the three brand colours, a third each (red, blue, yellow; `border-image` with hard stops). Not sticky |
 | Site footer | `SiteFooter.astro` | Takedown line with a mailto link (TRD §10), then the organisation name and descriptor. Stacked on phones; a single row from 900 px. The takedown line has no width cap and uses `text-wrap: balance`, so it reads as one sentence on desktop and never leaves a short tail |
 | Skip link | `BaseLayout.astro` | "Skip to content": hidden above the viewport until focused, then shown in blue |
 | Breadcrumbs | `Breadcrumbs.astro` | `nav[aria-label=Breadcrumb] > ol`. Blue links separated by muted chevrons. The current page is muted text with `aria-current="page"` |

@@ -1,5 +1,5 @@
 ---
-/** Site header (TRD §6.1): placeholder mark, "Pinus Community" linking home, descriptor. */
+/** Site header (TRD §6.1): logo mark, "Pinus Community" linking home, descriptor. */
 import { SITE } from '../lib/config.ts';
 import { withBase } from '../lib/url.ts';
 import LogoMark from './LogoMark.astro';
@@ -24,8 +24,16 @@ const { isHome = false } = Astro.props;
 </header>
 
 <style>
+  /* Bottom stripe in the three brand colours, a third each (DESIGN.md). */
   .site-header {
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 3px solid;
+    border-image: linear-gradient(
+        to right,
+        var(--brand-red) 0 33.333%,
+        var(--brand-blue) 33.333% 66.667%,
+        var(--brand-yellow) 66.667% 100%
+      )
+      1;
   }
 
   .inner {

@@ -1305,3 +1305,13 @@ Requested by the committee after milestone 6.
 - The logo's own colours (navy `#232E6E`, red `#F7423B`, yellow `#EBB727`, figures
   `#9B8370`) are kept exactly as supplied. They are close to, but not the same as, the brand
   tokens in DESIGN.md, which keep the official values from the TRD.
+
+## After the POC — header stripe and contact address
+
+- The header's bottom hairline became a 3 px stripe in the three brand colours, a third each
+  (red, blue, yellow), as the user asked. It uses the brand tokens (`--brand-red`,
+  `--brand-blue`, `--brand-yellow`) through `border-image` with hard colour stops. It is
+  decorative, so the contrast rules for yellow and red as thin lines (DESIGN.md) do not apply
+  to it; the footer and sibling nav keep the neutral hairline.
+- The default `CONTACT_EMAIL` is now the association's real address, `kontakpinus@gmail.com`,
+  instead of the `example.com` placeholder. The repository variable still overrides it.

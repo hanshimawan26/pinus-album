@@ -629,8 +629,8 @@ project folder; they need the repository on GitHub.
    ```
 3. **Turn on Pages:** **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 4. **Set the contact address:** **Settings → Secrets and variables → Actions → Variables →
-   New repository variable**, name `CONTACT_EMAIL`, value the association's address. Until you
-   do, the footer shows a placeholder address.
+   New repository variable**, name `CONTACT_EMAIL`, value the address for takedown requests.
+   Without it, the footer shows `kontakpinus@gmail.com`.
 5. **Run the first deployment:** **Actions → Deploy to GitHub Pages → Run workflow** (the push
    in step 2 may have run before Pages was on). When it shows a green tick, the website is at
    `https://<your-org>.github.io/pinus-album/`.
@@ -643,7 +643,7 @@ After changing one, run the workflow again (**Actions → Run workflow**).
 
 | Variable | Default | What it does |
 |---|---|---|
-| `CONTACT_EMAIL` | a placeholder | The address in the footer's "Not comfortable with a photo?" line. **Set this before launch** |
+| `CONTACT_EMAIL` | `kontakpinus@gmail.com` | The address in the footer's "Not comfortable with a photo?" line. Set it only to use a different address |
 | `ALLOW_INDEXING` | `false` | `true` lets Google and other search engines list the website. Off by default because the photos show identifiable students; the committee decides |
 | `TIMEZONE` | `Asia/Singapore` | Time zone for camera dates |
 | `SITE_URL` | detected | The website's address, e.g. `https://photos.example.org`. Only for unusual setups |

@@ -13,7 +13,7 @@ export const SITE = {
   name: 'Pinus Community',
   descriptor: 'Indonesian Students Association at NUS',
   /** Placeholder until the committee sets a real address (TRD §10, DECISIONS.md). */
-  contactEmail: env.CONTACT_EMAIL || 'pinus.community.album@example.com',
+  contactEmail: env.CONTACT_EMAIL || 'kontakpinus@gmail.com',
 } as const;
 
 /** Content folder (TRD §4.1), relative to the project root. */
