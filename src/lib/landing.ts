@@ -48,8 +48,6 @@ export interface Chapter {
 export interface Landing {
   featured: AlbumNode;
   hero: PlacedPhoto;
-  /** Distinct credited photographers in the featured event. */
-  photographerCount: number;
   /** The featured event's sections, or the featured event itself when it has none. */
   chapters: Chapter[];
   spotlight?: PlacedPhoto;
@@ -108,11 +106,6 @@ function spotlightOf(event: AlbumNode, used: ReadonlySet<string>): PlacedPhoto |
   return curated ?? all.find((placed) => placed.photo.caption) ?? all[Math.floor(all.length / 2)];
 }
 
-function countPhotographers(event: AlbumNode): number {
-  const slugs = placedPhotos(event).flatMap(({ photo }) => (photo.photographer ? [photo.photographer.slug] : []));
-  return new Set(slugs).size;
-}
-
 /** The landing blocks for the published tree, or undefined when no event has photos yet. */
 export function buildLanding(root: AlbumNode): Landing | undefined {
   const events = root.children.filter((event) => event.photoCount > 0 && event.cover);
@@ -145,7 +138,6 @@ export function buildLanding(root: AlbumNode): Landing | undefined {
   const landing: Landing = {
     featured,
     hero,
-    photographerCount: countPhotographers(featured),
     chapters: chapters.filter((chapter) => chapter.photos.length > 0),
     moreEvents: moreEvents.filter((chapter) => chapter.photos.length > 0),
   };

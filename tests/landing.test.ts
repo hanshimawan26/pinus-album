@@ -116,9 +116,4 @@ describe('buildLanding', () => {
     const events = ['2026-01-01', '2026-02-01', '2026-03-01', '2026-04-01', '2026-05-01', '2026-06-01'].map((date, i) => event(`e${i}`, date));
     expect(landingOf(events)?.moreEvents.length).toBe(MORE_EVENTS);
   });
-
-  it('counts the credited photographers of the featured event', () => {
-    const landing = landingOf([event('event', '2026-09-20', { images: { ...photos(3), ...photos(2, 'bob') } })]);
-    expect(landing?.photographerCount).toBe(2);
-  });
 });

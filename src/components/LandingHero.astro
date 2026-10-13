@@ -21,10 +21,9 @@ interface Props {
 }
 
 const { landing, image } = Astro.props;
-const { featured: event, hero, photographerCount } = landing;
+const { featured: event, hero } = landing;
 const stats = [
   countParts(event.photoCount, 'photo'),
-  ...(photographerCount > 0 ? [countParts(photographerCount, 'photographer')] : []),
   ...(event.sectionCount > 0 ? [countParts(event.sectionCount, 'section')] : []),
 ];
 const credit = hero.photo.photographer?.name;

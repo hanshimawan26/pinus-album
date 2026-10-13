@@ -236,7 +236,7 @@ URLs are lowercase slugs with a trailing slash. All internal links must go throu
 
 Top to bottom (visual design: DESIGN.md "Landing"; the rules are in `src/lib/landing.ts`):
 
-1. **Hero:** the featured event — the event with `featured: true`, else the newest event with photos — with its cover, title, date, venue, the start of its story, counts (photos, photographers, sections), and links to its album and its "All photos" page. The cover's photographer is named.
+1. **Hero:** the featured event — the event with `featured: true`, else the newest event with photos — with its cover, title, date, venue, the start of its story, counts (photos, and sections when it has any), and links to its album and its "All photos" page. The cover's photographer is named.
 2. **Chapters:** one per section of the featured event (an event without sections gets one "highlights" chapter), each with up to five photos.
 3. **Photo spotlight:** one photo of the featured event (its first `highlights` photo; else its first captioned photo; else a photo from the middle), with its caption, photographer and date.
 4. **More events:** the next three events, one chapter each.

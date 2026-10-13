@@ -330,7 +330,7 @@ bottom, with the visually hidden h1 "Photo albums":
   instead of being cut off.
   At the bottom, on the photo scrim: eyebrow ("FEATURED EVENT" · date, red dot; whether the
   event was pinned with `featured: true` or is simply the newest), the title (h2, display size, white), venue (600), the start of the story (2 lines),
-  glass stat pills ("**118** photos", "**8** photographers", "**4** sections"), a primary
+  glass stat pills ("**118** photos", "**4** sections"), a primary
   "Open album" button and a glass "All 118 photos" button, then the cover's photo credit. The
   image loads eagerly with high priority (it is the largest thing in the first viewport).
 - **Chapters** (`LandingChapter.astro`): one per section of the featured event, or one

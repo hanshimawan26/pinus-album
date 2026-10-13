@@ -1535,3 +1535,6 @@ each other. Decisions (the user chose the first three):
     because swiping is how people move there and the arrows covered much of the photo. They
     are clipped, not removed: VoiceOver/TalkBack users still get "Next photo"/"Previous
     photo" (swiping is not available to them), and a keyboard focus shows them again.
+- **The hero no longer shows the number of photographers** (asked by the user): its stat pills
+  are the photo count and, for an event with sections, the section count. The count was used
+  nowhere else, so `Landing.photographerCount` was removed too.
