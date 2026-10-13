@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&amp;family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-secondary-fixed":"#001b3c","primary-fixed-dim":"#ffb3b1","on-secondary-container":"#a2b9e2","secondary":"#b0c7f1","error":"#ffb4ab","surface-bright":"#31394d","inverse-primary":"#bb152c","on-tertiary-fixed":"#2a1700","surface-container-lowest":"#060e20","tertiary-container":"#ca8100","inverse-surface":"#dae2fd","secondary-container":"#334a6d","on-secondary-fixed-variant":"#30476a","on-primary-fixed-variant":"#92001c","error-container":"#93000a","outline":"#ab8987","on-surface-variant":"#e4bebc","surface-container-highest":"#2d3449","background":"#0b1326","tertiary":"#ffb95f","primary-container":"#ff535b","surface":"#0b1326","primary-fixed":"#ffdad8","on-primary-container":"#5b000e","tertiary-fixed-dim":"#ffb95f","primary":"#ffb3b1","surface-dim":"#0b1326","on-background":"#dae2fd","secondary-fixed":"#d5e3ff","surface-container":"#171f33","on-secondary":"#183153","on-tertiary-container":"#3e2400","outline-variant":"#5b403f","on-tertiary":"#472a00","on-surface":"#dae2fd","on-tertiary-fixed-variant":"#653e00","on-error":"#690005","on-error-container":"#ffdad6","secondary-fixed-dim":"#b0c7f1","surface-container-low":"#131b2e","tertiary-fixed":"#ffddb8","surface-variant":"#2d3449","inverse-on-surface":"#283044","surface-tint":"#ffb3b1","on-primary-fixed":"#410007","on-primary":"#680011","surface-container-high":"#222a3d"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"gutter":"1.5rem","space-xs":"0.25rem","space-xl":"2.5rem","space-sm":"0.5rem","space-md":"1rem","margin-mobile":"1rem","space-lg":"1.5rem","margin":"3rem","gutter-mobile":"0.75rem"},"fontFamily":{"body-lg":["Plus Jakarta Sans"],"headline-sm":["Playfair Display"],"title-lg":["Plus Jakarta Sans"],"headline-md":["Playfair Display"],"headline-lg-mobile":["Playfair Display"],"label-md":["Plus Jakarta Sans"],"title-md":["Plus Jakarta Sans"],"display-lg":["Playfair Display"],"headline-lg":["Playfair Display"],"body-md":["Plus Jakarta Sans"],"body-sm":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"],"display-lg-mobile":["Playfair Display"]},"fontSize":{"body-lg":["16px",{"lineHeight":"26px","fontWeight":"400"}],"headline-sm":["22px",{"lineHeight":"28px","fontWeight":"500"}],"title-lg":["18px",{"lineHeight":"26px","fontWeight":"600"}],"headline-md":["28px",{"lineHeight":"36px","fontWeight":"500"}],"headline-lg-mobile":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"600"}],"label-md":["13px",{"lineHeight":"16px","letterSpacing":"0.04em","fontWeight":"600"}],"title-md":["16px",{"lineHeight":"22px","fontWeight":"600"}],"display-lg":["56px",{"lineHeight":"64px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-lg":["40px",{"lineHeight":"48px","letterSpacing":"-0.015em","fontWeight":"600"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"body-sm":["12px",{"lineHeight":"18px","fontWeight":"400"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.06em","fontWeight":"700"}],"display-lg-mobile":["36px",{"lineHeight":"44px","letterSpacing":"-0.01em","fontWeight":"700"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-20 w-full px-gutter-mobile md:px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-lg flex-shrink-0"><div class="flex items-center gap-space-sm"><img alt="Lumina Community Archive Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1U7bOBo_FdUuIduqFWefcseNPvYrKcFeO9yxPVUlzZnnaiKQhPDBJhoX9QR3Q94tnfXTCvWRASsjC43bXcmbEqyBIrSwa_F6ZaOwUvjzbQacD40cMY53BCBiPj0A_JBQhcRd3bDvTjP5hZtO-FxxrY1Aommel-56gjmG6pGnzbqPqUOj8lIcsPZ0iZ_nEfODQY76Hl4db2nja_EH7_NLOUiR-NMf0TQrGZpIhI0-f8oWNh1S-wM9C-ZV3g"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-none">Lumina</span><span class="font-label-sm text-label-sm text-on-surface-variant tracking-wider uppercase mt-space-xs">Archive</span></div></div><div class="hidden xl:flex items-center gap-1.5 pl-space-sm py-1 bg-surface-container-low px-space-sm rounded-full"><span class="w-2 h-2 rounded-full bg-primary-container"></span><span class="w-2 h-2 rounded-full bg-secondary"></span><span class="w-2 h-2 rounded-full bg-tertiary"></span><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider pl-1">Community Folio</span></div></div><nav class="hidden lg:flex items-center gap-space-xs bg-surface-container-low/70 p-1 rounded-full" data-active-classes="bg-surface-container-high text-on-surface font-title-md"><a class="font-label-md text-label-md px-space-md py-space-xs rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" data-path="events-and-albums" href="#">Events &amp; Albums</a><a class="font-label-md text-label-md px-space-md py-space-xs rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" data-path="highlights" href="#">Highlights</a><a class="font-label-md text-label-md px-space-md py-space-xs rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" data-path="photographers" href="#">Photographers</a><a class="font-label-md text-label-md px-space-md py-space-xs rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" data-path="timeline" href="#">Timeline</a><a class="font-label-md text-label-md px-space-md py-space-xs rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" data-path="curated-collections" href="#">Curated Collections</a></nav><div class="flex items-center gap-space-md flex-shrink-0"><div class="relative hidden md:flex items-center"><div class="absolute left-3 flex items-center pointer-events-none text-on-surface-variant"><span class="material-symbols-outlined text-base">search</span></div><input class="bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/60 font-body-sm text-body-sm pl-9 pr-14 py-space-xs rounded-xl focus:outline-none cursor-pointer w-48 xl:w-60 shadow-[0_1px_8px_rgba(0,0,0,0.04)]" placeholder="Search archives..." readonly="" type="text"/><kbd class="absolute right-2.5 font-label-sm text-label-sm bg-surface-container px-1.5 py-0.5 rounded text-on-surface-variant pointer-events-none shadow-[0_1px_8px_rgba(0,0,0,0.04)]">⌘K</kbd></div><a class="relative inline-flex items-center justify-center p-[1px] overflow-hidden rounded-xl bg-gradient-to-r from-primary-container via-tertiary to-secondary group" data-path="photo-submission" href="#"><span class="px-space-md py-space-xs bg-surface-container-low rounded-[calc(0.5rem-1px)] font-label-md text-label-md text-on-surface group-hover:bg-surface-container-high group-hover:text-on-surface transition-colors flex items-center gap-space-xs"><span class="material-symbols-outlined text-base text-primary">add_photo_alternate</span>Submit Photos</span></a><div class="flex items-center gap-space-xs pl-space-xs"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-container-highest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBChlDDNIp4FDiW5R0yR4Ytco3AyR7OL7bNLTOgQ8IIpAV5w5lxUAfPPGhR0ZhKqXOQ79QXoaZU7wSu0yhL6WMWgWucGHE70yCbpIE4l7W_XTN8LKsOAszJOBMcBb2IttBlo-rseQZX7v6iDqbq7ASI-5Nl-5xnoKUIUSlb_aUmQPAXHE6lUDY0b_Nvb20HPLzgHuz3lx4tNeX8ZXAApmijtu_8kfTMvAw1Swbm97If1mwF4vId-s81"/></div></div></div></header><main class="w-full pt-20 bg-background flex-1 flex flex-col"><div class="flex flex-col w-full text-on-surface">
+<!-- TOP HERO SPOTLIGHT: Cinematic Featured Event -->
+<section class="relative w-full px-gutter-mobile md:px-margin pt-space-md pb-space-xl">
+<div class="relative w-full rounded-xl overflow-hidden bg-surface-container-low shadow-2xl">
+<!-- Panoramic Feature Visual -->
+<div class="relative w-full h-[540px] md:h-[620px] bg-cover bg-center overflow-hidden" data-alt="Cinematic atmospheric nighttime festival street with hundreds of glowing golden floating lanterns casting warm reflections on a wet cobblestone plaza. Crowds of diverse happy community members in casual vibrant evening clothing laughing, listening to street violinists, warm amber fairy lights and rich deep cobalt dusk sky, rich film photography texture." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBhmj86l8Gw0hE_fOK0MJd7T3NOJBzRpo7l-2nqpm7jaImIHBq0cd_2fqlTGmCQzEvxm5LaaD4pknrVnP-GPCReVhOK5sCb76MTcluOyEBXEYIOmR516rkt4U7q0-rBdrjFobYBpuV_-L-_P9Mt99TSUyLgja2Ih_yide1KXk60iQZipQ7bnUjCaR9Y0EQY4UAg07BldHjVMfNCLRsLtSTklwsXpr55dyrGEGGlT_A8vT7tx3X9aDa0')">
+<!-- Editorial Dark Scrim & Chromatic Gradients -->
+<div class="absolute inset-0 bg-gradient-to-t from-background via-surface-container-lowest/60 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-background/90 via-transparent to-surface-container-lowest/40"></div>
+<!-- Artistic Color Rhythm Line & Coordinates Tag -->
+<div class="absolute top-6 left-6 md:left-10 flex items-center gap-space-sm z-10">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-lowest/80 backdrop-blur-md shadow-md">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-on-surface uppercase tracking-wider">Featured Master Album</span>
+</span>
+<div class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-lowest/60 backdrop-blur-md">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono">ARCHIVE • 2024.07.18</span>
+</div>
+</div>
+<!-- Lead Content Overlay -->
+<div class="absolute bottom-0 left-0 right-0 p-6 md:p-12 flex flex-col md:flex-row items-end justify-between gap-space-lg z-10">
+<div class="max-w-3xl space-y-space-sm">
+<!-- Event taxonomy & Date -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<span class="px-2.5 py-1 rounded bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-semibold uppercase tracking-wider">District Cultural Pavilion</span>
+<span class="text-on-surface-variant font-label-md text-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-tertiary">calendar_today</span> July 18, 2024
+              </span>
+<span class="text-on-surface-variant font-label-md text-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-primary">location_on</span> Old Canal Waterfront &amp; Pier 7
+              </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight leading-none md:text-5xl">
+              Midsummer Lantern &amp; Arts Festival 2024
+            </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl line-clamp-2 md:line-clamp-none">
+              A record gathering of over 4,500 neighbors illuminating the urban waterways with handcrafted bamboo lanterns, impromptu jazz collectives, and live street muralists under the summer twilight.
+            </p>
+<!-- Metrics Pill Bar -->
+<div class="flex flex-wrap items-center gap-space-md pt-2 text-on-surface">
+<div class="flex items-center gap-2 bg-surface-container-high/80 backdrop-blur-md px-3.5 py-1.5 rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-base text-primary">photo_library</span>
+<span class="font-title-md text-title-md font-bold">428</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Archived Photos</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-high/80 backdrop-blur-md px-3.5 py-1.5 rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-base text-secondary">group</span>
+<span class="font-title-md text-title-md font-bold">14</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Photographers</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-high/80 backdrop-blur-md px-3.5 py-1.5 rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-base text-tertiary">verified</span>
+<span class="font-title-md text-title-md font-bold">4K Res</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Master Raw</span>
+</div>
+</div>
+</div>
+<!-- Quick Action Buttons -->
+<div class="flex flex-wrap sm:flex-nowrap items-center gap-space-sm w-full md:w-auto flex-shrink-0">
+<button class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-space-lg py-3 rounded-xl bg-primary-container text-on-primary-container font-label-md text-label-md hover:bg-primary transition-all shadow-lg active:scale-95" id="btnOpenSlideshow">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+              Launch Slideshow
+            </button>
+<button class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-space-md py-3 rounded-xl bg-surface-container-highest/80 backdrop-blur-md text-on-surface hover:bg-surface-bright transition-all shadow-md active:scale-95">
+<span class="material-symbols-outlined text-lg">download</span>
+              Curated Set (64)
+            </button>
+<button class="p-3 rounded-xl bg-surface-container-highest/80 backdrop-blur-md text-on-surface hover:bg-surface-bright transition-all shadow-md" title="Share Folio">
+<span class="material-symbols-outlined text-lg">share</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- FILTER & CHRONOLOGICAL TOOLBAR: Deep Slate Exhibition Controls -->
+<section class="sticky top-20 z-40 w-full px-gutter-mobile md:px-margin py-3 bg-background/95 backdrop-blur-xl shadow-md">
+<div class="flex flex-col lg:flex-row items-center justify-between gap-space-md py-2">
+<!-- Primary Category Pills -->
+<div class="flex items-center gap-space-xs overflow-x-auto w-full lg:w-auto scrollbar-none pb-1 lg:pb-0">
+<button class="flex-shrink-0 px-4 py-1.5 rounded-full bg-surface-container-high text-on-surface font-label-md text-label-md shadow-sm">
+          All Gatherings
+        </button>
+<button class="flex-shrink-0 px-4 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors font-label-md text-label-md flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+          Street Festivals
+        </button>
+<button class="flex-shrink-0 px-4 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors font-label-md text-label-md flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+          Gallery Openings
+        </button>
+<button class="flex-shrink-0 px-4 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors font-label-md text-label-md flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+          Makers &amp; Craft Fair
+        </button>
+<button class="flex-shrink-0 px-4 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors font-label-md text-label-md">
+          Live Music Sessions
+        </button>
+<button class="flex-shrink-0 px-4 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors font-label-md text-label-md">
+          Community Gardens
+        </button>
+</div>
+<!-- Secondary Toggles & Layout Switches -->
+<div class="flex items-center justify-between lg:justify-end gap-space-md w-full lg:w-auto flex-shrink-0">
+<!-- Season Pill Switch -->
+<div class="inline-flex p-1 bg-surface-container-low rounded-xl shadow-inner">
+<button class="px-3 py-1 rounded-lg bg-surface-container-high font-label-sm text-label-sm text-on-surface font-semibold shadow-sm">2024 Summer</button>
+<button class="px-3 py-1 rounded-lg text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm transition-colors">2024 Spring</button>
+<button class="px-3 py-1 rounded-lg text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm transition-colors">2023 Archive</button>
+</div>
+<!-- View Segment Switch -->
+<div class="hidden sm:flex items-center bg-surface-container-low rounded-xl p-1">
+<button class="p-1.5 rounded-lg bg-surface-container-high text-on-surface" title="Story Masonry">
+<span class="material-symbols-outlined text-base">dashboard</span>
+</button>
+<button class="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface transition-colors" title="Chronological Feed">
+<span class="material-symbols-outlined text-base">view_agenda</span>
+</button>
+<button class="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface transition-colors" title="Photographer Folios">
+<span class="material-symbols-outlined text-base">person_book</span>
+</button>
+</div>
+<!-- Sort Select -->
+<div class="relative flex items-center">
+<select class="appearance-none bg-surface-container-low text-on-surface font-label-sm text-label-sm pl-3 pr-8 py-2 rounded-xl focus:outline-none cursor-pointer">
+<option>Curator Picks</option>
+<option>Most Recent First</option>
+<option>Highest Engagement</option>
+<option>Lens / Camera EXIF</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 pointer-events-none text-base text-on-surface-variant">expand_more</span>
+</div>
+</div>
+</div>
+</section>
+<!-- CHAPTER 1: Lantern Night & Street Parade (Asymmetric Editorial Masonry) -->
+<section class="w-full px-gutter-mobile md:px-margin pt-space-xl pb-space-lg">
+<!-- Chapter Header with Typographic Accent -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-sm pb-space-md">
+<div class="space-y-1">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-label-sm text-label-sm text-primary tracking-widest uppercase">Chapter 01 • 8:00 PM – 11:30 PM</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Lantern Night &amp; Street Parade</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">The ceremonial march down Riverway Boulevard with brass band accompaniment and luminous paper sculptures.</p>
+</div>
+<div class="flex items-center gap-space-sm text-on-surface-variant font-label-sm text-label-sm">
+<span>Showing 6 of 124 photos</span>
+<span class="text-surface-container-highest">•</span>
+<button class="text-primary hover:underline flex items-center gap-0.5">
+          View Chapter Reel <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Masonry Grid with Diverse Aspect Ratios -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-space-md">
+<!-- Tile 1: Masterpiece Lead (Span 7, Tall) -->
+<div class="lg:col-span-7 group relative rounded-xl overflow-hidden bg-surface-container-low shadow-xl">
+<div class="relative w-full h-[460px] bg-cover bg-center transition-transform duration-500 group-hover:scale-[1.02]" data-alt="Close-up candid portrait of an elderly artisan with deep laugh lines guiding a young girl's hands to light a large hand-painted carp paper lantern. Soft orange flame glow illuminating their smiling faces against a dark twilight background, rich photographic grain, cinematic contrast." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD_Of5o74v9CISUl7l1y6-a75KNW2wnfw8DMHA9Y-QBr1baUcAn-0xXXveooWJi73pBMjrslNfPCsf5y_hdfyvmVAsSEg_-YiKDGOGhPcgujvRAKo1tcDSpMFL5-PmcPDOxhGgFC9YMboiq-uLESARKvglCFaOKqgYoFyx3eKIWcAc21vjUbzfPrcIT6FVTmcCXfffGPer39yAl1oPPwZTK_e9BquBgO4flm_Ibzk4YZ5Z8hnLvddZN')">
+<!-- Top chromatic tag marker -->
+<div class="absolute top-3 left-3 z-20">
+<span class="px-2.5 py-0.5 rounded-full bg-primary-container/90 text-on-primary-container font-label-sm text-label-sm font-bold shadow-md">
+              Curator's Choice
+            </span>
+</div>
+<!-- Quick inspect trigger -->
+<button class="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-surface-container-lowest/70 backdrop-blur-md flex items-center justify-center text-on-surface opacity-0 group-hover:opacity-100 transition-opacity hover:bg-surface-bright">
+<span class="material-symbols-outlined text-sm">fullscreen</span>
+</button>
+<!-- Hover Metadata Scrim -->
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/30 to-transparent opacity-85 group-hover:opacity-95 transition-opacity flex flex-col justify-end p-6">
+<div class="flex items-center justify-between text-on-surface">
+<div>
+<span class="font-title-md text-title-md font-semibold block">Lighting the Maiden Carp</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5 mt-0.5">
+<span class="material-symbols-outlined text-xs text-primary">photo_camera</span>
+                  Maya Lin • Sony A7IV • 35mm f/1.4 GM
+                </span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors text-primary" title="Like">
+<span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</button>
+<button class="p-2 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface" title="EXIF">
+<span class="material-symbols-outlined text-base">info</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Tile 2: Brass Band Action (Span 5, Tall) -->
+<div class="lg:col-span-5 group relative rounded-xl overflow-hidden bg-surface-container-low shadow-xl">
+<div class="relative w-full h-[460px] bg-cover bg-center transition-transform duration-500 group-hover:scale-[1.02]" data-alt="Dynamic energetic live action shot of a young trumpet player wearing a floral shirt mid-solo under street lamps. Steam or stage haze catching dramatic blue and yellow backlights, brass instrument gleaming with vibrant reflections, passionate expression, low angle shot." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDHtNfm8RgpajlSaqu0YV2oNeU58V19ZoG_E0Gq5uZphzs_Kpx2Bi7sSUX3H3Zkoat8oZXdF6Acbm1jQ5dKFGNNdUqeG3ln75yK4WPQgagpx7w8BakE51mbi_YBrzkOKV-xDOnphCm4VYmU74FP7lHq7o-2mv8iZonB3eaxw0aw-oJGjeUSqLFYDTNfUifbJ6KSHu6L485tfGgdZk2kZTuke1JDNx21UieU3pe0oZZzq9QIPisoNpNe')">
+<div class="absolute top-3 left-3 z-20">
+<span class="px-2.5 py-0.5 rounded-full bg-secondary-container/90 text-on-secondary-container font-label-sm text-label-sm font-semibold shadow-md">
+              Live Sound
+            </span>
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/30 to-transparent opacity-80 group-hover:opacity-95 transition-opacity flex flex-col justify-end p-6">
+<div class="flex items-center justify-between text-on-surface">
+<div>
+<span class="font-title-md text-title-md font-semibold block">Brass Collective Opening Horn</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5 mt-0.5">
+<span class="material-symbols-outlined text-xs text-secondary">photo_camera</span>
+                  Tomas Velasquez • Nikon Z8 • 85mm f/1.8
+                </span>
+</div>
+<button class="p-2 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface" title="Add to Favorite">
+<span class="material-symbols-outlined text-base">favorite</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Tile 3: Square Detail / Crowd Confetti (Span 4) -->
+<div class="lg:col-span-4 group relative rounded-xl overflow-hidden bg-surface-container-low shadow-md">
+<div class="relative w-full h-[320px] bg-cover bg-center transition-transform duration-500 group-hover:scale-[1.02]" data-alt="Crowd of spectators with raised hands, paper streamers and biodegradable confetti falling through vibrant golden lamp glow. Joyful candid silhouettes, motion blur of confetti against sharp festive expressions, evening celebration." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDc_CIXfx38kRmq_yKXkeB4EigHZPHsCbVm3FP3peCTeSFIK2_ElZcid7rYrUPE03RGRELTTlSN_0spX8qYpbApS63WaIEEC2ekk1LAJWR-vaQoocVs43EFibQfIR52Td48EFMx0Dily4uUAsfXgqEXpvLXBJ-kg7FVPHiRYBMobGoL62lDijIJkSTaLAaETLLlySmR7iI6W4uyyZtgInhM9LF4sQiRdTILbyvM37TPXMA5IPAB_ler')">
+<div class="absolute top-3 left-3 z-20">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-85 p-4 flex flex-col justify-end">
+<span class="font-title-md text-title-md text-on-surface font-medium truncate">Golden Hour Confetti Release</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Hannah Berg • Canon R6 • 24-70mm</span>
+</div>
+</div>
+</div>
+<!-- Tile 4: Wide Canal Perspective (Span 4) -->
+<div class="lg:col-span-4 group relative rounded-xl overflow-hidden bg-surface-container-low shadow-md">
+<div class="relative w-full h-[320px] bg-cover bg-center transition-transform duration-500 group-hover:scale-[1.02]" data-alt="Reflections of hundreds of glowing spherical lanterns floating slowly down an urban stone canal. The arched stone bridge overhead is crowded with silhouetted spectators leaning over iron railings, warm glow on cool teal dark water." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD4BAi5uE5Szhl1ofiWHYzA4YaTKXwRSGzCxbaOftNemdpBvNi5ZgCpVrKAd_g4spVcgEK7xLEfhk1hKfyolINvVGAF1IXgz6bLGJy6uW0QEAHJBVapzyFgkCIEq2D7Ciq4eOhRQRGarHeROlQH0GaMq5VrtIM2WbpPBDxJls1jio_Fg8PiSasQf9Ntwn-CveBkbh7aLru8FcN5JIKxwBZTWzT3FndaPadipgzfJ8uuFwdCEW4MoaF6')">
+<div class="absolute top-3 left-3 z-20">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-85 p-4 flex flex-col justify-end">
+<span class="font-title-md text-title-md text-on-surface font-medium truncate">Canal Float #42</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Julian Vance • Fujifilm X-T5 • 23mm f/1.4</span>
+</div>
+</div>
+</div>
+<!-- Tile 5: Intimate Macro Portrait (Span 4) -->
+<div class="lg:col-span-4 group relative rounded-xl overflow-hidden bg-surface-container-low shadow-md">
+<div class="relative w-full h-[320px] bg-cover bg-center transition-transform duration-500 group-hover:scale-[1.02]" data-alt="Intimate street food capture of hands dipping skewered mochi dumplings into rich sweet soy glaze over a smoking charcoal brazier at an outdoor night market stall, sparks flying, warm delicious orange glow." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD_PpEVCFym9GDG9xSwHNd4E9X_hsoecron_kc-ZeKemDfVMNvBq7HOKTqo6hIJFsf2kEObLODYnLuzzp50v28RK20-qeLOSM0s37Wq535DRYuAV-JMOBDC-jR6SGQHiA7uoXGttSnV7YjjRisUFu1XSFTE7fXmqr0g5_wP3H7uQzpuu4ygW5KMNLwJLcEA6jRjLD9y-e3xaq-QEUsloR6UB_DqxnM2ruxg1qv_pjeR_YavhcoF1Qha')">
+<div class="absolute top-3 left-3 z-20">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-85 p-4 flex flex-col justify-end">
+<span class="font-title-md text-title-md text-on-surface font-medium truncate">Night Market Skewers</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Kofi Mensah • Leica Q2 • 28mm f/1.7</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CHAPTER 2: Artisan Woodcraft & Clay Workshop -->
+<section class="w-full px-gutter-mobile md:px-margin pt-space-lg pb-space-lg">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-sm pb-space-md">
+<div class="space-y-1">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-label-sm text-label-sm text-tertiary tracking-widest uppercase">Chapter 02 • 2:00 PM – 6:00 PM</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Artisan Woodcraft &amp; Clay Studio</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Hands-on pottery wheels, reclaimed oak carving benches, and neighbors sharing craft techniques.</p>
+</div>
+<div class="flex items-center gap-space-sm text-on-surface-variant font-label-sm text-label-sm">
+<span>Showing 4 of 96 photos</span>
+<span class="text-surface-container-highest">•</span>
+<button class="text-tertiary hover:underline flex items-center gap-0.5">
+          Full Studio Set <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Editorial Staggered Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-md">
+<!-- Clay Wheel Potter (Span 4) -->
+<div class="md:col-span-4 group relative rounded-xl overflow-hidden bg-surface-container-low shadow-md">
+<div class="relative w-full h-[380px] bg-cover bg-center transition-transform duration-500 group-hover:scale-[1.02]" data-alt="Clay covered hands centered on a spinning pottery wheel carefully shaping a wet terracotta clay vase. Natural directional sunlight streaming from a high warehouse window highlighting droplets of water, tactile texture, artisanal studio." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCSluS2WUhuxLMmtjs5drl7eOs2V654NxndioEXteJpKKdOjomt_gFvrIXYHApC4jX5pCEh-RJ8nySwkmxFyLBFc8XrgvInIRLVLEtWpfsVkYqNMV3XiIixLcL_qXy6vaZI-MtOMdjzrn6c2WEJ6_d1LZHjmrM7U3Hu3u6q78zpR9l7iyRYdOaeKklZfZn__ovU-oM9_NwMiEPptQEtqYCo4ZeTEnNQwQMc3oFu17dsM5dipSzx5evQ')">
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-85 p-5 flex flex-col justify-end">
+<span class="font-title-md text-title-md text-on-surface font-medium">Terracotta on Wheel 3</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Sarah Jenkins • Hasselblad X2D • 55mm</span>
+</div>
+</div>
+</div>
+<!-- Wood Shavings Carver (Span 5) -->
+<div class="md:col-span-5 group relative rounded-xl overflow-hidden bg-surface-container-low shadow-md">
+<div class="relative w-full h-[380px] bg-cover bg-center transition-transform duration-500 group-hover:scale-[1.02]" data-alt="Local carpenter with wood shavings scattered on canvas apron demonstrating hand plane tool to two curious smiling teenagers. Warm indoor timber barn atmosphere, sawdust motes in warm amber light, authentic mentorship moment." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAFNGZ2Ma4ag40t6y9Q7a24V9eUcGmOWEpiGX9rzwHmelNxQy2aKW47vsMRXz8lKrxbn8vTT2gh-JR1-posL4wDIthzrF1sH23LA4JzqAnYn8ppZrEepb5Eqdu0hnbD1-ZSv_m1k8X1_j2ms198JD8uW2Ow_RW3dY6zfhnsiahoLzDrQPtHenbiGrDF-sVbB6FklfAKPA53jEi-fnPHkmE_f_UWqZgNdjvoXenYHRbo2UAIrMzsRTjy')">
+<div class="absolute top-3 left-3 z-20">
+<span class="px-2.5 py-0.5 rounded-full bg-tertiary-container text-on-tertiary-container font-label-sm text-label-sm font-semibold">
+              Community Mentor
+            </span>
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-85 p-5 flex flex-col justify-end">
+<span class="font-title-md text-title-md text-on-surface font-medium">The Hand Plane Demonstration</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Liam O'Connor • Sony A7IV • 50mm f/1.2 GM</span>
+</div>
+</div>
+</div>
+<!-- Tool Rack Still Life (Span 3) -->
+<div class="md:col-span-3 group relative rounded-xl overflow-hidden bg-surface-container-low shadow-md">
+<div class="relative w-full h-[380px] bg-cover bg-center transition-transform duration-500 group-hover:scale-[1.02]" data-alt="Editorial macro still life of worn Japanese wood chisels, horn hammers, and leather tool rolls neatly lined on an oiled maple workbench with natural shadows, museum quality archival photography." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAcoDqtHudbjUktNHVxUATM-J1y04Eo9E2bVLuT3_ogOwuyrObNLjsp4noS1rNUGGcxxyUP8jo6HfD0_IrJQzAZSgFVSIizz5_fRL8f35kj7KDg8GPezwh8c1oIYrjHNhzuT4v7e9Yf98TwyuiljAa4vC3_zI3VcF30D3m8R41ym9NQ-dmCVlNp89HObQsTEKIkUEU6666eOOhMGBVs-cxdEHxCzbo8xj88LJfZ7A4cKxWGZr4WZQ_6')">
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-85 p-5 flex flex-col justify-end">
+<span class="font-title-md text-title-md text-on-surface font-medium">Guild Tool Arsenal</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Liam O'Connor • 90mm Macro</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- INTERACTIVE SPOTLIGHT PREVIEW / SPLIT-VIEW INSPECTOR (Masterpiece Lightbox Callout) -->
+<section class="w-full px-gutter-mobile md:px-margin py-space-xl">
+<div class="w-full rounded-2xl bg-surface-container-low p-4 md:p-8 shadow-2xl relative overflow-hidden">
+<!-- Ambient Backlight Blur Glow -->
+<div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-primary-container/10 filter blur-3xl pointer-events-none"></div>
+<div class="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-secondary/10 filter blur-3xl pointer-events-none"></div>
+<!-- Lightbox Header Strip -->
+<div class="flex items-center justify-between pb-6 mb-6">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-xl">zoom_in</span>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface font-bold">Curator Spotlight • Archival Record #408</h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Archived with full uncompressed metadata for neighborhood historic preservation</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="hidden sm:inline-block font-label-sm text-label-sm px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant">Photo 14 of 428</span>
+<button class="w-9 h-9 rounded-full bg-surface-container-high hover:bg-surface-bright flex items-center justify-center text-on-surface transition-colors">
+<span class="material-symbols-outlined text-base">fullscreen</span>
+</button>
+</div>
+</div>
+<!-- Split View Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-center">
+<!-- Large High-Res Inspection Canvas (Left: 8 cols) -->
+<div class="lg:col-span-8 relative rounded-xl overflow-hidden bg-surface-container-lowest shadow-2xl flex items-center justify-center min-h-[440px] md:min-h-[540px]">
+<div class="relative w-full h-[440px] md:h-[540px] bg-cover bg-center" data-alt="Museum-grade nighttime photograph of thousands of illuminated floating water lanterns on a tranquil river reflecting warm gold light under a historic stone bridge. A small wooden punt boat with two volunteer stewards is quietly guiding the lanterns, cinematic film grading, dark starry indigo night." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDJth2OozVv93ujd667OqhEa6GllSDpgApdzabOznFJN7PKGP3_ZTp7gGA5oct9xOzLUvmr4-77cgeCD2gMszjpNo_OgAU8FVgXGaKTj49gljzVDfvqqseeDu5QPUO-Pgs6ug54v_6c3TiUuhffdPiAfzBO5pGjQ9uW8qKkEFecD7bUtPlLhAYBFiaGpBviO7DQTz15JcQYgRiC0q6-9g9aDQz-Lv1cj4mX_8WGHQQgIFhhfHw59550')">
+<!-- Canvas Overlay Controls -->
+<div class="absolute inset-x-0 bottom-4 px-6 flex items-center justify-between pointer-events-none">
+<button class="pointer-events-auto p-2.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-on-surface hover:bg-surface-bright transition-colors shadow-lg">
+<span class="material-symbols-outlined text-base">chevron_left</span>
+</button>
+<div class="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-on-surface text-label-sm font-label-sm shadow-lg">
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm align-middle">zoom_out</span></button>
+<span class="font-mono text-on-surface-variant">100% RAW</span>
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm align-middle">zoom_in</span></button>
+</div>
+<button class="pointer-events-auto p-2.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-on-surface hover:bg-surface-bright transition-colors shadow-lg">
+<span class="material-symbols-outlined text-base">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Curatorial Metadata Panel (Right: 4 cols) -->
+<div class="lg:col-span-4 flex flex-col justify-between space-y-space-lg">
+<div class="space-y-space-md">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 rounded bg-primary-container text-on-primary-container font-label-sm text-label-sm font-bold">Plate No. 14</span>
+<span class="text-tertiary font-label-sm text-label-sm font-semibold">★ Golden Hour Selection</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">The Floating Lanterns over Canal Bridge</h4>
+</div>
+<!-- Curatorial Commentary -->
+<div class="p-4 rounded-xl bg-surface-container shadow-inner">
+<p class="font-body-md text-body-md text-on-surface-variant italic">
+                “Captured at 10:42 PM during the ceremonial canal release. Ambient candlelight reflected over 2,000 attendee lanterns with zero artificial flash, preserving the natural luminescence of the waterway.”
+              </p>
+</div>
+<!-- Photographer Profile Snippet -->
+<div class="flex items-center gap-space-sm p-3 rounded-xl bg-surface-container">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="Close up warm portrait of photographer Maya Lin smiling gently with camera strap over shoulder in natural light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAl6YGrHuDofuRDl7YAR1SrlQIT121rnywSO5QQYf6PJDY9hpE5tioC_r-foGQAoCVKB7S4QrRwkE7PCWgS0TIGg_C0IZ776yB59u-CoZTnzJPJliLI2bkycPkLIX29XZGENAZWnwMZWahdHmF3VCSm8kRI-1wlOEwPJvxRomfyULsMZThx-xO2OiUJegwAiS9DMyjPgRj_I8Kd28y1xiWmcJdTRR3-XWPewSmr2Irb860GBqpJhJhT"/>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface font-semibold">Maya Lin</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Archive Resident • 8 Collections</span>
+</div>
+<button class="ml-auto px-3 py-1 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm transition-colors">
+                Follow
+              </button>
+</div>
+<!-- EXIF Metadata Grid -->
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block mb-2">Technical Telemetry • EXIF</span>
+<div class="grid grid-cols-2 gap-2 text-on-surface">
+<div class="p-2.5 rounded-lg bg-surface-container flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Camera</span>
+<span class="font-body-sm text-body-sm font-mono font-medium">Sony ILCE-7M4</span>
+</div>
+<div class="p-2.5 rounded-lg bg-surface-container flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Optics</span>
+<span class="font-body-sm text-body-sm font-mono font-medium">FE 35mm F1.4 GM</span>
+</div>
+<div class="p-2.5 rounded-lg bg-surface-container flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Exposure</span>
+<span class="font-body-sm text-body-sm font-mono font-medium">1/160s at f/2.0</span>
+</div>
+<div class="p-2.5 rounded-lg bg-surface-container flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Sensitivity</span>
+<span class="font-body-sm text-body-sm font-mono font-medium">ISO 800 (Native)</span>
+</div>
+</div>
+</div>
+<!-- Community Reaction Counter -->
+<div class="flex items-center justify-between pt-2">
+<div class="flex items-center gap-3">
+<span class="flex items-center gap-1 font-label-md text-label-md text-primary">
+<span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">favorite</span> 284 Likes
+                </span>
+<span class="flex items-center gap-1 font-label-md text-label-md text-secondary">
+<span class="material-symbols-outlined text-base">print</span> 42 Fine Prints
+                </span>
+</div>
+<button class="text-tertiary hover:underline font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">bookmark</span> Collect
+              </button>
+</div>
+</div>
+<!-- Inspector Action Row -->
+<div class="flex items-center gap-space-sm pt-4">
+<button class="flex-1 py-2.5 px-4 rounded-xl bg-primary-container text-on-primary-container hover:bg-primary font-label-md text-label-md transition-colors shadow-md text-center">
+              Order Archival Print ($35)
+            </button>
+<button class="py-2.5 px-3 rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-md text-label-md transition-colors" title="Download Full Res">
+<span class="material-symbols-outlined text-base align-middle">file_download</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CHAPTER 3: Community Garden Harvest Banquet -->
+<section class="w-full px-gutter-mobile md:px-margin pt-space-lg pb-space-xl">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-sm pb-space-md">
+<div class="space-y-1">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-sm text-label-sm text-secondary tracking-widest uppercase">Chapter 03 • 5:30 PM – 9:00 PM</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Community Garden Harvest Banquet</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Long communal tables set between heirloom tomato trellises, acoustic folk songs, and shared family recipes.</p>
+</div>
+<div class="flex items-center gap-space-sm text-on-surface-variant font-label-sm text-label-sm">
+<span>Showing 3 of 88 photos</span>
+<span class="text-surface-container-highest">•</span>
+<button class="text-secondary hover:underline flex items-center gap-0.5">
+          View Harvest Folio <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Triple Editorial Card Row -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Card 1: Banquet Table Perspective -->
+<div class="group relative rounded-xl overflow-hidden bg-surface-container-low shadow-md">
+<div class="relative w-full h-[360px] bg-cover bg-center transition-transform duration-500 group-hover:scale-[1.02]" data-alt="Long rustic wooden banquet table in a lush community garden at sunset, covered in ceramic bowls of fresh heirloom vegetables, sourdough bread, wildflowers in mason jars, smiling neighbors seated talking in warm golden sunset light." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB9dnWB6n8Z1DzuzfIHPMGpQZU74zpMksqY7ArwzduPz8wuswZeixjYrudsHSZvWD3j-BfS3sjqiQJmTN2cricLTtv28LDq2tftfK-ahQw66OFKQPWd-ZRaO3gcBly25fIFDwve1HBnVLg9wfUhepvYgUPsQ7kJLVfVXDY2VXLP0WYOcSOBHJ3Zkib7pzVmdEAuP_vXq9wQqYymxZpBmMJgzVDozSrTNfk7QQ-geTRoxmRKGPRAwg9y')">
+<div class="absolute top-3 left-3 z-20">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-85 p-5 flex flex-col justify-end">
+<span class="font-title-md text-title-md text-on-surface font-medium truncate">The 60-Foot Harvest Board</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Elena Rostova • Leica M11 • 35mm</span>
+</div>
+</div>
+</div>
+<!-- Card 2: Acoustic Stage Performance -->
+<div class="group relative rounded-xl overflow-hidden bg-surface-container-low shadow-md">
+<div class="relative w-full h-[360px] bg-cover bg-center transition-transform duration-500 group-hover:scale-[1.02]" data-alt="Acoustic guitar duo performing on an elevated wooden pallet stage wrapped in ivy and fairy lights in a community garden during twilight. Soft warm string glow on instruments, intimate outdoor concert crowd listening attentively." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCpoHgjEQukykaSfvyWhVnE8y8VDESeydBQFY479RMCLl9Iw8qcVJnV2BgBubiN0LRBPn6uMnn_Lj7Mvj-dB4LYkRsjDdnUNUK-Q-1IjWDiP2-NBuLBGBcqEkgx-Pcw6LJoQF7Za1b93ZjsxdOg7ww7dPbp-ODzfzTRgDrV7UsW3ngAr9cMMYefQoH6pq7mYxMvALdGiFqGh716ojpVm2jw9ldkPp4DNy_x7poffltsz9-ZI3EQuBzA')">
+<div class="absolute top-3 left-3 z-20">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-85 p-5 flex flex-col justify-end">
+<span class="font-title-md text-title-md text-on-surface font-medium truncate">Sunset Duet on the Pallet Stage</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">David K. • Canon EOS R5 • 50mm f/1.2</span>
+</div>
+</div>
+</div>
+<!-- Card 3: Child with Flower Crown -->
+<div class="group relative rounded-xl overflow-hidden bg-surface-container-low shadow-md">
+<div class="relative w-full h-[360px] bg-cover bg-center transition-transform duration-500 group-hover:scale-[1.02]" data-alt="Delighted young child wearing a hand-woven crown of yellow marigolds and lavender, laughing joyfully while holding a giant homegrown striped heirloom tomato. Warm golden hour backlight haloing curls, pure childhood delight." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCrZ07E4BSLqThbCX-hvhSHCcWJH5YbodQDWILnIuf41KIoT8xF4agkZIrcugP4liqotQDQT1mm8gZhrh4VCn4C7pC7vj8ZRxns5CYEpnNW4aJS7VT3ReFIO7XhgGorUojIqssDnCOuXYWWKlhLQaIGg48n4DEE7zTimR6u_Rm5pcPSdOaMjzyesjP9ZhVgW7y7-16oUJp2srHduB_Y7Lub_KuZGx-EYOFPfWSl5jAybyJr3r02ClVg')">
+<div class="absolute top-3 left-3 z-20">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-85 p-5 flex flex-col justify-end">
+<span class="font-title-md text-title-md text-on-surface font-medium truncate">Marigold Crown &amp; Heirloom Prize</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Maya Lin • Sony A7IV • 85mm f/1.4</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- COMMUNITY CONTRIBUTION & PRINT ORDERING BANNER -->
+<section class="w-full px-gutter-mobile md:px-margin pb-space-xl">
+<div class="relative w-full rounded-2xl bg-surface-container-low overflow-hidden p-8 md:p-14 shadow-2xl">
+<!-- Chromatic background accent shapes -->
+<div class="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-primary-container/15 filter blur-3xl pointer-events-none"></div>
+<div class="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-secondary/15 filter blur-3xl pointer-events-none"></div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-tertiary/10 filter blur-3xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-space-xl">
+<div class="max-w-2xl text-center lg:text-left space-y-space-sm">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-high text-on-surface shadow-sm">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider pl-1">Open Community Memory Project</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Were you behind a lens at our latest gathering?</h3>
+<p class="font-body-lg text-body-lg text-on-surface-variant">
+            Lumina is co-created by everyone who lives here. Submit your high-res camera rolls or smartphone captures to the permanent community historical vault, or request museum-grade archival prints delivered straight to your door.
+          </p>
+<div class="flex flex-wrap items-center justify-center lg:justify-start gap-space-md pt-2 text-on-surface-variant font-label-sm text-label-sm">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm text-secondary">check_circle</span> Creative Commons CC-BY</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm text-tertiary">check_circle</span> Giclée Fine Art Stock</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm text-primary">check_circle</span> 100% Volunteer Curated</span>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row items-center gap-space-sm w-full lg:w-auto flex-shrink-0">
+<button class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-primary-container text-on-primary-container hover:bg-primary font-label-md text-label-md transition-colors shadow-lg flex items-center justify-center gap-2 active:scale-95">
+<span class="material-symbols-outlined text-base">cloud_upload</span>
+            Contribute Your Album
+          </button>
+<button class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-surface-container-high text-on-surface hover:bg-surface-bright font-label-md text-label-md transition-colors shadow-md flex items-center justify-center gap-2 active:scale-95">
+<span class="material-symbols-outlined text-base">local_mall</span>
+            Request Archival Prints
+          </button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<script>
+  // Simple micro-interaction for Slideshow launch feedback
+  document.getElementById('btnOpenSlideshow')?.addEventListener('click', function() {
+    const originalText = this.innerHTML;
+    this.innerHTML = '<span class="material-symbols-outlined text-lg animate-spin">refresh</span> Loading Stream...';
+    setTimeout(() => {
+      this.innerHTML = originalText;
+    }, 1200);
+  });
+</script></main><footer class="w-full bg-surface-container-lowest mt-auto shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="w-full px-gutter-mobile md:px-margin py-space-xl flex flex-col md:flex-row items-center justify-between gap-space-lg"><div class="flex flex-col items-center md:items-start gap-space-xs"><div class="flex items-center gap-space-sm"><span class="font-headline-sm text-headline-sm text-on-surface">Lumina Community Archive</span><span class="font-label-sm text-label-sm bg-surface-container-high px-space-sm py-space-xs rounded-full text-secondary">2014 – 2024</span></div><p class="font-body-sm text-body-sm text-on-surface-variant text-center md:text-left">Honoring street celebrations, neighborhood festivals, and archival community photojournalism.</p></div><div class="flex flex-wrap items-center justify-center gap-space-lg text-on-surface-variant font-label-md text-label-md"><span class="text-center md:text-right">Exhibition Years: 2014–Present • Preserved Under Community Open Access</span></div></div></footer></body></html>

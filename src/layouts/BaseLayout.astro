@@ -10,10 +10,11 @@
  * absolute, from the site's address (`SITE_URL`). The 404 page has none: it is served at any
  * unknown address, so it has no address of its own to share.
  */
+import { Font } from 'astro:assets';
 import '../styles/global.css';
 import SiteFooter from '../components/SiteFooter.astro';
 import SiteHeader from '../components/SiteHeader.astro';
-import { ALLOW_INDEXING, SITE, THEME_COLOR } from '../lib/config.ts';
+import { ALLOW_INDEXING, SITE, THEME_COLOR, THEME_COLOR_DARK } from '../lib/config.ts';
 import type { SizedImage } from '../lib/images.ts';
 import { withBase } from '../lib/url.ts';
 
@@ -48,7 +49,11 @@ const absolute = (path: string) => new URL(path, Astro.site).href;
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <meta name="robots" content={ALLOW_INDEXING ? 'index, follow' : 'noindex, nofollow'} />
-    <meta name="theme-color" content={THEME_COLOR} />
+    <meta name="theme-color" content={THEME_COLOR} media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content={THEME_COLOR_DARK} media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <Font cssVariable="--font-jakarta" preload={[{ style: 'normal' }]} />
+    <Font cssVariable="--font-playfair" preload />
     <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
     {
       linkPreview && (
@@ -91,7 +96,7 @@ const absolute = (path: string) => new URL(path, Astro.site).href;
     z-index: 10;
     padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-sm);
-    background: var(--brand-blue);
+    background: var(--color-accent);
     color: var(--color-on-accent);
     font-weight: 600;
     text-decoration: none;

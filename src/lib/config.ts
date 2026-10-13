@@ -80,7 +80,9 @@ export const SITE_URL = normaliseSiteUrl(env.SITE_URL || DEFAULT_SITE_URL);
 export const ALLOW_INDEXING = /^(1|true|yes)$/i.test(env.ALLOW_INDEXING ?? '');
 
 /**
- * Browser UI colour (`<meta name="theme-color">`): the page background. Must equal
- * `--color-bg` in src/styles/global.css; tests/config.test.ts checks that they agree.
+ * Browser UI colour (`<meta name="theme-color">`): the page background, light and dark. Must
+ * equal `--color-bg` in src/styles/global.css (the light value, then the one in the
+ * `prefers-color-scheme: dark` block); tests/config.test.ts checks that they agree.
  */
 export const THEME_COLOR = '#faf8f4';
+export const THEME_COLOR_DARK = '#0b1326';
