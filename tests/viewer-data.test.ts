@@ -38,7 +38,6 @@ describe('viewerPhoto', () => {
       caption: 'Opening dance',
       photographer: {
         name: 'Andi Pratama',
-        initials: 'AP',
         instagramUrl: 'https://www.instagram.com/andi.pratama/',
       },
       date: { label: '20 Sep 2026', iso: '2026-09-20' },
@@ -48,7 +47,7 @@ describe('viewerPhoto', () => {
   it('leaves out the caption and Instagram link when absent', () => {
     const data = viewerPhoto(photos.get('@sari/plain.jpg') as Photo, image);
     expect(data).not.toHaveProperty('caption');
-    expect(data.photographer).toEqual({ name: 'Sari Wijaya', initials: 'SW' });
+    expect(data.photographer).toEqual({ name: 'Sari Wijaya' });
     // Date falls back to the event's index.md date (TRD §4.6).
     expect(data.date).toEqual({ label: '20 Sep 2026', iso: '2026-09-20' });
   });

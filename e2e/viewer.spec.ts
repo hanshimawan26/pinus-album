@@ -21,7 +21,9 @@ test.describe('opening a photo', () => {
     const v = viewer(page);
     await expect(v.dialog).toHaveAttribute('aria-modal', 'true');
     await expect(v.dialog).toHaveAccessibleName('Photo 2 of 13 by Alice (Demo)');
-    await expect(v.avatar).toHaveText('AD');
+    // The credit is marked as the photographer's: a camera icon, and "Photo by" for screen readers.
+    await expect(v.nameRow.locator('svg')).toBeVisible();
+    await expect(v.nameRow).toHaveText(/^Photo by\s*Alice \(Demo\)/);
     await expect(v.nameLink.locator('[data-name-link-text]')).toHaveText('Alice (Demo)');
     await expect(v.nameLink).toHaveAttribute('href', 'https://www.instagram.com/alice.demo.placeholder/');
     await expect(v.nameLink).toHaveAttribute('target', '_blank');
@@ -62,7 +64,7 @@ test.describe('absent data leaves no empty rows', () => {
     await openFromTile(page, 7); // IMG-20260815-WA0002.jpg: Budi, no date, no caption
     const v = viewer(page);
     await expect(v.nameRow).toBeVisible();
-    await expect(v.nameRow).toHaveText('Budi (Demo)');
+    await expect(v.nameRow).toHaveText('Photo by Budi (Demo)');
     await expect(v.nameLink).toHaveCount(0);
     await expect(v.dateRow).toBeHidden();
     await expect(v.captionBlock).toBeHidden();
@@ -94,7 +96,8 @@ test.describe('moving between photos', () => {
     await expect(v.dialog).toHaveAccessibleName('Photo 1 of 13 by Budi (Demo)');
   });
 
-  test('the next and previous buttons', async ({ page }) => {
+  test('the next and previous buttons', async ({ page, hasTouch }) => {
+    test.skip(hasTouch, 'touch phones swipe; their arrows are hidden (next test)');
     await page.goto(PAGES.section);
     await openFromTile(page, 4);
     const v = viewer(page);
@@ -103,6 +106,34 @@ test.describe('moving between photos', () => {
     await v.previous.click();
     await v.previous.click();
     await expect(v.dialog).toHaveAccessibleName(/^Photo 4 of 13/);
+  });
+
+  test('on a touch phone the arrows stay off the photo, but screen readers still have them', async ({ page, hasTouch }) => {
+    test.skip(!hasTouch, 'touch only');
+    await page.goto(PAGES.section);
+    await openFromTile(page, 4);
+    const v = viewer(page);
+    for (const arrow of [v.next, v.previous]) {
+      const box = await arrow.boundingBox();
+      expect(box?.width ?? 0).toBeLessThanOrEqual(1);
+    }
+    await expect(v.dialog.getByRole('button', { name: 'Next photo' })).toHaveCount(1);
+    await v.next.dispatchEvent('click');
+    await expect(v.dialog).toHaveAccessibleName(/^Photo 6 of 13/);
+  });
+
+  test('on a phone the photo sits in the middle of the screen, not under the header', async ({ page, hasTouch }) => {
+    test.skip(!hasTouch, 'phone layout only');
+    await page.goto(PAGES.section);
+    await openFromTile(page, 1);
+    await loadedPhotoSize(page);
+    const { photoMiddle, screenMiddle, screen } = await viewer(page).photo.evaluate((image: HTMLImageElement) => {
+      // The image box fills the stage; the visible photo is centred in it (object-fit: contain).
+      const box = image.getBoundingClientRect();
+      return { photoMiddle: box.top + box.height / 2, screenMiddle: window.innerHeight / 2, screen: window.innerHeight };
+    });
+    // Within a sixth of the screen height of the middle (header above, caption below).
+    expect(Math.abs(photoMiddle - screenMiddle)).toBeLessThan(screen / 6);
   });
 
   test('moving replaces the history entry instead of adding one', async ({ page }) => {

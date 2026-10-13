@@ -15,7 +15,6 @@ const valid: ViewerData = {
       caption: 'Line one\nline two 🎉 <b>not html</b>',
       photographer: {
         name: 'Alice (Demo)',
-        initials: 'AD',
         instagramUrl: 'https://www.instagram.com/alice.demo.placeholder/',
       },
       date: { label: '20 Sep 2026', iso: '2026-09-20' },

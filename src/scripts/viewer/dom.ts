@@ -7,7 +7,6 @@ export interface ViewerElements {
   dialog: HTMLDialogElement;
   title: HTMLElement;
   credit: HTMLElement;
-  avatar: HTMLElement;
   nameRow: HTMLElement;
   /** Detached unless the photographer has an Instagram handle. */
   nameLink: HTMLAnchorElement;
@@ -73,7 +72,6 @@ export function viewerElements(dialog: HTMLDialogElement): ViewerElements {
     dialog,
     title: required(dialog, 'title', HTMLElement),
     credit: required(dialog, 'credit', HTMLElement),
-    avatar: required(dialog, 'avatar', HTMLElement),
     nameRow: required(dialog, 'name-row', HTMLElement),
     nameLink: nameLink.link,
     nameLinkText: nameLink.text,

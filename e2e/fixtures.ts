@@ -53,7 +53,6 @@ export function viewer(page: Page) {
   return {
     dialog,
     credit: dialog.locator('[data-credit]'),
-    avatar: dialog.locator('[data-avatar]'),
     nameRow: dialog.locator('[data-name-row]'),
     nameLink: dialog.locator('a[data-name-link]'),
     dateRow: dialog.locator('[data-date-row]'),

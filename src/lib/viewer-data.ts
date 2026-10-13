@@ -21,8 +21,6 @@ export interface ViewerImage {
 
 export interface ViewerPhotographer {
   name: string;
-  /** Avatar initials, e.g. `AP`. */
-  initials: string;
   /** Profile link; present only when photographers.yaml lists a handle (TRD §10). */
   instagramUrl?: string;
 }
@@ -69,8 +67,8 @@ export function viewerPhoto(photo: Photo, image: ViewerImage, placement: Omit<Gr
   if (placement.context) result.context = placement.context;
   if (photo.caption) result.caption = photo.caption;
   if (photo.photographer) {
-    const { name, initials, instagramUrl } = photo.photographer;
-    const photographer: ViewerPhotographer = { name, initials };
+    const { name, instagramUrl } = photo.photographer;
+    const photographer: ViewerPhotographer = { name };
     if (instagramUrl) photographer.instagramUrl = instagramUrl;
     result.photographer = photographer;
   }

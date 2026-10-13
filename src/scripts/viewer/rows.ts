@@ -7,9 +7,8 @@ import type { ViewerPhoto } from '../../lib/viewer-data.ts';
 import { isInstagramUrl } from './data.ts';
 
 export interface Rows {
-  /** The whole header credit (avatar, name row and date row). */
+  /** The whole header credit (name row with its camera icon, and date row). */
   credit: boolean;
-  avatar: boolean;
   nameRow: boolean;
   /** The name as an Instagram link: only with a valid Instagram profile URL. */
   nameLink: boolean;
@@ -25,7 +24,6 @@ export function rowsFor(photo: Pick<ViewerPhoto, 'photographer' | 'date' | 'capt
   const linked = credited && isInstagramUrl(photographer.instagramUrl);
   return {
     credit: credited || date !== undefined,
-    avatar: credited && photographer.initials !== '',
     nameRow: credited,
     nameLink: linked,
     nameText: credited && !linked,

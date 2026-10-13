@@ -5,8 +5,10 @@
  * `#viewer-data` JSON. Rendered by PhotoGrid, so the script ships only on pages with photos.
  *
  * Layouts:
- * - below 600px: full screen. Header (avatar, name, date, ✕), the photo across the full
- *   width at its own aspect ratio, the caption clamped to 3 lines with "more", the counter.
+ * - below 600px: full screen. Header (camera icon and photographer, date, ✕), the photo
+ *   centred in the black area between header and caption, the caption clamped to 3 lines
+ *   with "more", the counter. On touch phones the arrows are visually hidden (swipe instead)
+ *   but stay available to screen readers and keyboards.
  * - 600–899px: the same column, 36rem wide, centred on the dark backdrop.
  * - from 900px: the photo on black on the left, a 340px details panel on the right (header,
  *   full caption, "Day 1 · Event"), arrows over the photo and the counter in its corner.
@@ -16,6 +18,7 @@
  * `<img>` needs a `src`, and a link exists only when there is an Instagram handle), so the
  * photo's styles below are `:global(.photo)` inside the scoped `.stage`.
  */
+import CameraIcon from './CameraIcon.astro';
 import ChevronIcon from './ChevronIcon.astro';
 import CloseIcon from './CloseIcon.astro';
 ---
@@ -26,11 +29,12 @@ import CloseIcon from './CloseIcon.astro';
 
     <header class="head">
       <div class="credit" data-credit>
-        <span class="avatar" aria-hidden="true" data-avatar></span>
-        <div class="credit-lines">
-          <p class="name" data-name-row><span data-name-text></span></p>
-          <p class="date" data-date-row><time data-date></time></p>
-        </div>
+        <p class="name" data-name-row>
+          <CameraIcon size={16} />
+          <span class="visually-hidden">Photo by </span>
+          <span data-name-text></span>
+        </p>
+        <p class="date" data-date-row><time data-date></time></p>
       </div>
       <button type="button" class="close" aria-label="Close" data-close>
         <CloseIcon size={20} />
@@ -116,15 +120,17 @@ import CloseIcon from './CloseIcon.astro';
     outline: none;
   }
 
+  /* Phones: the black stage takes all the height the header, caption and counter leave, so
+     the photo sits in the middle of the screen rather than under the header. */
   .frame {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(15rem, 1fr) auto auto;
     grid-template-areas:
       'head'
       'stage'
       'details'
       'counter';
-    align-content: start;
     flex: 1;
     min-width: 0;
     background: var(--color-bg);
@@ -132,7 +138,7 @@ import CloseIcon from './CloseIcon.astro';
     overscroll-behavior: contain;
   }
 
-  /* ---------- Header: avatar, name, date, close ---------- */
+  /* ---------- Header: photographer credit, date, close ---------- */
 
   .head {
     grid-area: head;
@@ -143,40 +149,31 @@ import CloseIcon from './CloseIcon.astro';
     padding: var(--space-2) var(--space-1) var(--space-2) var(--space-4);
   }
 
+  /* The camera says "taken by": the name is the photographer, not someone in the photo
+     (DESIGN.md, "Photo credit"). The date lines up under the name, past the icon. */
   .credit {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    min-width: 0;
-  }
-
-  .avatar {
-    flex: none;
-    display: grid;
-    place-items: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: var(--radius-full);
-    background: var(--color-surface-sunken);
-    box-shadow: inset 0 0 0 1px var(--color-border);
-    color: var(--color-text);
-    font-size: var(--text-sm);
-    font-weight: 650;
-    letter-spacing: 0.02em;
-  }
-
-  .credit-lines {
+    --credit-icon: 1rem;
     min-width: 0;
     line-height: var(--leading-snug);
   }
 
   .name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
     font-size: var(--text-md);
-    font-weight: 650;
+    font-weight: 600;
     overflow-wrap: anywhere;
   }
 
+  .name :global(.camera-icon) {
+    width: var(--credit-icon);
+    height: var(--credit-icon);
+    color: var(--color-text-muted);
+  }
+
   .date {
+    padding-inline-start: calc(var(--credit-icon) + var(--space-2));
     color: var(--color-text-muted);
     font-size: var(--text-sm);
   }
@@ -215,10 +212,7 @@ import CloseIcon from './CloseIcon.astro';
     display: grid;
     place-items: center;
     width: 100%;
-    /* Reserve the photo's own shape before it loads (set from width/height), but leave room
-       for the header and caption on short screens; the black band letterboxes the rest. */
-    aspect-ratio: var(--photo-ratio, 1);
-    max-height: max(15rem, 100dvh - 12rem);
+    height: 100%;
     background: var(--color-viewer-bg);
     color: var(--color-viewer-text);
     overflow: hidden;
@@ -344,6 +338,20 @@ import CloseIcon from './CloseIcon.astro';
     right: var(--space-2);
   }
 
+  /* Touch phones move between photos by swiping, so the arrows would only cover the photo.
+     They are hidden visually but stay in the page: screen readers still offer "Next photo",
+     and a keyboard focus shows them again. */
+  @media (max-width: 599px) and (pointer: coarse) {
+    .arrow:not(:focus-visible) {
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      border: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+  }
+
   /* On black (and over any photo): a light ring with a black edge on both sides. */
   .stage :focus-visible {
     outline: 2px solid var(--color-viewer-focus);
@@ -420,12 +428,18 @@ import CloseIcon from './CloseIcon.astro';
 
     .frame {
       flex: 0 1 36rem;
+      grid-template-rows: none;
+      align-content: start;
       max-height: 100%;
       margin: auto;
       border-radius: var(--radius-md);
     }
 
+    /* Reserve the photo's own shape before it loads (set from width/height), but leave room
+       for the header and caption; the black band letterboxes the rest. */
     .stage {
+      height: auto;
+      aspect-ratio: var(--photo-ratio, 1);
       max-height: max(15rem, 100dvh - 15rem);
     }
   }

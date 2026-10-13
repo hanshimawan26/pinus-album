@@ -4,15 +4,14 @@ import type { AlbumNode } from '../../src/lib/content/types.ts';
 import { viewerPhoto, type ViewerImage } from '../../src/lib/viewer-data.ts';
 import { rowsFor } from '../../src/scripts/viewer/rows.ts';
 
-const alice = { name: 'Alice (Demo)', initials: 'AD', instagramUrl: 'https://www.instagram.com/alice.demo.placeholder/' };
-const budi = { name: 'Budi (Demo)', initials: 'BD' };
+const alice = { name: 'Alice (Demo)', instagramUrl: 'https://www.instagram.com/alice.demo.placeholder/' };
+const budi = { name: 'Budi (Demo)' };
 const date = { label: '20 Sep 2026', iso: '2026-09-20' };
 
 describe('rowsFor (TRD §6.5: absent data disappears)', () => {
   it('shows every row, with the name as a link, when everything is known', () => {
     expect(rowsFor({ photographer: alice, date, caption: 'Hi' })).toEqual({
       credit: true,
-      avatar: true,
       nameRow: true,
       nameLink: true,
       nameText: false,
@@ -30,7 +29,7 @@ describe('rowsFor (TRD §6.5: absent data disappears)', () => {
   });
 
   it('hides the photographer row but keeps the date when nobody is credited', () => {
-    expect(rowsFor({ date })).toMatchObject({ credit: true, avatar: false, nameRow: false, nameLink: false, nameText: false, dateRow: true });
+    expect(rowsFor({ date })).toMatchObject({ credit: true, nameRow: false, nameLink: false, nameText: false, dateRow: true });
   });
 
   it('hides the date row when the date is unknown', () => {
@@ -40,7 +39,6 @@ describe('rowsFor (TRD §6.5: absent data disappears)', () => {
   it('hides the whole credit when neither photographer nor date is known', () => {
     expect(rowsFor({})).toEqual({
       credit: false,
-      avatar: false,
       nameRow: false,
       nameLink: false,
       nameText: false,

@@ -17,14 +17,12 @@ export interface Position {
 function renderCredit(elements: ViewerElements, photo: ViewerPhoto, rows: Rows): void {
   const { photographer, date } = photo;
 
-  elements.avatar.textContent = rows.avatar ? (photographer?.initials ?? '') : '';
-  setShown(elements.avatar, rows.avatar);
-
   if (rows.nameLink && photographer?.instagramUrl) {
     elements.nameLink.href = photographer.instagramUrl;
     elements.nameLinkText.textContent = photographer.name;
     // Attach only when detached: re-inserting an attached node moves it, which drops focus.
-    if (elements.nameLink.parentNode !== elements.nameRow) elements.nameRow.prepend(elements.nameLink);
+    // It takes the plain name's place, after the camera icon and "Photo by".
+    if (elements.nameLink.parentNode !== elements.nameRow) elements.nameText.before(elements.nameLink);
   } else {
     elements.nameLink.remove();
   }
