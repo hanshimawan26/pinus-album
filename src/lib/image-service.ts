@@ -4,7 +4,8 @@
  *
  * `getImage({ …, credit: 'Andi Pratama' })` (only viewer images and the download JPEG pass
  * it, see images.ts) burns `© Andi Pratama` into the bottom-right corner and writes the name
- * to EXIF Artist and Copyright (credit/watermark.ts). Every other image goes through Astro's
+ * to EXIF Artist and Copyright (credit/watermark.ts; the visible mark is switched off for now,
+ * `WATERMARK_ENABLED`). Every other image goes through Astro's
  * sharp service unchanged. `credit` is part of the file hash, so renaming a photographer or
  * changing a photo's credit produces new files, and it travels in the dev server's image URL.
  * So is the watermark's look (`WATERMARK_STYLE`, added to every credited transform), so

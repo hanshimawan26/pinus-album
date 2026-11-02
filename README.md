@@ -398,11 +398,12 @@ a caption simply shows no caption.
 
 **The credit travels with the photo.** When someone downloads a photo (the download button
 at the top of the photo viewer, next to ✕; it gives a JPEG up to 2400 px wide) or saves it
-from the viewer, the photographer's name comes with it: a small, see-through "© Their Name"
-in the bottom-right corner of the picture, and the name in the file's details (Artist and
-Copyright). The website adds both
+from the viewer, the photographer's name comes with it, in the file's details (Artist and
+Copyright). The website can also write a small, see-through "© Their Name" in the
+bottom-right corner of the picture; that watermark is switched off for now (a developer
+turns it back on with `WATERMARK_ENABLED` in `src/lib/credit/credit.ts`). The website adds the credit
 when it is built; your photo files in `src/albums/` are never changed. Fixing a name in
-`photographers.yaml` fixes every watermark at the next publish. Photos without a
+`photographers.yaml` fixes every credit at the next publish. Photos without a
 photographer get no watermark, and the small grid tiles and album covers never have one.
 
 ### Hide a photo

@@ -24,6 +24,13 @@ export function creditFor(name: string | undefined): Credit | undefined {
   return artist ? { artist, copyright: `© ${artist}` } : undefined;
 }
 
+/**
+ * Whether the `© Name` watermark is drawn. Switched off for now (asked by the user, to be
+ * turned back on later): credited images still carry the EXIF Artist/Copyright credit, only
+ * the visible mark is left out. Set to `true` to bring it back; the layout below is kept.
+ */
+export const WATERMARK_ENABLED = false;
+
 /** Watermark font size as a share of the image's short edge (about 24 px on a 2000 × 1333 image). */
 const FONT_SHARE = 0.018;
 /** Smallest font size (px), so the 800 px image phones download stays readable when saved. */
@@ -62,11 +69,13 @@ export function watermarkLayout(width: number, height: number): WatermarkLayout 
 /**
  * Everything that sets how the watermark looks, as text. The image service hashes it into
  * every credited file's name, so a new look gives new files: Astro's image cache (local, and
- * restored in CI) would otherwise keep serving images with the old watermark. Bump
- * `revision` for a change these values cannot see (another font file).
+ * restored in CI) would otherwise keep serving images with the old watermark (or with one
+ * after it was switched off). Bump `revision` for a change these values cannot see (another
+ * font file).
  */
 export const WATERMARK_STYLE = JSON.stringify({
   revision: 1,
+  enabled: WATERMARK_ENABLED,
   layout: watermarkLayout(2000, 1333),
   minimum: watermarkLayout(1, 1),
   opacity: WATERMARK_OPACITY,

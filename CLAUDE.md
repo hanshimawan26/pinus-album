@@ -153,7 +153,8 @@ e2e/                 Playwright specs (viewer, navigation, landing, site-wide ru
   `getImage()` in `images.ts`; sizes come from the content engine. `verify:dist` enforces it.
   The one exception to "no metadata": viewer images and downloads of credited photos carry a
   `© Name` watermark and EXIF Artist/Copyright (nothing else), written by `image-service.ts`;
-  thumbnails and covers carry neither.
+  thumbnails and covers carry neither. The visible watermark is switched off for now
+  (`WATERMARK_ENABLED = false` in `credit/credit.ts`); the EXIF credit is still written.
   The masters in the (public) repository should carry no GPS either: `photos:prep` removes it
   and `photos:check` warns (`location-in-photo`). Hiding a photo must never fail the build
   (a takedown cannot be blocked), so a hidden `cover:` is a warning, not an error.
