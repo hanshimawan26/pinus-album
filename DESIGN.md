@@ -427,7 +427,9 @@ from `src/lib/image-sizes.ts`, EXIF stripped and orientation applied, never upsc
 - **Viewer and spotlight:** the same files, 800–2000 px, with the photographer watermark.
 - **Download:** the whole photo as a JPEG, long edge up to 2400 px, quality 85, with the
   photographer watermark (the viewer's download link).
-- **Photographer watermark (viewer images and downloads only):** `© Name` in the bottom-right
+- **Photographer watermark (viewer images and downloads only; switched off for now, see
+  `WATERMARK_ENABLED` in `src/lib/credit/credit.ts`, so only the EXIF credit is written):**
+  `© Name` in the bottom-right
   corner, Inter SemiBold at 1.8 % of the image's short edge (at least 12 px), inset 0.8 × the
   font size, white at 60 % over a soft black shadow at 40 %: a quiet mark that does not
   compete with the photo. It is burned into the pixels, so its values live in

@@ -1579,3 +1579,11 @@ each other. Decisions (the user chose the first three):
   options only, and CI restores `node_modules/.astro`, so without it a deploy would have
   kept serving viewer images with the old watermark. Any change to the layout or opacity
   values now renames the files; a new font file needs a `revision` bump.
+- **Watermark switched off for now** (asked by the user: "disable it for a while, don't
+  remove it"). `WATERMARK_ENABLED = false` in `credit/credit.ts`: `encodeCredited` skips the
+  overlay but still writes EXIF Artist/Copyright, so a saved image keeps the photographer's
+  name in its details and `verify:dist`'s credit checks are unchanged. Everything else (the
+  layout, the font, the tests that draw it) stays; setting it back to `true` restores the
+  mark. The switch is part of `WATERMARK_STYLE`, so flipping it renames every credited file
+  and the image cache cannot serve the other state; the next build re-renders all viewer
+  images and downloads once.

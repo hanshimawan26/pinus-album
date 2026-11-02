@@ -11,7 +11,7 @@ import sharp, { type JpegOptions, type OverlayOptions, type Sharp, type WebpOpti
 import { resolve } from 'node:path';
 import { buildCreditTiff } from '../authoring/exif-block.ts';
 import { withJpegExif } from '../authoring/jpeg.ts';
-import { fittedFontSize, WATERMARK_OPACITY, watermarkLayout, watermarkMarkup, watermarkPosition, type Credit, type WatermarkLayout } from './credit.ts';
+import { fittedFontSize, WATERMARK_ENABLED, WATERMARK_OPACITY, watermarkLayout, watermarkMarkup, watermarkPosition, type Credit, type WatermarkLayout } from './credit.ts';
 import { withWebpExif } from './webp-exif.ts';
 
 /** Relative to the project root, like ALBUMS_DIR: builds, tests and scripts all run from there. */
@@ -99,13 +99,22 @@ export type CreditedOutput = { format: 'webp'; options?: WebpOptions } | { forma
 
 /**
  * Encode `image` (already rotated and resized) as WebP or JPEG with the credit: the
- * watermark in its bottom-right corner and an EXIF block holding only Artist and Copyright.
+ * watermark in its bottom-right corner (unless `drawWatermark` is false; the site's setting
+ * is `WATERMARK_ENABLED`) and an EXIF block holding only Artist and Copyright.
  */
-export async function encodeCredited(image: Sharp, credit: Credit, output: CreditedOutput = { format: 'webp' }): Promise<Uint8Array> {
-  // Decode once to learn the exact output size before placing the watermark.
-  const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
-  const overlays = await watermarkOverlays(info.width, info.height, credit.copyright);
-  const composed = sharp(data, { raw: { width: info.width, height: info.height, channels: info.channels } }).composite(overlays);
+export async function encodeCredited(
+  image: Sharp,
+  credit: Credit,
+  output: CreditedOutput = { format: 'webp' },
+  drawWatermark: boolean = WATERMARK_ENABLED,
+): Promise<Uint8Array> {
+  let composed = image;
+  if (drawWatermark) {
+    // Decode once to learn the exact output size before placing the watermark.
+    const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
+    const overlays = await watermarkOverlays(info.width, info.height, credit.copyright);
+    composed = sharp(data, { raw: { width: info.width, height: info.height, channels: info.channels } }).composite(overlays);
+  }
   const tiff = buildCreditTiff(credit);
   if (output.format === 'jpeg') return withJpegExif(await composed.jpeg(output.options).toBuffer(), tiff);
   return withWebpExif(await composed.webp(output.options).toBuffer(), tiff);

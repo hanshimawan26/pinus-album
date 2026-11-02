@@ -1,6 +1,7 @@
 /**
  * The watermark drawn with sharp: it lands in the bottom-right corner, leaves the rest of
- * the photo alone, and the output keeps its size and carries only the credit's EXIF.
+ * the photo alone, and the output keeps its size and carries only the credit's EXIF. The
+ * drawing tests switch it on explicitly, whatever `WATERMARK_ENABLED` is today.
  */
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
@@ -24,7 +25,7 @@ async function changeIn(image: Uint8Array, region: { left: number; top: number; 
 
 describe('encodeCredited', () => {
   it('draws the credit in the bottom-right corner only', async () => {
-    const credited = await encodeCredited(sharp(await photo(800, 533).toBuffer()), creditFor('Andi Pratama')!, { format: 'webp', options: { quality: 90 } });
+    const credited = await encodeCredited(sharp(await photo(800, 533).toBuffer()), creditFor('Andi Pratama')!, { format: 'webp', options: { quality: 90 } }, true);
     expect(await sharp(credited).metadata()).toMatchObject({ format: 'webp', width: 800, height: 533 });
     expect(await changeIn(credited, { left: 640, top: 493, width: 160, height: 40 })).toBeGreaterThan(2);
     expect(await changeIn(credited, { left: 0, top: 0, width: 400, height: 400 })).toBeLessThan(1);
@@ -37,12 +38,19 @@ describe('encodeCredited', () => {
   });
 
   it('writes a JPEG (the download) with the same watermark and EXIF credit', async () => {
-    const credited = await encodeCredited(sharp(await photo(800, 533).toBuffer()), creditFor('Andi Pratama')!, { format: 'jpeg', options: { quality: 90 } });
+    const credited = await encodeCredited(sharp(await photo(800, 533).toBuffer()), creditFor('Andi Pratama')!, { format: 'jpeg', options: { quality: 90 } }, true);
     expect(await sharp(credited).metadata()).toMatchObject({ format: 'jpeg', width: 800, height: 533 });
     expect(scanImageMetadata(credited).blocks).toEqual(['EXIF']);
     expect(readCredit(exifTiffOf(parseJpeg(credited).segments)!)).toEqual({ artist: 'Andi Pratama', copyright: '© Andi Pratama', hasOtherTags: false });
     expect(await changeIn(credited, { left: 640, top: 493, width: 160, height: 40 })).toBeGreaterThan(2);
     expect(await changeIn(credited, { left: 0, top: 0, width: 400, height: 400 })).toBeLessThan(1);
+  });
+
+  it('leaves the pixels alone with the watermark switched off, and still writes the EXIF credit', async () => {
+    const credited = await encodeCredited(sharp(await photo(800, 533).toBuffer()), creditFor('Andi Pratama')!, { format: 'jpeg', options: { quality: 90 } }, false);
+    expect(await sharp(credited).metadata()).toMatchObject({ format: 'jpeg', width: 800, height: 533 });
+    expect(await changeIn(credited, { left: 640, top: 493, width: 160, height: 40 })).toBeLessThan(1);
+    expect(readCredit(exifTiffOf(parseJpeg(credited).segments)!)).toEqual({ artist: 'Andi Pratama', copyright: '© Andi Pratama', hasOtherTags: false });
   });
 });
 

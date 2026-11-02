@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { creditFor, fittedFontSize, watermarkLayout, watermarkMarkup, watermarkPosition } from '../../src/lib/credit/credit.ts';
+import { creditFor, fittedFontSize, WATERMARK_ENABLED, WATERMARK_STYLE, watermarkLayout, watermarkMarkup, watermarkPosition } from '../../src/lib/credit/credit.ts';
 
 describe('creditFor', () => {
   it('credits the display name as Artist and © Name as Copyright', () => {
@@ -62,5 +62,11 @@ describe('watermarkMarkup', () => {
     expect(watermarkMarkup('© Tom & <Jerry>', '#FFFFFF', 85)).toBe(
       '<span foreground="#FFFFFF" alpha="85%">© Tom &amp; &lt;Jerry&gt;</span>',
     );
+  });
+});
+
+describe('WATERMARK_STYLE', () => {
+  it('includes the on/off switch, so switching it gives new files instead of cached ones', () => {
+    expect(JSON.parse(WATERMARK_STYLE)).toMatchObject({ enabled: WATERMARK_ENABLED });
   });
 });
