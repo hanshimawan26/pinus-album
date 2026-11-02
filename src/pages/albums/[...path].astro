@@ -105,7 +105,7 @@ const eyebrow = parent ? { parts: [parent.title], dot: 'blue' as const } : { par
           <h2 id="photos-heading" class:list={['block-heading', { 'visually-hidden': !hasSections }]}>
             Photos
           </h2>
-          <PhotoGrid photos={gridPhotos(node.photos)} context={viewerContext(trail.map((item) => item.title))} nearTop={contentNearTop && !hasSections} />
+          <PhotoGrid photos={gridPhotos(node.photos)} context={viewerContext(trail.map((item) => item.title))} albumPath={node.slugPath} nearTop={contentNearTop && !hasSections} />
         </section>
       )
     }

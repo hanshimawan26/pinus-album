@@ -8,6 +8,8 @@ import {
   coverWidths,
   heroSizes,
   loadingHint,
+  DOWNLOAD_IMAGE,
+  downloadImageSize,
   PREVIEW_IMAGE,
   previewImageSize,
   SHORT_STORY_MAX_CHARS,
@@ -156,6 +158,19 @@ describe('previewImageSize (link preview, 1.91:1)', () => {
     expect(previewImageSize(800, 600)).toEqual({ width: 800, height: 420 });
     expect(previewImageSize(1600, 400)).toEqual({ width: 761, height: 400 });
     expect(previewImageSize(1, 1)).toEqual({ width: 1, height: 1 });
+  });
+});
+
+describe('downloadImageSize (the viewer download, TRD §6.5)', () => {
+  it('scales the long edge down to 2400 px, keeping the shape', () => {
+    expect(downloadImageSize(6240, 4160)).toEqual({ width: 2400, height: 1600 });
+    expect(downloadImageSize(4160, 6240)).toEqual({ width: 1600, height: 2400 });
+    expect(DOWNLOAD_IMAGE).toEqual({ maxEdge: 2400, quality: 85 });
+  });
+
+  it('keeps a web-ready master at its own size (never upscales)', () => {
+    expect(downloadImageSize(2400, 1600)).toEqual({ width: 2400, height: 1600 });
+    expect(downloadImageSize(1200, 900)).toEqual({ width: 1200, height: 900 });
   });
 });
 

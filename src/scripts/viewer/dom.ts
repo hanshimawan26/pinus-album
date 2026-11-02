@@ -14,6 +14,8 @@ export interface ViewerElements {
   nameText: HTMLElement;
   dateRow: HTMLElement;
   date: HTMLTimeElement;
+  /** Saves the photo's JPEG; `href` and `download` are set for each photo. */
+  download: HTMLAnchorElement;
   close: HTMLButtonElement;
   stage: HTMLElement;
   image: HTMLImageElement;
@@ -78,6 +80,7 @@ export function viewerElements(dialog: HTMLDialogElement): ViewerElements {
     nameText: required(dialog, 'name-text', HTMLElement),
     dateRow: required(dialog, 'date-row', HTMLElement),
     date: required(dialog, 'date', HTMLTimeElement),
+    download: required(dialog, 'download', HTMLAnchorElement),
     close: required(dialog, 'close', HTMLButtonElement),
     stage,
     image,

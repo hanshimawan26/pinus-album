@@ -57,7 +57,7 @@ const previewImage = await previewImageFor(node.cover);
 
     <section class="block" aria-labelledby="photos-heading">
       <h2 id="photos-heading" class="visually-hidden">All photos</h2>
-      <PhotoGrid photos={photos} context={viewerContext(titles)} nearTop />
+      <PhotoGrid photos={photos} context={viewerContext(titles)} albumPath={node.slugPath} nearTop />
     </section>
   </div>
 </BaseLayout>

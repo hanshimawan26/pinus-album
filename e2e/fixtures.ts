@@ -61,6 +61,7 @@ export function viewer(page: Page) {
     caption: dialog.locator('[data-caption]'),
     counter: dialog.locator('[data-counter]'),
     photo: dialog.locator('[data-stage] img'),
+    download: dialog.getByRole('link', { name: 'Download photo' }),
     close: dialog.getByRole('button', { name: 'Close' }),
     next: dialog.getByRole('button', { name: 'Next photo' }),
     previous: dialog.getByRole('button', { name: 'Previous photo' }),

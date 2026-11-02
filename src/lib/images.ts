@@ -4,8 +4,8 @@
  * the published derivatives. Sizes and loading policy come from the pure `image-sizes.ts`.
  *
  * Privacy (TRD §7, §10): sharp drops EXIF/GPS from every derivative and applies the EXIF
- * orientation first, so derivatives are upright and metadata-free (viewer images of credited
- * photos then get back only EXIF Artist/Copyright, see `viewerImageFor`). Two rules keep original
+ * orientation first, so derivatives are upright and metadata-free (viewer images and downloads
+ * of credited photos then get back only EXIF Artist/Copyright, see `viewerImageFor`). Two rules keep original
  * files (which still carry EXIF/GPS) out of `dist/`:
  *
  * 1. Never read a property of an imported image (`.src`, `.width`, …) here or in a page.
@@ -22,6 +22,8 @@ import {
   coverHeight,
   coverSizes,
   coverWidths,
+  DOWNLOAD_IMAGE,
+  downloadImageSize,
   HERO_WIDTHS,
   heroSizes,
   landingTileSizes,
@@ -94,6 +96,18 @@ export async function viewerImageFor(photo: Photo, sizes: string = VIEWER_SIZES)
   const credit = photo.photographer?.name;
   const image = await getImage({ src: sourceOf(photo), width, height, widths, fit: 'cover', format: OUTPUT_FORMAT, credit });
   return { src: image.src, srcset: image.srcSet.attribute, sizes, width, height };
+}
+
+/**
+ * The viewer's download (TRD §6.5): the whole photo as a JPEG, long edge up to 2400 px, with
+ * the same credit as the viewer image (watermark and EXIF Artist/Copyright).
+ */
+export async function downloadImageFor(photo: Photo): Promise<SizedImage> {
+  const { width, height } = downloadImageSize(photo.width, photo.height);
+  const credit = photo.photographer?.name;
+  // `cover` for the same reason as the viewer image: exactly the claimed size.
+  const image = await getImage({ src: sourceOf(photo), width, height, fit: 'cover', format: 'jpg', quality: DOWNLOAD_IMAGE.quality, credit });
+  return { src: image.src, width, height };
 }
 
 /** Card cover: a 4:3 crop with a srcset sized for event or section cards. */

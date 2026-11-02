@@ -54,6 +54,7 @@ describe('rowsFor (TRD §6.5: absent data disappears)', () => {
 
 describe('rowsFor on photos built by the content engine', () => {
   const image: ViewerImage = { src: '/x/a.webp', srcset: '/x/a.webp 800w', sizes: '100vw', width: 800, height: 533 };
+  const download = { src: '/x/a.jpg', width: 2400, height: 1600, fileName: 'event-a.jpg' };
   const { root } = build(
     sourceTree(
       [
@@ -66,7 +67,7 @@ describe('rowsFor on photos built by the content engine', () => {
       { photographers: 'andi:\n  name: "Andi Pratama"\n  instagram: "andi.pratama"\nsari:\n  name: "Sari Wijaya"\n' },
     ),
   );
-  const photos = new Map((root.children[0] as AlbumNode).photos.map((photo) => [photo.relPath, viewerPhoto(photo, image)]));
+  const photos = new Map((root.children[0] as AlbumNode).photos.map((photo) => [photo.relPath, viewerPhoto(photo, image, download)]));
   const rows = (relPath: string) => {
     const photo = photos.get(relPath);
     if (!photo) throw new Error(`No photo ${relPath}`);

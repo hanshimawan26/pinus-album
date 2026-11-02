@@ -2,7 +2,12 @@
  * The post viewer (TRD §6.5, acceptance checklist §12.3), on the demo content:
  * Demo Event A › Day 1 has 13 photos, Demo Event B has the photos with missing data.
  */
-import type { Locator } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+import sharp from 'sharp';
+import { readCredit } from '../src/lib/authoring/exif-block.ts';
+import { exifTiffOf, parseJpeg } from '../src/lib/authoring/jpeg.ts';
+import { scanImageMetadata } from '../src/lib/build-checks/image-metadata.ts';
 import { expect, hashOf, loadedPhotoSize, openFromTile, PAGES, swipe, test, tile, viewer, withoutHash } from './fixtures.ts';
 
 test.describe('opening a photo', () => {
@@ -204,6 +209,42 @@ test.describe('closing', () => {
       await page.keyboard.press('Tab');
       expect(await viewer(page).dialog.evaluate((dialog) => dialog.contains(document.activeElement))).toBe(true);
     }
+  });
+});
+
+test.describe('downloading', () => {
+  /** Clicks the viewer's download link and returns the saved file's name and bytes. */
+  async function download(page: Page): Promise<{ name: string; bytes: Buffer }> {
+    const [file] = await Promise.all([page.waitForEvent('download'), viewer(page).download.click()]);
+    return { name: file.suggestedFilename(), bytes: await readFile(await file.path()) };
+  }
+
+  test('the header’s download link saves the photo as a JPEG with its photographer’s credit', async ({ page }) => {
+    await page.goto(PAGES.section);
+    await openFromTile(page, 1); // @alice-demo/IMG_0001.jpg
+    await expect(viewer(page).download).toBeVisible();
+    const { name, bytes } = await download(page);
+    expect(name).toBe('demo-event-a-day-1-alice-demo-img-0001.jpg');
+    expect(await sharp(bytes).metadata()).toMatchObject({ format: 'jpeg' });
+    expect(scanImageMetadata(bytes).blocks).toEqual(['EXIF']);
+    expect(readCredit(exifTiffOf(parseJpeg(bytes).segments)!)).toEqual({ artist: 'Alice (Demo)', copyright: '© Alice (Demo)', hasOtherTags: false });
+  });
+
+  test('a photo without a photographer downloads without any metadata', async ({ page }) => {
+    await page.goto(PAGES.flatEvent);
+    await openFromTile(page, 8); // IMG-20260815-WA0003.jpg: nobody credited
+    const { name, bytes } = await download(page);
+    expect(name).toBe('demo-event-b-img-20260815-wa0003.jpg');
+    expect(scanImageMetadata(bytes).blocks).toEqual([]);
+  });
+
+  test('the link follows the photo shown', async ({ page }) => {
+    await page.goto(PAGES.section);
+    await openFromTile(page, 1);
+    const first = await viewer(page).download.getAttribute('href');
+    await page.keyboard.press('ArrowRight');
+    await expect(viewer(page).download).not.toHaveAttribute('href', first ?? '');
+    await expect(viewer(page).download).toHaveAttribute('download', /^demo-event-a-day-1-.+\.jpg$/);
   });
 });
 

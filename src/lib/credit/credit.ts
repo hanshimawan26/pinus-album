@@ -24,10 +24,16 @@ export function creditFor(name: string | undefined): Credit | undefined {
   return artist ? { artist, copyright: `© ${artist}` } : undefined;
 }
 
-/** Watermark font size as a share of the image's short edge (about 32 px on a 2000 × 1333 image). */
-const FONT_SHARE = 0.024;
+/** Watermark font size as a share of the image's short edge (about 24 px on a 2000 × 1333 image). */
+const FONT_SHARE = 0.018;
 /** Smallest font size (px), so the 800 px image phones download stays readable when saved. */
-const MIN_FONT_PX = 14;
+const MIN_FONT_PX = 12;
+
+/**
+ * Opacity (%) of the white text and of the dark shadow under it: a quiet mark that names
+ * the photographer without competing with the photo.
+ */
+export const WATERMARK_OPACITY = { text: 60, shadow: 40 } as const;
 
 export interface WatermarkLayout {
   /** Font size in pixels. */
@@ -52,6 +58,19 @@ export function watermarkLayout(width: number, height: number): WatermarkLayout 
     shadowOffset: Math.max(1, Math.round(fontSize * 0.05)),
   };
 }
+
+/**
+ * Everything that sets how the watermark looks, as text. The image service hashes it into
+ * every credited file's name, so a new look gives new files: Astro's image cache (local, and
+ * restored in CI) would otherwise keep serving images with the old watermark. Bump
+ * `revision` for a change these values cannot see (another font file).
+ */
+export const WATERMARK_STYLE = JSON.stringify({
+  revision: 1,
+  layout: watermarkLayout(2000, 1333),
+  minimum: watermarkLayout(1, 1),
+  opacity: WATERMARK_OPACITY,
+});
 
 /**
  * Font size that fits a text measured `textWidth` px wide at `layout.fontSize` inside the

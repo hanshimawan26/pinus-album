@@ -1,43 +1,70 @@
 /**
  * Which published images may carry metadata, and exactly what. PURE.
  *
- * Every published image is metadata-free (TRD §7, §10) except the viewer images of credited
- * photos: those carry an EXIF block with only Artist and Copyright naming the photo's
- * photographer (credit/credit.ts). `npm run verify:dist` maps every viewer image to the
- * credit its photo's viewer data names and checks each file against it. Since the
+ * Every published image is metadata-free (TRD §7, §10) except the viewer images and
+ * downloads of credited photos: those carry an EXIF block with only Artist and Copyright
+ * naming the photo's photographer (credit/credit.ts). `npm run verify:dist` maps every viewer
+ * image and download to the credit its photo's viewer data names and checks each file
+ * against it. Since the
  * watermark and the EXIF are written in the same step, a matching EXIF block also shows the
  * watermark pass ran.
  */
 import type { CreditFacts } from '../authoring/exif-block.ts';
+import { exifTiffOf, isJpeg, parseJpeg } from '../authoring/jpeg.ts';
 import { creditFor, type Credit } from '../credit/credit.ts';
+import { webpExif } from '../credit/webp-exif.ts';
 import type { MetadataKind } from './image-metadata.ts';
 import { inlineJson, srcsetUrls } from './links.ts';
 
 export interface ViewerImageCredit {
-  /** An image URL from the viewer data (`src` or a srcset entry). */
+  /** An image URL from the viewer data (`src`, a srcset entry or the download). */
   url: string;
   /** The credit the image must carry; undefined for a photo without a photographer. */
   credit?: Credit;
 }
 
-/** Every viewer image URL in a page's viewer data, with its expected credit. Throws on invalid JSON. */
+/** Every viewer image and download URL in a page's viewer data, with its expected credit. Throws on invalid JSON. */
 export function viewerImageCredits(html: string): ViewerImageCredit[] {
   const result: ViewerImageCredit[] = [];
   for (const data of inlineJson(html)) {
     const photos = data && typeof data === 'object' ? (data as { photos?: unknown }).photos : undefined;
     if (!Array.isArray(photos)) continue;
-    for (const photo of photos as Array<{ image?: { src?: unknown; srcset?: unknown }; photographer?: { name?: unknown } }>) {
+    for (const photo of photos as Array<{ image?: { src?: unknown; srcset?: unknown }; download?: { src?: unknown }; photographer?: { name?: unknown } }>) {
       const name = photo?.photographer?.name;
       const credit = creditFor(typeof name === 'string' ? name : undefined);
       const image = photo?.image;
+      const download = photo?.download;
       const urls = [
         ...(typeof image?.src === 'string' ? [image.src] : []),
         ...(typeof image?.srcset === 'string' ? srcsetUrls(image.srcset) : []),
+        ...(typeof download?.src === 'string' ? [download.src] : []),
       ];
       for (const url of new Set(urls)) result.push(credit ? { url, credit } : { url });
     }
   }
   return result;
+}
+
+/** The TIFF block of a JPEG's or WebP's EXIF, or undefined (none, or not readable). Never throws. */
+export function exifTiffOfImage(bytes: Uint8Array): Uint8Array | undefined {
+  if (!isJpeg(bytes)) return webpExif(bytes);
+  try {
+    return exifTiffOf(parseJpeg(bytes).segments);
+  } catch {
+    return undefined;
+  }
+}
+
+/** The EXIF tags a credit consists of, as exifr names them. */
+const CREDIT_TAGS = new Set(['Artist', 'Copyright']);
+
+/**
+ * The tags exifr found that the image may not carry: all of them, or for a credited image
+ * (a download is a JPEG, which exifr reads) all but Artist and Copyright. Their values are
+ * checked by `creditProblem`.
+ */
+export function unexpectedExifrTags(tags: readonly string[], credited: boolean): string[] {
+  return credited ? tags.filter((tag) => !CREDIT_TAGS.has(tag)) : [...tags];
 }
 
 export interface FoundMetadata {

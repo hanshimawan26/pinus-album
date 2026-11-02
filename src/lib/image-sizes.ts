@@ -6,6 +6,7 @@
  * image is drawn at each breakpoint, so the browser picks the smallest file that is sharp
  * enough. The breakpoints are the ones in src/styles/global.css (see DESIGN.md).
  */
+import { PREP_LIMITS } from './authoring/prep-rules.ts';
 
 /**
  * Grid thumbnails: square WebP crops of about 480 px (TRD §6.4, §7), plus a 240 px one for
@@ -102,6 +103,19 @@ export function previewImageSize(sourceWidth: number, sourceHeight: number): { w
   const { width: maxWidth, height: maxHeight } = PREVIEW_IMAGE;
   const width = Math.max(1, Math.floor(Math.min(maxWidth, sourceWidth, (sourceHeight * maxWidth) / maxHeight)));
   return { width, height: Math.max(1, Math.round((width * maxHeight) / maxWidth)) };
+}
+
+/**
+ * The viewer's download (TRD §6.5): the whole photo as a JPEG at the web-ready master size
+ * (`photos:prep`: long edge at most 2400 px, quality 85), so a prepped photo downloads at
+ * its own full size. JPEG, not WebP: every phone and computer opens it.
+ */
+export const DOWNLOAD_IMAGE = { maxEdge: PREP_LIMITS.maxLongEdge, quality: PREP_LIMITS.jpegQuality } as const;
+
+/** Size of the download of a source: its long edge scaled to at most 2400 px, never upscaled. */
+export function downloadImageSize(sourceWidth: number, sourceHeight: number): { width: number; height: number } {
+  const scale = Math.min(1, DOWNLOAD_IMAGE.maxEdge / Math.max(sourceWidth, sourceHeight, 1));
+  return { width: Math.max(1, Math.round(sourceWidth * scale)), height: Math.max(1, Math.round(sourceHeight * scale)) };
 }
 
 /**

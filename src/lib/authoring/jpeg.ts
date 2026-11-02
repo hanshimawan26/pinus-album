@@ -176,6 +176,17 @@ export function withMetadataOnly(parsed: ParsedJpeg, exif: Uint8Array | undefine
   return serialiseJpeg({ segments: [...jfif, ...exifSegment, ...rest], scan: parsed.scan });
 }
 
+/**
+ * `jpeg` with its metadata replaced by one EXIF block holding `tiff` (a TIFF block): how a
+ * credited download gets its Artist/Copyright tags. Throws on a file that is not a JPEG.
+ */
+export function withJpegExif(jpeg: Uint8Array, tiff: Uint8Array): Uint8Array {
+  const app1 = new Uint8Array(6 + tiff.length);
+  app1.set([0x45, 0x78, 0x69, 0x66, 0, 0]); // "Exif\0\0"
+  app1.set(tiff, 6);
+  return withMetadataOnly(parseJpeg(jpeg), app1);
+}
+
 /** Byte-wise equality of two arrays. */
 export function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;

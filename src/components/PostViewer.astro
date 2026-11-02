@@ -5,13 +5,16 @@
  * `#viewer-data` JSON. Rendered by PhotoGrid, so the script ships only on pages with photos.
  *
  * Layouts:
- * - below 600px: full screen. Header (camera icon and photographer, date, ✕), the photo
+ * - below 600px: full screen. Header (camera icon and photographer, date, download, ✕), the photo
  *   centred in the black area between header and caption, the caption clamped to 3 lines
  *   with "more", the counter. On touch phones the arrows are visually hidden (swipe instead)
  *   but stay available to screen readers and keyboards.
  * - 600–899px: the same column, 36rem wide, centred on the dark backdrop.
  * - from 900px: the photo on black on the left, a 340px details panel on the right (header,
  *   full caption, "Day 1 · Event"), arrows over the photo and the counter in its corner.
+ *
+ * The download link saves the photo's JPEG (up to 2400 px, with the photographer's credit)
+ * under a readable file name; the script sets its `href` and `download` for each photo.
  *
  * Every row that has no data gets the `hidden` attribute, so it is not rendered at all.
  * The photo's `<img>` and the photographer's Instagram link are created by the script (an
@@ -21,6 +24,7 @@
 import CameraIcon from './CameraIcon.astro';
 import ChevronIcon from './ChevronIcon.astro';
 import CloseIcon from './CloseIcon.astro';
+import DownloadIcon from './DownloadIcon.astro';
 ---
 
 <dialog class="viewer" aria-modal="true" aria-labelledby="viewer-title" data-viewer>
@@ -36,9 +40,14 @@ import CloseIcon from './CloseIcon.astro';
         </p>
         <p class="date" data-date-row><time data-date></time></p>
       </div>
-      <button type="button" class="close" aria-label="Close" data-close>
-        <CloseIcon size={20} />
-      </button>
+      <div class="actions">
+        <a class="action" aria-label="Download photo" data-download>
+          <DownloadIcon size={20} />
+        </a>
+        <button type="button" class="action" aria-label="Close" data-close>
+          <CloseIcon size={20} />
+        </button>
+      </div>
     </header>
 
     <div class="stage" data-stage>
@@ -138,7 +147,7 @@ import CloseIcon from './CloseIcon.astro';
     overscroll-behavior: contain;
   }
 
-  /* ---------- Header: photographer credit, date, close ---------- */
+  /* ---------- Header: photographer credit, date, download, close ---------- */
 
   .head {
     grid-area: head;
@@ -178,13 +187,18 @@ import CloseIcon from './CloseIcon.astro';
     font-size: var(--text-sm);
   }
 
-  .close {
+  .actions {
     flex: none;
+    display: flex;
+    margin-inline-start: auto;
+  }
+
+  /* Download and ✕: round 44px icon targets, like Google Drive's viewer bar. */
+  .action {
     display: grid;
     place-items: center;
     width: 2.75rem;
     height: 2.75rem;
-    margin-inline-start: auto;
     padding: 0;
     border: 0;
     border-radius: var(--radius-full);
@@ -194,12 +208,12 @@ import CloseIcon from './CloseIcon.astro';
     transition: background-color var(--duration-fast) var(--ease-out);
   }
 
-  .close:hover {
+  .action:hover {
     background: var(--color-surface-sunken);
   }
 
   /* Drawn inside the button: the frame clips anything outside its edge on wide screens. */
-  .close:focus-visible {
+  .action:focus-visible {
     outline-offset: -3px;
     border-radius: var(--radius-full);
   }
