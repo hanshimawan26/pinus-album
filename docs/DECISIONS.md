@@ -1542,3 +1542,40 @@ each other. Decisions (the user chose the first three):
   used to swap to favicon.svg (the logo on a white disc). It now always shows logo.svg, on a
   plate drawn by CSS from two tokens: invisible on Day, a white rounded rectangle
   (`--radius-sm`, 3 px inset) on Night. favicon.svg stays the browser-tab icon.
+
+## After the POC — download button and a quieter watermark
+
+- **The viewer has a download button** (asked by the user, "like in Google Drive"): an
+  `<a download>` with an arrow-into-tray icon in the header, next to ✕. This reverses TRD
+  §6.5's "Download is deliberately not offered in the POC"; the TRD is updated.
+- **Download size: 2400 px JPEG** (chosen by the user from three options). "Full
+  resolution" was measured first: 211 of the 264 masters are unprepped camera originals up to
+  6240 px. At their own size the downloads average 2.4 MB (about +630 MB for today's photos,
+  leaving the site near GitHub Pages' 1 GB limit after one or two more events). At 2400 px they
+  average about 0.45 MB (+116 MB). 2400 px is the `photos:prep` master size, so a prepped
+  photo downloads at its true full size. The 2000 px viewer WebP was the third option (no
+  new files) but is neither full size nor JPEG.
+- **JPEG, quality 85** (`DOWNLOAD_IMAGE`, the same limits as `PREP_LIMITS`): WebP is not
+  opened by every phone gallery, chat app or Windows tool. Encoded by Astro's sharp service
+  defaults (no mozjpeg) like the link preview.
+- **Same credit as the viewer image:** the `© Name` watermark and EXIF Artist/Copyright
+  (written into the JPEG by `withJpegExif`, the same TIFF writer); nothing for a photo
+  without a photographer. `verify:dist` checks downloads like viewer images: the credit,
+  no other metadata (exifr may report only Artist and Copyright on a credited JPEG), the
+  size the viewer data claims, and that the file is used.
+- **File name** `<album path>-<photo slug>.jpg` (`downloadFileName`), so the same photo gets
+  the same name from its album page and the "All photos" page, and downloads from different
+  albums do not collide the way `IMG_0012.jpg` would.
+- **Download on every grid photo, not the home page spotlight:** the spotlight has no viewer.
+- **Measured after the build:** `dist/` went from 117 MB to 222 MB (about 0.84 MB per photo;
+  the TRD §7 and README size notes are updated: the site now reaches 1 GB at roughly 1,200
+  photos). verify:dist: 1065 credited images (viewer images and downloads), no problems.
+- **Quieter watermark** (asked by the user, "less opaque and smaller"): 1.8 % of the short edge
+  (was 2.4 %; about 24 px on a 2000 × 1333 image, was 32 px), at least 12 px (was 14), white
+  at 60 % (was 85 %) over a shadow at 40 % (was 60 %). Still readable on light and dark
+  photos at the viewer's sizes; less in the way of the photo.
+- **The watermark's look is part of every credited file's hash** (`WATERMARK_STYLE`, added by
+  the image service's `validateOptions`). Astro's image cache keys files on the hashed
+  options only, and CI restores `node_modules/.astro`, so without it a deploy would have
+  kept serving viewer images with the old watermark. Any change to the layout or opacity
+  values now renames the files; a new font file needs a `revision` bump.

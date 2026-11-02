@@ -396,9 +396,11 @@ a caption simply shows no caption.
   [step 7](#7-add-new-photographers-optional)). Without an entry, "their-name" is shown as
   "Their Name".
 
-**The credit travels with the photo.** When someone saves a photo from the viewer, the
-photographer's name comes with it: a small "© Their Name" in the bottom-right corner of the
-picture, and the name in the file's details (Artist and Copyright). The website adds both
+**The credit travels with the photo.** When someone downloads a photo (the download button
+at the top of the photo viewer, next to ✕; it gives a JPEG up to 2400 px wide) or saves it
+from the viewer, the photographer's name comes with it: a small, see-through "© Their Name"
+in the bottom-right corner of the picture, and the name in the file's details (Artist and
+Copyright). The website adds both
 when it is built; your photo files in `src/albums/` are never changed. Fixing a name in
 `photographers.yaml` fixes every watermark at the next publish. Photos without a
 photographer get no watermark, and the small grid tiles and album covers never have one.
@@ -651,8 +653,9 @@ Pages. Both have limits:
 - **Git LFS is not allowed** for the photos: GitHub Pages cannot serve LFS files.
 
 After `photos:prep`, a photo is about **0.7 MB**, so roughly **1,500 photos fit in 1 GB**.
-The website holds several resized WebP copies of each photo, which together can be about as
-large as the photo itself, so both limits arrive around the same number of photos.
+The website holds several resized WebP copies of each photo plus the JPEG people download
+(up to 2400 px), together about 0.85 MB per photo, so the website reaches its 1 GB limit at
+roughly 1,200 photos, a little before the repository does.
 `photos:check` warns when `src/albums/` passes 700 MB.
 
 What helps, in order:
@@ -775,7 +778,7 @@ no UI framework. Start with these documents:
 | `npm run photos:prep -- <folder> [--dry-run] [--force]` | Makes JPEGs web-ready in place (≤ 2400 px, quality 85, upright, GPS removed). Idempotent |
 | `npm run photos:init -- <album-folder> [--dry-run]` | Appends empty `caption` entries to `photos.yaml` for photos without one |
 | `npm run demo:images` | Regenerates the demo images (deterministic) |
-| `npm run verify:dist` | Checks `dist/` after a build: no EXIF/GPS (viewer images carry only their photographer credit), no copies of originals, no broken links, image sizes and orientation, no drafts, hidden albums or hidden photos, robots meta, takedown line, JS only on photo pages and within 60 KB gzipped, link preview tags on the site's own address. Use the same `BASE_PATH`, `SITE_URL`, `ALLOW_INDEXING`, `CONTACT_EMAIL` and `SHOW_HIDDEN` as the build |
+| `npm run verify:dist` | Checks `dist/` after a build: no EXIF/GPS (viewer images and downloads carry only their photographer credit), no copies of originals, no broken links, image sizes and orientation, no drafts, hidden albums or hidden photos, robots meta, takedown line, JS only on photo pages and within 60 KB gzipped, link preview tags on the site's own address. Use the same `BASE_PATH`, `SITE_URL`, `ALLOW_INDEXING`, `CONTACT_EMAIL` and `SHOW_HIDDEN` as the build |
 | `npm test` | Unit tests (Vitest, `tests/`) |
 | `npm run test:e2e` | Browser tests (Playwright, `e2e/`) against a fresh production build |
 | `npm run typecheck` | `astro check` |

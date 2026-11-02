@@ -19,6 +19,16 @@ export interface ViewerImage {
   height: number;
 }
 
+/** The photo's download (TRD §6.5): a JPEG of the whole photo, with the credit when it has one. */
+export interface ViewerDownload {
+  src: string;
+  /** Pixel size of `src`. */
+  width: number;
+  height: number;
+  /** The name the saved file gets: `pinus-ori-day-1-img-0012.jpg`. */
+  fileName: string;
+}
+
 export interface ViewerPhotographer {
   name: string;
   /** Profile link; present only when photographers.yaml lists a handle (TRD §10). */
@@ -34,6 +44,7 @@ export interface ViewerPhoto {
    */
   context?: string;
   image: ViewerImage;
+  download: ViewerDownload;
   alt: string;
   caption?: string;
   photographer?: ViewerPhotographer;
@@ -62,8 +73,22 @@ export interface GridPhoto {
 /** The photos of one album, as its own page shows them. */
 export const gridPhotos = (photos: readonly Photo[]): GridPhoto[] => photos.map((photo) => ({ photo, slug: photo.slug }));
 
-export function viewerPhoto(photo: Photo, image: ViewerImage, placement: Omit<GridPhoto, 'photo'> = { slug: photo.slug }): ViewerPhoto {
-  const result: ViewerPhoto = { slug: placement.slug, image, alt: photo.alt };
+/**
+ * The download's file name: the album's path and the photo's slug on that page, so a photo
+ * gets the same name from its album page and from the all-photos page
+ * (`pinus-ori` + `day-1/img-0012` and `pinus-ori/day-1` + `img-0012` → `pinus-ori-day-1-img-0012.jpg`).
+ */
+export function downloadFileName(albumSlugPath: readonly string[], slug: string): string {
+  return `${[...albumSlugPath, ...slug.split('/')].filter(Boolean).join('-')}.jpg`;
+}
+
+export function viewerPhoto(
+  photo: Photo,
+  image: ViewerImage,
+  download: ViewerDownload,
+  placement: Omit<GridPhoto, 'photo'> = { slug: photo.slug },
+): ViewerPhoto {
+  const result: ViewerPhoto = { slug: placement.slug, image, download, alt: photo.alt };
   if (placement.context) result.context = placement.context;
   if (photo.caption) result.caption = photo.caption;
   if (photo.photographer) {

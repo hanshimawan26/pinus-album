@@ -5,6 +5,7 @@
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 import { readCredit } from '../../src/lib/authoring/exif-block.ts';
+import { exifTiffOf, parseJpeg } from '../../src/lib/authoring/jpeg.ts';
 import { scanImageMetadata } from '../../src/lib/build-checks/image-metadata.ts';
 import { creditFor } from '../../src/lib/credit/credit.ts';
 import { encodeCredited, watermarkOverlays } from '../../src/lib/credit/watermark.ts';
@@ -23,9 +24,9 @@ async function changeIn(image: Uint8Array, region: { left: number; top: number; 
 
 describe('encodeCredited', () => {
   it('draws the credit in the bottom-right corner only', async () => {
-    const credited = await encodeCredited(sharp(await photo(800, 533).toBuffer()), creditFor('Andi Pratama')!, { quality: 90 });
+    const credited = await encodeCredited(sharp(await photo(800, 533).toBuffer()), creditFor('Andi Pratama')!, { format: 'webp', options: { quality: 90 } });
     expect(await sharp(credited).metadata()).toMatchObject({ format: 'webp', width: 800, height: 533 });
-    expect(await changeIn(credited, { left: 560, top: 493, width: 240, height: 40 })).toBeGreaterThan(5);
+    expect(await changeIn(credited, { left: 640, top: 493, width: 160, height: 40 })).toBeGreaterThan(2);
     expect(await changeIn(credited, { left: 0, top: 0, width: 400, height: 400 })).toBeLessThan(1);
   });
 
@@ -33,6 +34,15 @@ describe('encodeCredited', () => {
     const credited = await encodeCredited(sharp(await photo(400, 300).toBuffer()), creditFor('Sari Wíjaya')!);
     expect(scanImageMetadata(credited).blocks).toEqual(['EXIF']);
     expect(readCredit(webpExif(credited)!)).toEqual({ artist: 'Sari Wíjaya', copyright: '© Sari Wíjaya', hasOtherTags: false });
+  });
+
+  it('writes a JPEG (the download) with the same watermark and EXIF credit', async () => {
+    const credited = await encodeCredited(sharp(await photo(800, 533).toBuffer()), creditFor('Andi Pratama')!, { format: 'jpeg', options: { quality: 90 } });
+    expect(await sharp(credited).metadata()).toMatchObject({ format: 'jpeg', width: 800, height: 533 });
+    expect(scanImageMetadata(credited).blocks).toEqual(['EXIF']);
+    expect(readCredit(exifTiffOf(parseJpeg(credited).segments)!)).toEqual({ artist: 'Andi Pratama', copyright: '© Andi Pratama', hasOtherTags: false });
+    expect(await changeIn(credited, { left: 640, top: 493, width: 160, height: 40 })).toBeGreaterThan(2);
+    expect(await changeIn(credited, { left: 0, top: 0, width: 400, height: 400 })).toBeLessThan(1);
   });
 });
 

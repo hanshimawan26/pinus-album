@@ -46,6 +46,8 @@ export function renderPhoto(elements: ViewerElements, photo: ViewerPhoto, { inde
   const rows = rowsFor(photo);
   elements.title.textContent = photoLabel(photo, index, total);
   renderCredit(elements, photo, rows);
+  elements.download.href = photo.download.src;
+  elements.download.download = photo.download.fileName;
   elements.caption.textContent = rows.captionBlock ? (photo.caption ?? '') : '';
   setShown(elements.captionBlock, rows.captionBlock);
   elements.context.textContent = context;

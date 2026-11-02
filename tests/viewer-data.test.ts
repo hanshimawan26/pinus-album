@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { build, sourceTree } from './helpers/content.ts';
 import type { AlbumNode, Photo } from '../src/lib/content/types.ts';
-import { gridPhotos, viewerContext, viewerPhoto, type ViewerImage } from '../src/lib/viewer-data.ts';
+import { downloadFileName, gridPhotos, viewerContext, viewerPhoto, type ViewerDownload, type ViewerImage } from '../src/lib/viewer-data.ts';
 
 const image: ViewerImage = { src: '/x/a.webp', srcset: '/x/a.webp 800w', sizes: '100vw', width: 800, height: 533 };
+const download: ViewerDownload = { src: '/x/a.jpg', width: 2400, height: 1600, fileName: 'event-a.jpg' };
 
 function photosOf(node: AlbumNode): Map<string, Photo> {
   return new Map(node.photos.map((photo) => [photo.relPath, photo]));
@@ -31,9 +32,10 @@ describe('viewerPhoto', () => {
   const photos = photosOf(event);
 
   it('carries every field the viewer shows (TRD §6.5)', () => {
-    expect(viewerPhoto(photos.get('@andi/full.jpg') as Photo, image)).toEqual({
+    expect(viewerPhoto(photos.get('@andi/full.jpg') as Photo, image, download)).toEqual({
       slug: 'andi-full',
       image,
+      download,
       alt: 'Opening dance',
       caption: 'Opening dance',
       photographer: {
@@ -45,7 +47,7 @@ describe('viewerPhoto', () => {
   });
 
   it('leaves out the caption and Instagram link when absent', () => {
-    const data = viewerPhoto(photos.get('@sari/plain.jpg') as Photo, image);
+    const data = viewerPhoto(photos.get('@sari/plain.jpg') as Photo, image, download);
     expect(data).not.toHaveProperty('caption');
     expect(data.photographer).toEqual({ name: 'Sari Wijaya' });
     // Date falls back to the event's index.md date (TRD §4.6).
@@ -53,7 +55,7 @@ describe('viewerPhoto', () => {
   });
 
   it('leaves out the photographer when nobody is credited', () => {
-    const data = viewerPhoto(photos.get('loose.jpg') as Photo, image);
+    const data = viewerPhoto(photos.get('loose.jpg') as Photo, image, download);
     expect(data).not.toHaveProperty('photographer');
     expect(data.alt).toBe('Photo from Event');
   });
@@ -61,14 +63,21 @@ describe('viewerPhoto', () => {
   it('leaves out the date when there is none', () => {
     const { root: undated } = build(sourceTree([{ folder: 'e', images: ['a.jpg'] }]));
     const photo = (undated.children[0] as AlbumNode).photos[0] as Photo;
-    expect(viewerPhoto(photo, image)).not.toHaveProperty('date');
+    expect(viewerPhoto(photo, image, download)).not.toHaveProperty('date');
   });
 
   it('uses the slug and context of its place on the page (the "All photos" page)', () => {
     const photo = photos.get('@sari/plain.jpg') as Photo;
-    expect(viewerPhoto(photo, image)).not.toHaveProperty('context');
-    const placed = viewerPhoto(photo, image, { slug: 'day-1/sari-plain', context: 'Day 1 · Event' });
+    expect(viewerPhoto(photo, image, download)).not.toHaveProperty('context');
+    const placed = viewerPhoto(photo, image, download, { slug: 'day-1/sari-plain', context: 'Day 1 · Event' });
     expect(placed).toMatchObject({ slug: 'day-1/sari-plain', context: 'Day 1 · Event' });
+  });
+});
+
+describe('downloadFileName', () => {
+  it('names the file after the album path and the photo, the same from either page', () => {
+    expect(downloadFileName(['pinus-ori', 'day-1'], 'img-0012')).toBe('pinus-ori-day-1-img-0012.jpg');
+    expect(downloadFileName(['pinus-ori'], 'day-1/img-0012')).toBe('pinus-ori-day-1-img-0012.jpg');
   });
 });
 

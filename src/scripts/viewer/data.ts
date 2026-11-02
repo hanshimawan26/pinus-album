@@ -21,9 +21,11 @@ export function isInstagramUrl(value: unknown): value is string {
 
 function isPhoto(value: unknown): value is ViewerPhoto {
   if (!isRecord(value) || !isText(value.slug) || typeof value.alt !== 'string') return false;
-  const { image, photographer, date } = value;
+  const { image, download, photographer, date } = value;
   if (!isRecord(image) || !isText(image.src) || typeof image.srcset !== 'string' || typeof image.sizes !== 'string') return false;
   if (!isSize(image.width) || !isSize(image.height)) return false;
+  if (!isRecord(download) || !isText(download.src) || !isText(download.fileName)) return false;
+  if (!isSize(download.width) || !isSize(download.height)) return false;
   if (!optional(value.caption, isText)) return false;
   if (!optional(value.context, isText)) return false;
   if (photographer !== undefined) {

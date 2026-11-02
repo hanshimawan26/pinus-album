@@ -37,8 +37,8 @@ step when a command, a content rule or a `photos:check` code changes.
   Both tools read paths relative to the terminal's folder (`INIT_CWD`), else the project.
 - `npm run demo:images` — regenerate the placeholder demo images (deterministic, idempotent;
   also restores a demo image that was changed by hand)
-- `npm run verify:dist` — after a build: no EXIF/GPS in published images (viewer images of
-  credited photos carry exactly their EXIF Artist/Copyright credit), no copies of source
+- `npm run verify:dist` — after a build: no EXIF/GPS in published images (viewer images and
+  downloads of credited photos carry exactly their EXIF Artist/Copyright credit), no copies of source
   photos, no broken internal links, every image file the size (and orientation) its page
   claims, album pages exactly the published albums (no drafts, hidden albums or photos), no unused
   images in `_astro/`, and on every page the robots meta for `ALLOW_INDEXING`, the footer's
@@ -83,9 +83,11 @@ src/
                      which nodes get one, date order, section-path slugs (`day-1/<slug>`)
     photographer-filter.ts  PURE: the filter chips of a grid (TRD §6.3 item 8)
     images.ts        ASTRO-ONLY: photos → getImage() derivatives (thumb, viewer srcset, covers
-                     and landing tiles, the home hero, the 1200×630 JPEG link preview)
+                     and landing tiles, the home hero, the 1200×630 JPEG link preview, the
+                     viewer's 2400 px JPEG download)
     image-service.ts ASTRO-ONLY: the site's image service (astro.config `image.service`):
-                     Astro's sharp service + the photographer credit on viewer images
+                     Astro's sharp service + the photographer credit on viewer images and
+                     downloads (the watermark's look is hashed into their file names)
     credit/          the credit saved viewer images carry: PURE credit.ts (`© Name`, watermark
                      size/position), webp-exif.ts (EXIF chunk into WebP); watermark.ts (sharp:
                      draws the text with the font in src/fonts, writes EXIF Artist/Copyright)
@@ -149,8 +151,8 @@ e2e/                 Playwright specs (viewer, navigation, landing, site-wide ru
   copied into `dist/` (they still contain EXIF). Never read a property of an imported image
   (`.src`, `.width`, …): Astro then keeps the original in `dist/`. Pass it only to
   `getImage()` in `images.ts`; sizes come from the content engine. `verify:dist` enforces it.
-  The one exception to "no metadata": viewer images of credited photos carry a `© Name`
-  watermark and EXIF Artist/Copyright (nothing else), written by `image-service.ts`;
+  The one exception to "no metadata": viewer images and downloads of credited photos carry a
+  `© Name` watermark and EXIF Artist/Copyright (nothing else), written by `image-service.ts`;
   thumbnails and covers carry neither.
   The masters in the (public) repository should carry no GPS either: `photos:prep` removes it
   and `photos:check` warns (`location-in-photo`). Hiding a photo must never fail the build

@@ -4,13 +4,14 @@
  * come from the pure `credit.ts`.
  *
  * The text is drawn with the font in src/fonts (Inter SemiBold, SIL Open Font License), so
- * it looks the same on every machine that builds the site: white at 85 % opacity over a
- * soft dark shadow, readable on light and dark photos alike.
+ * it looks the same on every machine that builds the site: translucent white over a soft
+ * dark shadow (`WATERMARK_OPACITY`), readable on light and dark photos alike.
  */
-import sharp, { type OverlayOptions, type Sharp, type WebpOptions } from 'sharp';
+import sharp, { type JpegOptions, type OverlayOptions, type Sharp, type WebpOptions } from 'sharp';
 import { resolve } from 'node:path';
 import { buildCreditTiff } from '../authoring/exif-block.ts';
-import { fittedFontSize, watermarkLayout, watermarkMarkup, watermarkPosition, type Credit, type WatermarkLayout } from './credit.ts';
+import { withJpegExif } from '../authoring/jpeg.ts';
+import { fittedFontSize, WATERMARK_OPACITY, watermarkLayout, watermarkMarkup, watermarkPosition, type Credit, type WatermarkLayout } from './credit.ts';
 import { withWebpExif } from './webp-exif.ts';
 
 /** Relative to the project root, like ALBUMS_DIR: builds, tests and scripts all run from there. */
@@ -40,8 +41,8 @@ async function renderText(text: string, fontSize: number, colour: string, opacit
 
 /** The text and its blurred shadow (with `layout.shadowPad` of room on every side). */
 async function renderWatermark(text: string, layout: WatermarkLayout): Promise<{ text: RenderedText; shadow: Buffer }> {
-  const rendered = await renderText(text, layout.fontSize, '#FFFFFF', 85);
-  const dark = await renderText(text, layout.fontSize, '#000000', 60);
+  const rendered = await renderText(text, layout.fontSize, '#FFFFFF', WATERMARK_OPACITY.text);
+  const dark = await renderText(text, layout.fontSize, '#000000', WATERMARK_OPACITY.shadow);
   const pad = layout.shadowPad;
   const shadow = await sharp(dark.data)
     .extend({ top: pad, bottom: pad, left: pad, right: pad, background: { r: 0, g: 0, b: 0, alpha: 0 } })
@@ -93,17 +94,19 @@ async function fitShadow(shadow: Buffer, left: number, top: number, width: numbe
   return sharp(shadow).extract({ left: cropLeft, top: cropTop, width: visibleWidth, height: visibleHeight }).png().toBuffer();
 }
 
+/** The format a credited image is written in: WebP (viewer images) or JPEG (downloads). */
+export type CreditedOutput = { format: 'webp'; options?: WebpOptions } | { format: 'jpeg'; options?: JpegOptions };
+
 /**
- * Encode `image` (already rotated and resized) as WebP with the credit: the watermark in its
- * bottom-right corner and an EXIF block holding only Artist and Copyright.
+ * Encode `image` (already rotated and resized) as WebP or JPEG with the credit: the
+ * watermark in its bottom-right corner and an EXIF block holding only Artist and Copyright.
  */
-export async function encodeCredited(image: Sharp, credit: Credit, webpOptions: WebpOptions = {}): Promise<Uint8Array> {
+export async function encodeCredited(image: Sharp, credit: Credit, output: CreditedOutput = { format: 'webp' }): Promise<Uint8Array> {
   // Decode once to learn the exact output size before placing the watermark.
   const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
   const overlays = await watermarkOverlays(info.width, info.height, credit.copyright);
-  const webp = await sharp(data, { raw: { width: info.width, height: info.height, channels: info.channels } })
-    .composite(overlays)
-    .webp(webpOptions)
-    .toBuffer();
-  return withWebpExif(webp, buildCreditTiff(credit));
+  const composed = sharp(data, { raw: { width: info.width, height: info.height, channels: info.channels } }).composite(overlays);
+  const tiff = buildCreditTiff(credit);
+  if (output.format === 'jpeg') return withJpegExif(await composed.jpeg(output.options).toBuffer(), tiff);
+  return withWebpExif(await composed.webp(output.options).toBuffer(), tiff);
 }

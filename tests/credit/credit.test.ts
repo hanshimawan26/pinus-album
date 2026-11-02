@@ -17,19 +17,19 @@ describe('watermarkLayout', () => {
   it('scales with the short edge, so every srcset width looks the same', () => {
     const large = watermarkLayout(2000, 1333);
     const medium = watermarkLayout(1200, 800);
-    expect(large.fontSize).toBe(32);
+    expect(large.fontSize).toBe(24);
     expect(large.fontSize / 1333).toBeCloseTo(medium.fontSize / 800, 2);
     // Portrait: the short edge is the width.
     expect(watermarkLayout(1333, 2000).fontSize).toBe(large.fontSize);
   });
 
   it('never goes below a readable size', () => {
-    expect(watermarkLayout(400, 300).fontSize).toBe(14);
+    expect(watermarkLayout(400, 300).fontSize).toBe(12);
   });
 });
 
 describe('fittedFontSize', () => {
-  const layout = watermarkLayout(800, 1200); // 19 px, margin 15 px
+  const layout = watermarkLayout(800, 1200); // 14 px, margin 11 px
 
   it('keeps the size when the text fits', () => {
     expect(fittedFontSize(layout, 800, 300)).toBe(layout.fontSize);

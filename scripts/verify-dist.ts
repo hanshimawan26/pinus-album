@@ -2,8 +2,8 @@
  * `npm run verify:dist` — checks the built site in dist/ (run after `npm run build`):
  *
  *   1. Privacy (TRD §7, §10): no published image carries EXIF, GPS, XMP or IPTC metadata,
- *      except the viewer images of credited photos, which carry exactly their photographer's
- *      credit (EXIF Artist and Copyright, nothing else; see src/lib/credit/).
+ *      except the viewer images and downloads of credited photos, which carry exactly their
+ *      photographer's credit (EXIF Artist and Copyright, nothing else; see src/lib/credit/).
  *   2. Privacy: no file in dist/ is a byte-for-byte copy of a source photo in src/albums/
  *      (sources keep their EXIF/GPS data).
  *   3. Links (TRD §12.3): every internal href/src/srcset (including the viewer's JSON data
@@ -35,10 +35,9 @@ import { ALBUMS_DIR, ALLOW_INDEXING, BASE_PATH, SITE, SITE_URL } from '../src/li
 import { loadAlbums, siteLoadOptions } from '../src/lib/content/index.ts';
 import { findSourceCopies, listFiles, relativePosix } from '../src/lib/build-checks/files.ts';
 import { readCredit } from '../src/lib/authoring/exif-block.ts';
-import { creditProblem, viewerImageCredits } from '../src/lib/build-checks/credits.ts';
+import { creditProblem, exifTiffOfImage, unexpectedExifrTags, viewerImageCredits } from '../src/lib/build-checks/credits.ts';
 import { scanImageMetadata } from '../src/lib/build-checks/image-metadata.ts';
 import type { Credit } from '../src/lib/credit/credit.ts';
-import { webpExif } from '../src/lib/credit/webp-exif.ts';
 import { dimensionProblem, extractImageClaims, type ImageClaim } from '../src/lib/build-checks/image-claims.ts';
 import { absoluteUrlProblem, extractCssReferences, extractHtmlReferences, metaProperties, resolveReference, sitePathOf, type Reference } from '../src/lib/build-checks/links.ts';
 import { extractScripts, JS_BUDGET_GZIP_BYTES, kilobytes, pageProblems, previewImageSizeProblem, previewProblems, scriptBudgetProblem } from '../src/lib/build-checks/page-rules.ts';
@@ -59,7 +58,7 @@ interface Failure {
   message: string;
 }
 
-/** The credit each viewer image must carry (absolute dist/ path → credit, undefined for none). */
+/** The credit each viewer image and download must carry (absolute dist/ path → credit, undefined for none). */
 async function expectedCredits(files: readonly string[]): Promise<Map<string, Credit | undefined>> {
   const credits = new Map<string, Credit | undefined>();
   for (const file of files) {
@@ -90,19 +89,21 @@ async function checkImageMetadata(
   for (const file of images) {
     const bytes = await readFile(file);
     const { blocks } = scanImageMetadata(bytes);
-    // exifr cannot read WebP (every derivative); for other formats it also catches tags in
-    // blocks the structural scan does not know. Credited images are always WebP.
+    const expected = credits.get(file);
+    // exifr cannot read WebP (most derivatives); for other formats it also catches tags in
+    // blocks the structural scan does not know. A credited download (JPEG) may hold the
+    // credit's two tags; creditProblem checks their values.
     const extra: string[] = [];
     if (EXIFR_PATTERN.test(file)) {
       const parsed = await exifr
         .parse(bytes, { tiff: true, exif: true, gps: true, xmp: true, iptc: true, icc: false, jfif: false, ihdr: false })
         .catch(() => undefined);
-      if (parsed && Object.keys(parsed).length > 0) extra.push('EXIF/XMP/IPTC tags (exifr)');
+      const tags = unexpectedExifrTags(parsed ? Object.keys(parsed) : [], expected !== undefined);
+      if (tags.length > 0) extra.push(`EXIF/XMP/IPTC tags (exifr: ${tags.join(', ')})`);
       const gps = await exifr.gps(bytes).catch(() => undefined);
       if (gps) extra.push('GPS position');
     }
-    const expected = credits.get(file);
-    const tiff = blocks.includes('EXIF') ? webpExif(bytes) : undefined;
+    const tiff = blocks.includes('EXIF') ? exifTiffOfImage(bytes) : undefined;
     const problem =
       extra.length > 0
         ? `contains metadata: ${[...blocks, ...extra].join(', ')}`

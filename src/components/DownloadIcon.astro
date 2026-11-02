@@ -1,0 +1,25 @@
+---
+/** A download arrow into a tray, drawn at 1.75px stroke like CloseIcon. Decorative: the link carries the name. */
+interface Props {
+  size?: number;
+}
+const { size = 16 } = Astro.props;
+---
+
+<svg class="download-icon" width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+  <path d="M8 2.25v7.5M4.75 6.75 8 10l3.25-3.25M2.75 11v1.25c0 .83.67 1.5 1.5 1.5h7.5c.83 0 1.5-.67 1.5-1.5V11"></path>
+</svg>
+
+<style>
+  .download-icon {
+    flex: none;
+    display: block;
+  }
+  path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+</style>

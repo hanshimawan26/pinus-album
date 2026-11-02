@@ -14,27 +14,35 @@
 import { loadingHint } from '../lib/image-sizes.ts';
 import PhotographerFilter from './PhotographerFilter.astro';
 import PostViewer from './PostViewer.astro';
-import { thumbnailFor, viewerImageFor } from '../lib/images.ts';
+import { downloadImageFor, thumbnailFor, viewerImageFor } from '../lib/images.ts';
 import { photographerChips } from '../lib/photographer-filter.ts';
 import { jsonForScript } from '../lib/presentation.ts';
-import { viewerPhoto, type GridPhoto, type ViewerData } from '../lib/viewer-data.ts';
+import { downloadFileName, viewerPhoto, type GridPhoto, type ViewerData } from '../lib/viewer-data.ts';
 
 interface Props {
   /** In display order, with each photo's deep-link slug on this page. */
   photos: readonly GridPhoto[];
   /** "Day 1 · Demo Event A", shown in the viewer's details panel. */
   context: string;
+  /** The album's slug path (`['pinus-ori', 'day-1']`): the start of each download's file name. */
+  albumPath: readonly string[];
   /** True when the grid starts in the first viewport, so the first row loads eagerly. */
   nearTop: boolean;
 }
 
-const { photos, context, nearTop } = Astro.props;
+const { photos, context, albumPath, nearTop } = Astro.props;
 const tiles = await Promise.all(
-  photos.map(async ({ photo, ...placement }) => ({ photo, placement, thumbnail: await thumbnailFor(photo), viewer: await viewerImageFor(photo) })),
+  photos.map(async ({ photo, ...placement }) => ({
+    photo,
+    placement,
+    thumbnail: await thumbnailFor(photo),
+    viewer: await viewerImageFor(photo),
+    download: { ...(await downloadImageFor(photo)), fileName: downloadFileName(albumPath, placement.slug) },
+  })),
 );
 const viewerData: ViewerData = {
   context,
-  photos: tiles.map(({ photo, placement, viewer }) => viewerPhoto(photo, viewer, placement)),
+  photos: tiles.map(({ photo, placement, viewer, download }) => viewerPhoto(photo, viewer, download, placement)),
 };
 const chips = photographerChips(photos.map(({ photo }) => photo));
 // The first row of the widest layout (5 tiles) loads eagerly with high priority: the tiles

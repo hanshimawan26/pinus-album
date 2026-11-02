@@ -4,6 +4,7 @@ import { jsonForScript } from '../../src/lib/presentation.ts';
 import type { ViewerData } from '../../src/lib/viewer-data.ts';
 
 const image = { src: '/a/1.webp', srcset: '/a/1.webp 800w', sizes: '100vw', width: 800, height: 533 };
+const download = { src: '/a/1.jpg', width: 2400, height: 1600, fileName: 'demo-event-a-1.jpg' };
 
 const valid: ViewerData = {
   context: 'Day 1 · Demo Event A',
@@ -11,6 +12,7 @@ const valid: ViewerData = {
     {
       slug: 'alice-demo-img-0001',
       image,
+      download,
       alt: 'Opening',
       caption: 'Line one\nline two 🎉 <b>not html</b>',
       photographer: {
@@ -19,7 +21,7 @@ const valid: ViewerData = {
       },
       date: { label: '20 Sep 2026', iso: '2026-09-20' },
     },
-    { slug: 'img-20260815-wa0003', image, alt: 'Photo from Demo Event B' },
+    { slug: 'img-20260815-wa0003', image, download, alt: 'Photo from Demo Event B' },
   ],
 };
 
@@ -44,6 +46,10 @@ describe('parseViewerData', () => {
     const noSize = structuredClone(valid);
     (noSize.photos[0] as { image: { width: number } }).image.width = 0;
     expect(parseViewerData(JSON.stringify(noSize))).toBeNull();
+
+    const noDownload = structuredClone(valid) as unknown as { photos: Array<Record<string, unknown>> };
+    delete noDownload.photos[1]?.download;
+    expect(parseViewerData(JSON.stringify(noDownload))).toBeNull();
 
     const emptyCaption = structuredClone(valid);
     (emptyCaption.photos[0] as { caption: string }).caption = '';

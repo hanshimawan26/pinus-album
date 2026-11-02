@@ -274,7 +274,7 @@ Mobile (portrait):
 
 ```
 ┌──────────────────────┐
-│ 📷 Andi Pratama    ✕ │   camera outline = "photo by"
+│ 📷 Andi Pratama  ⤓ ✕ │   camera outline = "photo by"; ⤓ download
 │    20 Sep 2026       │
 ├──────────────────────┤
 │                      │   black area fills the screen height
@@ -287,7 +287,7 @@ Mobile (portrait):
 └──────────────────────┘
 ```
 
-Desktop (≥ 900 px): photo on the left on a black background, details panel (about 340 px) on the right with the same header and caption, plus prev/next arrows over the photo.
+Desktop (≥ 900 px): photo on the left on a black background, details panel (about 340 px) on the right with the same header (download and ✕ included) and caption, plus prev/next arrows over the photo.
 
 ```
 ┌────────────────────────────────────────┬─────────────────┐
@@ -305,11 +305,12 @@ Behaviour:
 - Counter "n / total".
 - Preloads the next and previous images.
 - Photographer line: a camera outline icon plus the name (read as "Photo by Name"), so the name is not mistaken for someone pictured. If the photographer has an `instagram` handle, the name links to it (opens in a new tab with `rel="noopener noreferrer"`).
+- **Download:** a download button in the header, next to ✕ (like Google Drive's viewer), saves the photo as a JPEG at the download size (§7: long edge up to 2400 px). A credited photo's download carries the same credit as its viewer image (the `© Name` watermark and EXIF Artist/Copyright, nothing else). The file is named after the album path and the photo slug, e.g. `pinus-ori-day-1-img-0012.jpg`, the same from the album page and the "All photos" page.
 - On touch phones the prev/next buttons are hidden visually (swipe instead) but remain available to screen readers and keyboards.
 - Caption area is **not rendered** when there is no caption. Photographer or date rows are not rendered when absent.
 - **Deep links:** opening a photo updates the URL hash to `#<photo-slug>` (replace state while navigating). Loading a URL with a valid hash opens the viewer on that photo. An invalid hash is ignored.
 - Focus is trapped inside the viewer while open, and returns to the originating tile on close.
-- **P2:** share button (Web Share API / copy link). Download is deliberately not offered in the POC.
+- **P2:** share button (Web Share API / copy link).
 
 ### 6.6 Accessibility (P0)
 
@@ -323,12 +324,13 @@ Semantic landmarks, real `alt` text (§4.6), visible focus rings, `role="dialog"
 - **Build outputs:**
   - Grid thumbnail: square crop, about 480 px, WebP.
   - Viewer image: responsive `srcset` at 800 / 1200 / 1600 / 2000 px, WebP.
+  - Download (§6.5): the whole photo as a JPEG, long edge ≤ 2400 px (the web-ready master size, so a prepped photo downloads at its own size), quality 85. JPEG because every phone and computer opens it.
 - **Orientation:** honour EXIF orientation. Portrait phone photos must display upright in the grid and the viewer.
 - **Privacy:** published derivatives must contain **no EXIF or GPS data**. EXIF is read at build time only. Add a test that verifies this.
 - **P1:** low-quality placeholder (dominant colour or tiny blur) behind each image while it loads.
 - **Build time:** cache Astro's image cache in CI (`node_modules/.astro`) so rebuilds stay fast. Target ≤ 5 minutes cold for 500 photos.
 - **Git LFS: not allowed.** GitHub Pages does not serve LFS objects.
-- **Size limits to document in the README:** GitHub recommends repos under about 1 GB, and a Pages site is limited to 1 GB. At about 0.7 MB per photo, 1,500 photos is roughly 1 GB, so this design has headroom for the POC but not unlimited growth. The README should note Cloudflare Pages or R2 as the escape hatch.
+- **Size limits to document in the README:** GitHub recommends repos under about 1 GB, and a Pages site is limited to 1 GB. At about 0.7 MB per photo, 1,500 photos is roughly 1 GB, so this design has headroom for the POC but not unlimited growth. The published site holds about 0.85 MB per photo (about half of it the download JPEG), so it reaches the 1 GB Pages limit at roughly 1,200 photos. The README should note Cloudflare Pages or R2 as the escape hatch.
 
 ---
 
@@ -445,7 +447,7 @@ Work in this order. Each milestone ends with a commit and a short note on how to
 
 **P1 backlog (after the above):** "view all photos" aggregate grid, photographer filter chips, IPTC/XMP caption and photographer fallback, low-quality image placeholders, dark mode, Open Graph tags (cover image per album), Playwright E2E.
 
-**Status (13 Oct 2026):** P0 milestones 1–6 are done. Done from P1: "view all photos", photographer filter chips, dark mode, Open Graph tags, Playwright E2E, and the IPTC/XMP caption and photographer fallback (`embedded` sources). Added after the POC: the home page landing blocks (§6.2) and the photographer credit on saved viewer images. Open: low-quality image placeholders.
+**Status (13 Oct 2026):** P0 milestones 1–6 are done. Done from P1: "view all photos", photographer filter chips, dark mode, Open Graph tags, Playwright E2E, and the IPTC/XMP caption and photographer fallback (`embedded` sources). Added after the POC: the home page landing blocks (§6.2), the photographer credit on saved viewer images, and the viewer's download button (§6.5). Open: low-quality image placeholders.
 
 ---
 
