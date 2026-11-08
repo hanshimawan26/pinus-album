@@ -76,7 +76,8 @@ const { chips, total } = Astro.props;
   .chip {
     flex: none;
     display: inline-flex;
-    align-items: baseline;
+    /* Centres the text in the chip's min-height; name and count stay on one baseline as they are the same size. */
+    align-items: center;
     gap: 0.4em;
     min-height: 2.25rem;
     padding: var(--space-1) var(--space-3);
