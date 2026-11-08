@@ -106,7 +106,6 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --duration-fast: 160ms;
   --duration-slow: 480ms;
-  --duration-settle: 220ms; /* a swiped viewer photo springing back (gestures.ts) */
 
   color-scheme: light;
   accent-color: var(--brand-blue);

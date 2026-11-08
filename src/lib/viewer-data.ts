@@ -13,7 +13,6 @@ import type { Photo } from './content/types.ts';
 export interface ViewerImage {
   src: string;
   srcset: string;
-  sizes: string;
   /** Pixel size of `src`; its aspect ratio is the photo's upright aspect ratio. */
   width: number;
   height: number;

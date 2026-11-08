@@ -1,7 +1,8 @@
 /**
  * The post viewer's behaviour (TRD §6.5, §6.6): opening from a tile or a deep link,
- * navigation (buttons, ← / → keys, swipe), closing (✕, Esc, backdrop, browser Back), the URL
- * hash, focus and the caption's "more".
+ * navigation (buttons, ← / → keys, gestures), closing (✕, Esc, backdrop, browser Back, swiping
+ * the photo away), the URL hash, focus and the caption's "more". The photos themselves and
+ * every gesture on them are `PhotoStage`'s.
  *
  * The history rules are pure functions in `history.ts`; this class carries them out.
  *
@@ -17,12 +18,12 @@
 import type { ViewerData, ViewerPhoto } from '../../lib/viewer-data.ts';
 import { focusableIn, isRendered, setShown, type ViewerElements } from './dom.ts';
 import { wrapFocus } from './focus-order.ts';
-import { attachSwipe } from './gestures.ts';
 import { indexForHash, withHash, withoutHash } from './hash.ts';
 import { closeAction, loadAction, markedState, syncAction } from './history.ts';
-import { PhotoDisplay, Preloader } from './image.ts';
-import { clampIndex, hasNext, hasPrevious, neighbours, photoLabel, step } from './navigation.ts';
+import { clampIndex, photoLabel, step } from './navigation.ts';
+import { PhotoStage } from './photo-stage.ts';
 import { lockScroll, unlockScroll } from './scroll-lock.ts';
+import { slideFor, type Slide } from './slides.ts';
 import { renderPhoto } from './view.ts';
 
 /** A fragment that names an element on the page (the skip link's `#main`) is not a photo. */
@@ -36,8 +37,7 @@ export class PostViewer {
   #sequence: number[];
   /** Slugs of the photos in `#sequence`, in the same order. */
   #slugs: string[];
-  readonly #display: PhotoDisplay;
-  readonly #preloader = new Preloader();
+  readonly #photos: PhotoStage;
 
   /** Position of the shown photo in `#sequence`. */
   #position = 0;
@@ -56,7 +56,10 @@ export class PostViewer {
     this.#tiles = tiles;
     this.#sequence = data.photos.map((_, index) => index);
     this.#slugs = data.photos.map((photo) => photo.slug);
-    this.#display = new PhotoDisplay(elements.stage, elements.image, elements.error);
+    this.#photos = new PhotoStage(elements.dialog, elements.stage, elements.error, {
+      onMove: (position) => this.#moveTo(position),
+      onDismissed: () => this.close(),
+    });
     this.#bindEvents();
   }
 
@@ -109,9 +112,14 @@ export class PostViewer {
   /** Moves `delta` photos forward or back; does nothing past either end. */
   go(delta: number): void {
     const target = step(this.#position, delta, this.#total);
-    if (target === null || target === this.#position || !this.isOpen) return;
-    this.#showAndAnnounce(target);
-    history.replaceState(history.state, '', withHash(location.href, this.#slugs[target] ?? ''));
+    if (target !== null) this.#moveTo(target);
+  }
+
+  /** Moves to another photo while open: the buttons, keys and gestures all end up here. */
+  #moveTo(position: number): void {
+    if (position === this.#position || !this.isOpen) return;
+    this.#showAndAnnounce(position);
+    history.replaceState(history.state, '', withHash(location.href, this.#slugs[position] ?? ''));
   }
 
   close(): void {
@@ -133,11 +141,19 @@ export class PostViewer {
     this.#tileToReveal = null;
     lockScroll();
     dialog.showModal();
+    this.#photos.open(this.#slides(), this.#position);
     close.focus();
     this.#updateMore();
     window.addEventListener('resize', this.#onResize);
     // On the document, not the dialog: keys keep working even if focus ever lands on <body>.
     document.addEventListener('keydown', this.#onKeydown);
+  }
+
+  #slides(): Slide[] {
+    return this.#sequence.flatMap((index) => {
+      const photo = this.#data.photos[index];
+      return photo ? [slideFor(photo)] : [];
+    });
   }
 
   /** Every move to another photo while open (keys, buttons, swipe, Back/Forward) is announced. */
@@ -153,17 +169,14 @@ export class PostViewer {
     this.#keepingFocus(() => {
       this.#position = position;
       renderPhoto(this.#elements, photo, { index: position, total: this.#total }, photo.context ?? this.#data.context);
-      this.#display.show(photo.image, photo.alt);
+      this.#photos.show(position, photo.image.width, photo.image.height);
       this.#setCaptionExpanded(false);
     });
-    for (const neighbour of neighbours(position, this.#total)) {
-      const next = this.#photoAt(neighbour);
-      if (next) this.#preloader.preload(next.image);
-    }
   }
 
   /** The dialog has closed, by any route (✕, Esc, backdrop, Back). */
   #handleClose = (): void => {
+    this.#photos.close();
     window.removeEventListener('resize', this.#onResize);
     document.removeEventListener('keydown', this.#onKeydown);
     unlockScroll();
@@ -292,14 +305,14 @@ export class PostViewer {
   // -------------------------------------------------------------------------------------
 
   #bindEvents(): void {
-    const { dialog, close, previous, next, more, retry, stage, image } = this.#elements;
+    const { dialog, close, previous, next, more, retry } = this.#elements;
 
     dialog.addEventListener('close', this.#handleClose);
     close.addEventListener('click', () => this.close());
     previous.addEventListener('click', () => this.go(-1));
     next.addEventListener('click', () => this.go(1));
     more.addEventListener('click', () => this.#setCaptionExpanded(!this.#captionExpanded));
-    retry.addEventListener('click', () => this.#keepingFocus(() => this.#display.retry()));
+    retry.addEventListener('click', () => this.#keepingFocus(() => this.#photos.retry()));
 
     // Backdrop: the dialog element itself is only hit outside the frame. Both the press and
     // the release must be there: a click whose press and release land on different elements
@@ -315,11 +328,6 @@ export class PostViewer {
       if (event.target === dialog && this.#pressedOnBackdrop && this.#releasedOnBackdrop) this.close();
       this.#pressedOnBackdrop = false;
       this.#releasedOnBackdrop = false;
-    });
-
-    attachSwipe(stage, image, {
-      ends: () => ({ hasPrevious: hasPrevious(this.#position), hasNext: hasNext(this.#position, this.#total) }),
-      onSwipe: (direction) => this.go(direction === 'next' ? 1 : -1),
     });
 
     window.addEventListener('popstate', this.#syncWithLocation);

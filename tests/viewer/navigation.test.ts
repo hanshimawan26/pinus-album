@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampIndex, counterLabel, hasNext, hasPrevious, neighbours, photoLabel, showsCounter, step } from '../../src/scripts/viewer/navigation.ts';
+import { clampIndex, counterLabel, hasNext, hasPrevious, photoLabel, showsCounter, step } from '../../src/scripts/viewer/navigation.ts';
 
 describe('clampIndex', () => {
   it('keeps an index inside the list', () => {
@@ -29,19 +29,12 @@ describe('step', () => {
   });
 });
 
-describe('ends and neighbours', () => {
+describe('ends', () => {
   it('knows when there is a previous or next photo', () => {
     expect([hasPrevious(0), hasNext(0, 3)]).toEqual([false, true]);
     expect([hasPrevious(1), hasNext(1, 3)]).toEqual([true, true]);
     expect([hasPrevious(2), hasNext(2, 3)]).toEqual([true, false]);
     expect([hasPrevious(0), hasNext(0, 1)]).toEqual([false, false]);
-  });
-
-  it('lists the photos to preload, next first', () => {
-    expect(neighbours(2, 5)).toEqual([3, 1]);
-    expect(neighbours(0, 5)).toEqual([1]);
-    expect(neighbours(4, 5)).toEqual([3]);
-    expect(neighbours(0, 1)).toEqual([]);
   });
 });
 

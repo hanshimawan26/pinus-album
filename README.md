@@ -804,7 +804,7 @@ npm run test:e2e
 - **Browser tests** (`npm run test:e2e`) build the site for `/pinus-album/`, serve it with
   `astro preview` on port 4460 (change with `E2E_PORT`) and drive Google Chrome at phone
   (360 px, touch) and desktop (1280 px) sizes. They cover the acceptance checklist: opening a
-  photo, absent rows, keys, swipe, Esc/✕/Back/backdrop, focus return, deep links, invalid
+  photo, absent rows, keys, swipe, zoom, swipe to close, Esc/✕/Back/backdrop, focus return, deep links, invalid
   hashes, breadcrumbs, orientation, no horizontal scroll at 360/768/1280 px, robots and the
   takedown line, the "All photos" page, the photographer filter and the link preview tags. They use the demo albums and skip themselves when those are deleted. On CI
   (`CI` set) they use Playwright's bundled Chromium instead of Chrome. Without Chrome on your

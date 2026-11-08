@@ -118,10 +118,12 @@ src/
   scripts/viewer/    the post viewer and the photographer filter (client TS, bundled by Astro,
                      shipped only with PhotoGrid):
                      PURE navigation.ts, hash.ts, history.ts (history rules), rows.ts (which
-                     rows a photo fills), swipe.ts, focus-order.ts, data.ts, filter.ts
-                     (unit-tested); DOM dom.ts, view.ts, image.ts, gestures.ts, scroll-lock.ts,
-                     chips.ts (filter chips); controller.ts (state, history, focus; moves
-                     through the photos the filter left); index.ts (entry, used by PostViewer.astro)
+                     rows a photo fills), slides.ts (photo → PhotoSwipe slide), focus-order.ts,
+                     data.ts, filter.ts (unit-tested); DOM dom.ts, view.ts, scroll-lock.ts,
+                     chips.ts (filter chips); photo-stage.ts (PhotoSwipe in the photo area: every
+                     gesture on the photos, their loading); controller.ts (state, history,
+                     focus; moves through the photos the filter left); index.ts (entry, used by
+                     PostViewer.astro)
   scripts/selection/ selecting several photos and downloading them (TRD §6.4.1), started from
                      viewer/index.ts: PURE state.ts, drag.ts (long-press and edge-scroll
                      numbers), delivery.ts (file, files, ZIP or share sheet), bar-view.ts, zip.ts
@@ -146,10 +148,11 @@ e2e/                 Playwright specs (viewer, navigation, landing, site-wide ru
 - **Absent data disappears.** Never render "Unknown" or an empty row (TRD §4.6, §6.5). In
   the viewer, rows without data get the `hidden` attribute (a global rule makes `[hidden]`
   win over component `display`), and user text is set with `textContent`, never `innerHTML`.
-- **Viewer JS budget:** ≤ 60 KB gzipped (TRD §11); it is about 9 KB (viewer, filter chips, selection and ZIP). No viewer library.
+- **Viewer JS budget:** ≤ 60 KB gzipped (TRD §11); it is about 25 KB (PhotoSwipe 16 KB; viewer, filter chips, selection and ZIP 9 KB).
+  PhotoSwipe is the one viewer library, and only `photo-stage.ts` imports it: it handles the
+  photos and gestures inside the photo area, everything else in the viewer stays ours.
   Decisions the viewer makes (history, which rows show) go in its pure modules, not in
-  `controller.ts`/`view.ts`, so they are unit-tested. `VIEWER_LAYOUT` in `image-sizes.ts`
-  mirrors the viewer's CSS widths (a test reads the CSS to keep them in step).
+  `controller.ts`/`view.ts`, so they are unit-tested.
 - **Links:** never hard-code a leading `/`; use `withBase()` / `albumUrl()`. Link preview tags
   (BaseLayout) are the one place with absolute URLs, built from `Astro.site` (= `SITE_URL`).
   A section may not have the slug `all` (`ALL_PHOTOS_SLUG`): that is its parent's All photos page.

@@ -31,7 +31,6 @@ import {
   previewImageSize,
   thumbnailWidth,
   thumbnailWidths,
-  VIEWER_SIZES,
   viewerFallbackWidth,
   viewerWidths,
   widthsFor,
@@ -87,9 +86,10 @@ export async function thumbnailFor(photo: Photo, sizes: string): Promise<Respons
  * Viewer image: srcset 800/1200/1600/2000 px WebP, never wider than the source (TRD §7).
  * Credited photos carry the photographer's name: a `© Name` watermark in the bottom-right
  * corner and EXIF Artist/Copyright (image-service.ts), so a saved copy keeps the credit.
- * The home page's spotlight uses the same files with its own `sizes`.
+ * The home page's spotlight uses the same files. There is no `sizes`: PhotoSwipe sets it
+ * from the size a photo is drawn at, so a zoomed photo gets a larger file.
  */
-export async function viewerImageFor(photo: Photo, sizes: string = VIEWER_SIZES): Promise<ViewerImage> {
+export async function viewerImageFor(photo: Photo): Promise<ViewerImage> {
   const widths = viewerWidths(photo.width);
   const width = viewerFallbackWidth(widths);
   const height = Math.round((width * photo.height) / photo.width);
@@ -98,7 +98,7 @@ export async function viewerImageFor(photo: Photo, sizes: string = VIEWER_SIZES)
   // fit inside that box and come out 1 px narrower than its `w` descriptor.
   const credit = photo.photographer?.name;
   const image = await getImage({ src: sourceOf(photo), width, height, widths, fit: 'cover', format: OUTPUT_FORMAT, credit });
-  return { src: image.src, srcset: image.srcSet.attribute, sizes, width, height };
+  return { src: image.src, srcset: image.srcSet.attribute, width, height };
 }
 
 /**

@@ -3,7 +3,7 @@ import { isInstagramUrl, parseViewerData } from '../../src/scripts/viewer/data.t
 import { jsonForScript } from '../../src/lib/presentation.ts';
 import type { ViewerData } from '../../src/lib/viewer-data.ts';
 
-const image = { src: '/a/1.webp', srcset: '/a/1.webp 800w', sizes: '100vw', width: 800, height: 533 };
+const image = { src: '/a/1.webp', srcset: '/a/1.webp 800w', width: 800, height: 533 };
 const download = { src: '/a/1.jpg', width: 2400, height: 1600, fileName: 'demo-event-a-1.jpg' };
 
 const valid: ViewerData = {

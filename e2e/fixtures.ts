@@ -60,7 +60,9 @@ export function viewer(page: Page) {
     captionBlock: dialog.locator('[data-caption-block]'),
     caption: dialog.locator('[data-caption]'),
     counter: dialog.locator('[data-counter]'),
-    photo: dialog.locator('[data-stage] img'),
+    stage: dialog.locator('[data-stage]'),
+    /** The photo on show (PhotoSwipe keeps the neighbouring photos ready beside it). */
+    photo: dialog.locator('[data-stage] .pswp__item[aria-hidden="false"] img.pswp__img'),
     download: dialog.getByRole('link', { name: 'Download photo' }),
     close: dialog.getByRole('button', { name: 'Close' }),
     next: dialog.getByRole('button', { name: 'Next photo' }),
@@ -99,21 +101,47 @@ export function horizontalOverflow(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 }
 
+type Finger = { x: number; y: number };
+
+const TOUCH_STEPS = 8;
+
 /**
- * A real touch swipe (Chrome DevTools Protocol touch events, which the browser turns into
- * pointer events). `dx` < 0 swipes left (next photo).
+ * A real touch gesture (Chrome DevTools Protocol touch events, which the browser turns into
+ * pointer events): every finger goes in a straight line from `from` to `to`.
  */
-export async function swipe(page: Page, target: Locator, dx: number): Promise<void> {
-  const box = await target.boundingBox();
-  if (!box) throw new Error('swipe target is not visible');
-  const y = box.y + box.height / 2;
-  const startX = box.x + box.width / 2 - dx / 2;
+async function touchGesture(page: Page, fingers: ReadonlyArray<{ from: Finger; to: Finger }>): Promise<void> {
   const session = await page.context().newCDPSession(page);
-  const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', x: number) =>
-    session.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
-  await touch('touchStart', startX);
-  const steps = 8;
-  for (let step = 1; step <= steps; step++) await touch('touchMove', startX + (dx * step) / steps);
-  await touch('touchEnd', startX + dx);
+  const at = (step: number) =>
+    fingers.map(({ from, to }, id) => ({
+      id,
+      x: from.x + ((to.x - from.x) * step) / TOUCH_STEPS,
+      y: from.y + ((to.y - from.y) * step) / TOUCH_STEPS,
+    }));
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: at(0) });
+  for (let step = 1; step <= TOUCH_STEPS; step++) {
+    await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: at(step) });
+  }
+  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await session.detach();
+}
+
+async function middleOf(target: Locator): Promise<Finger> {
+  const box = await target.boundingBox();
+  if (!box) throw new Error('touch target is not visible');
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+/** A one-finger drag through the middle of `target`. `dx` < 0 swipes left (next photo). */
+export async function swipe(page: Page, target: Locator, dx: number, dy = 0): Promise<void> {
+  const { x, y } = await middleOf(target);
+  await touchGesture(page, [{ from: { x: x - dx / 2, y: y - dy / 2 }, to: { x: x + dx / 2, y: y + dy / 2 } }]);
+}
+
+/** Two fingers moving apart sideways in the middle of `target`, from 60 px to `spread` px apart. */
+export async function pinchOut(page: Page, target: Locator, spread: number): Promise<void> {
+  const { x, y } = await middleOf(target);
+  await touchGesture(page, [
+    { from: { x: x - 30, y }, to: { x: x - spread / 2, y } },
+    { from: { x: x + 30, y }, to: { x: x + spread / 2, y } },
+  ]);
 }

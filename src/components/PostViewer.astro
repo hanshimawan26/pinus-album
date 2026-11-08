@@ -17,10 +17,11 @@
  * under a readable file name; the script sets its `href` and `download` for each photo.
  *
  * Every row that has no data gets the `hidden` attribute, so it is not rendered at all.
- * The photo's `<img>` and the photographer's Instagram link are created by the script (an
- * `<img>` needs a `src`, and a link exists only when there is an Instagram handle), so the
- * photo's styles below are `:global(.photo)` inside the scoped `.stage`.
+ * The photographer's Instagram link is created by the script (it exists only when there is an
+ * Instagram handle). The photos are PhotoSwipe's, mounted in the stage by the script, so
+ * their styles below are `:global(.pswp…)` inside the scoped `.stage`.
  */
+import 'photoswipe/style.css';
 import CameraIcon from './CameraIcon.astro';
 import ChevronIcon from './ChevronIcon.astro';
 import CloseIcon from './CloseIcon.astro';
@@ -230,43 +231,30 @@ import DownloadIcon from './DownloadIcon.astro';
     background: var(--color-viewer-bg);
     color: var(--color-viewer-text);
     overflow: hidden;
-    /* Horizontal moves reach the swipe handler; vertical scrolling and zoom stay native. */
-    touch-action: pan-y pinch-zoom;
   }
 
-  /* Out of flow and pinned to the stage's box, so the photo is always bounded by it: a
-     grid or flex item would grow to the image's own height and be cropped by the stage. */
-  .stage :global(.photo) {
+  /* PhotoSwipe is built to fill the window: here it fills the stage, below the stage's own
+     controls. The stage is the black behind it, so its background layer is not needed. */
+  .stage :global(.pswp) {
+    --pswp-root-z-index: 0;
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    max-width: none;
-    object-fit: contain;
-    user-select: none;
-    -webkit-user-drag: none;
     -webkit-touch-callout: none;
-    transition: opacity var(--duration-fast) var(--ease-out);
   }
 
-  .stage :global(.photo.is-pending) {
-    opacity: 0;
-    transition: none;
+  .stage :global(.pswp__bg),
+  .stage :global(.pswp__top-bar),
+  .stage :global(.pswp__error-msg-container) {
+    display: none;
   }
 
-  .stage :global(.photo.is-settling) {
-    transition:
-      transform var(--duration-settle) var(--ease-out),
-      opacity var(--duration-fast) var(--ease-out);
-  }
-
-  .stage[data-state='error'] :global(.photo) {
-    visibility: hidden;
+  .stage :global(.pswp__img) {
+    animation: viewer-appear var(--duration-fast) var(--ease-out);
   }
 
   /* A slow photo: a quiet ring appears after 300ms (a fast one never shows it). */
   .spinner {
     grid-area: 1 / 1;
+    z-index: 1;
     width: 2rem;
     height: 2rem;
     border: 2px solid var(--color-viewer-control-edge);
@@ -299,6 +287,7 @@ import DownloadIcon from './DownloadIcon.astro';
 
   .stage-error {
     grid-area: 1 / 1;
+    z-index: 1;
     display: grid;
     justify-items: center;
     gap: var(--space-3);
@@ -431,6 +420,61 @@ import DownloadIcon from './DownloadIcon.astro';
     color: var(--color-text-muted);
     font-size: var(--text-sm);
     font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Swiping the photo away ---------- */
+
+  /* While the photo is dragged, everything else fades (`--viewer-fade`, set by the script)
+     until the album shows through. The drag is a finger's, so nothing transitions... */
+  .viewer[data-dismissing] .frame {
+    background: color-mix(in srgb, var(--color-bg) calc(var(--viewer-fade) * 100%), transparent);
+  }
+
+  .viewer[data-dismissing] .stage {
+    background: color-mix(in srgb, var(--color-viewer-bg) calc(var(--viewer-fade) * 100%), transparent);
+  }
+
+  /* The text is gone by halfway, before it can be read over the album's own text. */
+  .viewer[data-dismissing] .head,
+  .viewer[data-dismissing] .details,
+  .viewer[data-dismissing] .counter {
+    opacity: calc(var(--viewer-fade) * 2 - 1);
+  }
+
+  .viewer[data-dismissing]::backdrop {
+    opacity: var(--viewer-fade);
+    transition: none;
+  }
+
+  /* ...and the photo may leave the stage upwards and downwards, over the details (the
+     neighbouring photos stay out of sight at the sides). */
+  .viewer[data-dismissing] .frame,
+  .viewer[data-dismissing] .stage,
+  .viewer[data-dismissing] :global(.pswp__scroll-wrap),
+  .viewer[data-dismissing] :global(.pswp__item) {
+    overflow: visible;
+  }
+
+  .viewer[data-dismissing] .stage {
+    z-index: 1;
+  }
+
+  .viewer[data-dismissing] .stage :global(.pswp) {
+    overflow: visible;
+    clip-path: inset(-100vmax 0);
+  }
+
+  /* Let go far enough: the rest fades out with the photo. */
+  .viewer[data-closing] .frame,
+  .viewer[data-closing] .stage {
+    transition: background-color var(--duration-fast) var(--ease-out);
+  }
+
+  .viewer[data-closing] .head,
+  .viewer[data-closing] .details,
+  .viewer[data-closing] .counter,
+  .viewer[data-closing]::backdrop {
+    transition: opacity var(--duration-fast) var(--ease-out);
   }
 
   /* ---------- 600–899px: a centred column on the dark backdrop ---------- */

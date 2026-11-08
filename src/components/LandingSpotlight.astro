@@ -8,13 +8,14 @@
 import type { PlacedPhoto } from '../lib/landing.ts';
 import { formatDate } from '../lib/dates.ts';
 import { albumUrl } from '../lib/url.ts';
-import { viewerContext, type ViewerImage } from '../lib/viewer-data.ts';
+import type { ResponsiveImage } from '../lib/images.ts';
+import { viewerContext } from '../lib/viewer-data.ts';
 import Eyebrow from './Eyebrow.astro';
 import PhotoCredit from './PhotoCredit.astro';
 
 interface Props {
   spotlight: PlacedPhoto;
-  image: ViewerImage;
+  image: ResponsiveImage;
 }
 
 const { spotlight, image } = Astro.props;

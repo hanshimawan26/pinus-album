@@ -23,7 +23,7 @@ describe('extractImageClaims', () => {
   });
 
   it('reads the viewer JSON: a portrait photo claims portrait files', () => {
-    const data = { photos: [{ image: { src: '/b/v1.webp', srcset: '/b/v0.webp 800w, /b/v1.webp 1067w', sizes: '100vw', width: 1067, height: 1600 } }] };
+    const data = { photos: [{ image: { src: '/b/v1.webp', srcset: '/b/v0.webp 800w, /b/v1.webp 1067w', width: 1067, height: 1600 } }] };
     const html = `<script type="application/json" id="viewer-data">${JSON.stringify(data)}</script>`;
     expect(extractImageClaims(html)).toEqual([
       { source: 'json', url: '/b/v1.webp', width: 1067, height: 1600 },

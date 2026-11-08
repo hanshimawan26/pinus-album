@@ -18,7 +18,6 @@ export interface ViewerElements {
   download: HTMLAnchorElement;
   close: HTMLButtonElement;
   stage: HTMLElement;
-  image: HTMLImageElement;
   error: HTMLElement;
   retry: HTMLButtonElement;
   previous: HTMLButtonElement;
@@ -57,17 +56,9 @@ function createNameLink(): { link: HTMLAnchorElement; text: HTMLElement } {
 }
 
 /**
- * Finds every element of the viewer, and creates the ones that only make sense with data:
- * the photo's `<img>` (inside the stage) and the Instagram link (detached until needed).
+ * Finds every element of the viewer, and creates the Instagram link (detached until needed).
  */
 export function viewerElements(dialog: HTMLDialogElement): ViewerElements {
-  const stage = required(dialog, 'stage', HTMLElement);
-  const image = document.createElement('img');
-  image.className = 'photo';
-  image.alt = '';
-  image.decoding = 'async';
-  image.draggable = false;
-  stage.prepend(image);
   const nameLink = createNameLink();
 
   return {
@@ -82,8 +73,7 @@ export function viewerElements(dialog: HTMLDialogElement): ViewerElements {
     date: required(dialog, 'date', HTMLTimeElement),
     download: required(dialog, 'download', HTMLAnchorElement),
     close: required(dialog, 'close', HTMLButtonElement),
-    stage,
-    image,
+    stage: required(dialog, 'stage', HTMLElement),
     error: required(dialog, 'error', HTMLElement),
     retry: required(dialog, 'retry', HTMLButtonElement),
     previous: required(dialog, 'previous', HTMLButtonElement),

@@ -444,6 +444,7 @@ each section.
 
 ### Approach
 
+- *(Since changed: PhotoSwipe now runs inside the photo area, see "PhotoSwipe in the photo area".)*
 - **A custom `<dialog>` viewer in plain TypeScript, not PhotoSwipe** (TRD §3 allows either). The
   TRD's layout is an Instagram *post*: a header, the photo, the caption, a counter, and a details
   panel on desktop. PhotoSwipe is built around a full-bleed photo and would need most of that
@@ -568,6 +569,7 @@ each section.
   `overflow: hidden` cropped tall photos (a portrait lost about 45% at 1280×800). The browser
   check now asserts that the image box equals the photo area for every demo photo at five
   window sizes.
+- *(Since changed: PhotoSwipe sets `sizes` from the drawn size, and `VIEWER_SIZES` is gone.)*
 - **`sizes` follows the viewer's layout** (`VIEWER_SIZES`, built from `VIEWER_LAYOUT` in
   `image-sizes.ts`): `100vw` below 600 px, `576px` (the 36rem column) from 600 px,
   `calc(94vw - 340px)` from 900 px (the frame inset is `3vw` there) and a fixed `1260px` once
@@ -654,7 +656,7 @@ each section.
 ### Known limitations
 
 - Pinch-zoom inside the viewer is the browser's page zoom (allowed by `touch-action`). There is
-  no in-viewer zoom (not in the TRD).
+  no in-viewer zoom (not in the TRD). *(Since changed: see "PhotoSwipe in the photo area".)*
 - The close transition is instant, by choice. Animating a closing `<dialog>` needs
   `transition-behavior: allow-discrete`, and that is not supported by every browser the TRD
   targets.
@@ -1649,3 +1651,48 @@ circle at the top left on a computer). TRD §6.4.1 has the behaviour.
 - **Android's Back button does not end selecting; it leaves the page.** Ending it needs a history
   entry, which would interact with the viewer's history rules and scroll restoration. Left
   out for now.
+
+## After the POC — PhotoSwipe in the photo area
+
+**Why now.** Pinching in the viewer was the browser's page zoom. The photo area gave sideways
+drags to our swipe code (`touch-action: pan-y pinch-zoom`), and that code did not know the page
+was zoomed, so dragging a zoomed photo went to the next photo. A small fix could have stopped
+that, but page zoom also zooms the header and caption, never loads a sharper file, has no
+double tap, and the next photo could only pop in. The photo area needed real gestures, and
+writing pinch, momentum and multi-touch by hand is where a library earns its size.
+
+- **PhotoSwipe v5 inside the existing `<dialog>`, not instead of it.** The reason for not using
+  it at first still holds: it is built around a full-window photo, and the Instagram-style
+  header, caption and desktop panel would have had to be rebuilt on top of it. So it owns the
+  photos and gestures in the stage (`photo-stage.ts`, the only file that imports it), and
+  the dialog, details, URL hash, keys, focus and filter stay ours. Its own interface,
+  keyboard handling and focus trap are off.
+- **Size:** 16 KB gzipped on top of the 9 KB we had, about 25 KB of the 60 KB budget. It is a
+  static import, not loaded on first open: a first tap should not wait for the network.
+- **Version pinned** (5.4.4, `--save-exact`). The last release was in May 2024, and
+  `photo-stage.ts` relies on a few internals (next point), so an upgrade should be deliberate.
+- **What it takes to fit it in a box.** Its viewport is the stage's size
+  (`getViewportSizeFn`, followed by a `ResizeObserver`). Pointer positions are corrected by the
+  stage's place on the screen (`updateScrollOffset`, refreshed on each press because the phone
+  layout can scroll). `applyBgOpacity` is wrapped, as the one place every drag-away fade goes
+  through. Under reduced motion `startSpring` is replaced, because PhotoSwipe drops only its
+  zoom and open/close animations by itself.
+- **The viewer hears about a move when the slide starts, not when it lands.** PhotoSwipe's
+  `change` fires at the end of the slide. A caption of another length changes the stage's
+  height on phones, which is hidden during the slide but would make the photo jump after it.
+- **Swiping away closes in both directions and only when not zoomed**, which is PhotoSwipe's
+  behaviour. While dragged, the photo may leave the stage upwards and downwards; the details
+  are gone by halfway, so their text is never read over the album's.
+- **Zoom stays inside the photo area** rather than taking over the screen. It is the smaller
+  change, and the header and caption stay readable. Going full screen while zoomed is open
+  if the area feels small on phones.
+- **Slides have the size of the largest file**, not of `src`: PhotoSwipe derives its zoom levels
+  from it. It sets `sizes` itself, from the size the photo is drawn at, so a zoomed photo gets a
+  larger file. That replaced `VIEWER_SIZES`/`VIEWER_LAYOUT`, and the JSON no longer carries
+  `sizes`.
+- **A mouse can now drag and click-zoom on the photo.** Before, the mouse was ignored there.
+  A click on the black around a photo does nothing, as before.
+- **A photo smaller than the photo area is shown at its own size**, not stretched to fit as
+  `object-fit: contain` did. Only very small photos on large windows notice.
+- **Not checked on a real phone or in Safari.** The browser tests drive Chrome with emulated
+  touch. How smooth it feels, and iOS Safari, need a person with a phone.

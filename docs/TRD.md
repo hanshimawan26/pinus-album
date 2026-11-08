@@ -71,7 +71,7 @@ User accounts, upload through the website, comments or likes, search, a CMS, mem
 | Images | `astro:assets` (sharp) | Build-time resize, WebP, responsive `srcset` |
 | EXIF reading | `exifr` (build time only) | For `DateTimeOriginal` (P0) and IPTC/XMP (P1) |
 | YAML / validation | `yaml` + `zod` | Clear error messages with file paths |
-| Photo viewer | **PhotoSwipe v5** with a custom caption/info UI element, or a custom `<dialog>` viewer if that is simpler to get the IG-style layout right | JS loaded only on pages that have photos |
+| Photo viewer | A custom `<dialog>` for the IG-style layout, with **PhotoSwipe v5** inside its photo area for the photos and gestures | JS loaded only on pages that have photos |
 | Unit tests | Vitest | |
 | E2E tests | Playwright (P1) | |
 | Hosting | GitHub Pages via GitHub Actions | Repo lives under a GitHub **organization** (§8) |
@@ -320,7 +320,8 @@ Desktop (≥ 900 px): photo on the left on a black background, details panel (ab
 
 Behaviour:
 - Navigates through the photos of the current grid, in displayed order.
-- Prev/next via buttons, **← / →** keys, and touch swipe. Close via ✕, **Esc**, backdrop click, or browser Back.
+- Prev/next via buttons, **← / →** keys, and touch swipe (the neighbouring photo follows the finger). Close via ✕, **Esc**, backdrop click, browser Back, or by swiping the photo up or down (the album shows through as it goes; a short drag springs back; not while zoomed).
+- **Zoom:** pinch or double tap (a click with a mouse). Only the photo zooms, inside the photo area; the header and caption stay as they are. A zoomed photo is dragged around, and a drag that reaches its edge carries on to the next photo. Zooming loads a larger file when there is one.
 - Counter "n / total".
 - Preloads the next and previous images.
 - Photographer line: a camera outline icon plus the name (read as "Photo by Name"), so the name is not mistaken for someone pictured. If the photographer has an `instagram` handle, the name links to it (opens in a new tab with `rel="noopener noreferrer"`).

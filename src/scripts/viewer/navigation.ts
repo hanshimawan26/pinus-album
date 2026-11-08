@@ -25,11 +25,6 @@ export function step(index: number, delta: number, total: number): number | null
 export const hasPrevious = (index: number): boolean => index > 0;
 export const hasNext = (index: number, total: number): boolean => index < total - 1;
 
-/** The indexes worth preloading around `index`: next first, then previous. */
-export function neighbours(index: number, total: number): number[] {
-  return [step(index, 1, total), step(index, -1, total)].filter((value): value is number => value !== null);
-}
-
 /** Visible counter: "3 / 24". */
 export function counterLabel(index: number, total: number): string {
   return `${index + 1} / ${total}`;

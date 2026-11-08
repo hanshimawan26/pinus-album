@@ -28,7 +28,7 @@ const previewImage = await previewImageFor(albums.root.cover);
 
 const landing = buildLanding(albums.root);
 const heroImage = landing ? await heroImageFor(landing.hero.photo) : undefined;
-const spotlightImage = landing?.spotlight ? await viewerImageFor(landing.spotlight.photo, SPOTLIGHT_SIZES) : undefined;
+const spotlightImage = landing?.spotlight ? { ...(await viewerImageFor(landing.spotlight.photo)), sizes: SPOTLIGHT_SIZES } : undefined;
 const imagesOf = (chapter: Chapter) => Promise.all(chapter.photos.map(({ photo }, index) => landingTileImageFor(photo, index === 0)));
 const chapters = landing ? await Promise.all(landing.chapters.map(async (chapter) => ({ chapter, images: await imagesOf(chapter) }))) : [];
 const moreEvents = landing

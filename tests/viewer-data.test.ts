@@ -3,7 +3,7 @@ import { build, sourceTree } from './helpers/content.ts';
 import type { AlbumNode, Photo } from '../src/lib/content/types.ts';
 import { archiveFileName, downloadFileName, gridPhotos, viewerContext, viewerPhoto, type ViewerDownload, type ViewerImage } from '../src/lib/viewer-data.ts';
 
-const image: ViewerImage = { src: '/x/a.webp', srcset: '/x/a.webp 800w', sizes: '100vw', width: 800, height: 533 };
+const image: ViewerImage = { src: '/x/a.webp', srcset: '/x/a.webp 800w', width: 800, height: 533 };
 const download: ViewerDownload = { src: '/x/a.jpg', width: 2400, height: 1600, fileName: 'event-a.jpg' };
 
 function photosOf(node: AlbumNode): Map<string, Photo> {

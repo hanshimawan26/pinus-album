@@ -53,7 +53,7 @@ describe('rowsFor (TRD §6.5: absent data disappears)', () => {
 });
 
 describe('rowsFor on photos built by the content engine', () => {
-  const image: ViewerImage = { src: '/x/a.webp', srcset: '/x/a.webp 800w', sizes: '100vw', width: 800, height: 533 };
+  const image: ViewerImage = { src: '/x/a.webp', srcset: '/x/a.webp 800w', width: 800, height: 533 };
   const download = { src: '/x/a.jpg', width: 2400, height: 1600, fileName: 'event-a.jpg' };
   const { root } = build(
     sourceTree(

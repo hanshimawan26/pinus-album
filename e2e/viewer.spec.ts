@@ -8,7 +8,7 @@ import sharp from 'sharp';
 import { readCredit } from '../src/lib/authoring/exif-block.ts';
 import { exifTiffOf, parseJpeg } from '../src/lib/authoring/jpeg.ts';
 import { scanImageMetadata } from '../src/lib/build-checks/image-metadata.ts';
-import { expect, hashOf, loadedPhotoSize, openFromTile, PAGES, swipe, test, tile, viewer, withoutHash } from './fixtures.ts';
+import { expect, hashOf, loadedPhotoSize, openFromTile, PAGES, pinchOut, swipe, test, tile, viewer, withoutHash } from './fixtures.ts';
 
 test.describe('opening a photo', () => {
   test('from the home page, through the album, to a photo with photographer, date and caption', async ({ page }) => {
@@ -155,11 +155,90 @@ test.describe('moving between photos', () => {
     await page.goto(PAGES.section);
     await openFromTile(page, 1);
     const v = viewer(page);
-    const stage = v.dialog.locator('[data-stage]');
-    await swipe(page, stage, -160);
+    await loadedPhotoSize(page);
+    await swipe(page, v.stage, -160);
     await expect(v.dialog).toHaveAccessibleName(/^Photo 3 of 13/);
-    await swipe(page, stage, 160);
+    await expect.poll(() => hashOf(page)).toBe('budi-demo-img-0001');
+    await swipe(page, v.stage, 160);
     await expect(v.dialog).toHaveAccessibleName(/^Photo 2 of 13/);
+  });
+
+  test('a swipe past the last photo stays on it', async ({ page, hasTouch }) => {
+    test.skip(!hasTouch, 'touch only');
+    await page.goto(PAGES.section);
+    await openFromTile(page, 12);
+    const v = viewer(page);
+    await loadedPhotoSize(page);
+    await swipe(page, v.stage, -160);
+    await page.waitForTimeout(400); // a wrong move would have landed by now
+    await expect(v.dialog).toHaveAccessibleName(/^Photo 13 of 13/);
+  });
+});
+
+test.describe('zooming', () => {
+  test.skip(({ hasTouch }) => !hasTouch, 'touch only');
+
+  /** Pinches the photo until it is wider than the stage, and returns how far it reaches. */
+  async function zoomIn(page: Page): Promise<void> {
+    const v = viewer(page);
+    await pinchOut(page, v.stage, 300);
+    await expect.poll(async () => (await v.photo.boundingBox())?.width ?? 0).toBeGreaterThan((await v.stage.boundingBox())?.width ?? Infinity);
+  }
+
+  test('dragging a zoomed photo moves around in it instead of going to the next photo', async ({ page }) => {
+    await page.goto(PAGES.section);
+    await openFromTile(page, 1);
+    const v = viewer(page);
+    await loadedPhotoSize(page);
+    await zoomIn(page);
+    const before = await v.photo.boundingBox();
+
+    await swipe(page, v.stage, -80);
+
+    await expect.poll(async () => (await v.photo.boundingBox())?.x ?? 0).toBeLessThan(before?.x ?? -Infinity);
+    await page.waitForTimeout(400); // a wrong move would have landed by now
+    await expect(v.dialog).toHaveAccessibleName(/^Photo 2 of 13/);
+    await expect(v.dialog).toBeVisible();
+  });
+
+  test('a double tap zooms in, and another zooms back out', async ({ page }) => {
+    await page.goto(PAGES.section);
+    await openFromTile(page, 1);
+    const v = viewer(page);
+    await loadedPhotoSize(page);
+    const box = await v.photo.boundingBox();
+    const fitted = box?.width ?? 0;
+    const doubleTap = async () => {
+      await page.touchscreen.tap((box?.x ?? 0) + fitted / 2, (box?.y ?? 0) + (box?.height ?? 0) / 2);
+      await page.touchscreen.tap((box?.x ?? 0) + fitted / 2, (box?.y ?? 0) + (box?.height ?? 0) / 2);
+    };
+    await doubleTap();
+    await expect.poll(async () => (await v.photo.boundingBox())?.width ?? 0).toBeGreaterThan(fitted * 1.5);
+    await expect(v.dialog).toHaveAccessibleName(/^Photo 2 of 13/);
+    await doubleTap();
+    await expect.poll(async () => (await v.photo.boundingBox())?.width ?? 0).toBeCloseTo(fitted, 0);
+  });
+
+  test('pinching stays on the photo: the header does not zoom with it', async ({ page }) => {
+    await page.goto(PAGES.section);
+    await openFromTile(page, 1);
+    const v = viewer(page);
+    await loadedPhotoSize(page);
+    const header = await v.close.boundingBox();
+    await zoomIn(page);
+    expect(await v.close.boundingBox()).toEqual(header);
+    expect(await page.evaluate(() => window.visualViewport?.scale)).toBe(1);
+  });
+
+  test('a zoomed photo does not close when dragged down', async ({ page }) => {
+    await page.goto(PAGES.section);
+    await openFromTile(page, 1);
+    const v = viewer(page);
+    await loadedPhotoSize(page);
+    await zoomIn(page);
+    await swipe(page, v.stage, 0, 200);
+    await page.waitForTimeout(400); // a wrong close would have finished by now
+    await expect(v.dialog).toBeVisible();
   });
 });
 
@@ -180,6 +259,33 @@ test.describe('closing', () => {
     await viewer(page).close.click();
     await expect(viewer(page).dialog).toBeHidden();
     await expect(tile(page, 3)).toBeFocused();
+  });
+
+  test('swiping the photo down closes, clears the hash and returns to the tile', async ({ page, hasTouch }) => {
+    test.skip(!hasTouch, 'touch only');
+    await page.goto(PAGES.section);
+    await openFromTile(page, 3);
+    const v = viewer(page);
+    await loadedPhotoSize(page);
+    await swipe(page, v.stage, 0, 320);
+    await expect(v.dialog).toBeHidden();
+    await expect.poll(() => hashOf(page)).toBe('');
+    await expect(tile(page, 3)).toBeFocused();
+    // And it opens again afterwards, without leftovers from the swipe.
+    await openFromTile(page, 3);
+    await loadedPhotoSize(page);
+    await expect(v.dialog).not.toHaveAttribute('data-dismissing');
+  });
+
+  test('a short drag down springs back and the viewer stays open', async ({ page, hasTouch }) => {
+    test.skip(!hasTouch, 'touch only');
+    await page.goto(PAGES.section);
+    await openFromTile(page, 3);
+    const v = viewer(page);
+    await loadedPhotoSize(page);
+    await swipe(page, v.stage, 0, 24);
+    await expect(v.dialog).not.toHaveAttribute('data-dismissing');
+    await expect(v.dialog).toBeVisible();
   });
 
   test('browser Back closes the viewer, stays on the album page and returns focus to the tile', async ({ page }) => {
@@ -209,6 +315,22 @@ test.describe('closing', () => {
       await page.keyboard.press('Tab');
       expect(await viewer(page).dialog.evaluate((dialog) => dialog.contains(document.activeElement))).toBe(true);
     }
+  });
+});
+
+test.describe('a photo that does not load', () => {
+  test('says so, and "Try again" loads it', async ({ page }) => {
+    await page.goto(PAGES.section);
+    let failing = true;
+    await page.route('**/*.webp', (route) => (failing ? route.abort() : route.continue()));
+    await tile(page, 5).click();
+    const v = viewer(page);
+    const message = v.dialog.getByRole('alert');
+    await expect(message).toBeVisible();
+    failing = false;
+    await v.dialog.getByRole('button', { name: 'Try again' }).click();
+    await loadedPhotoSize(page);
+    await expect(message).toBeHidden();
   });
 });
 

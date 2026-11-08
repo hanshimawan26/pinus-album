@@ -289,8 +289,7 @@ spotlight; landing chapters take turns; the three dots mark the site-wide blocks
 ## Motion
 
 - `--ease-out` is `cubic-bezier(0.16, 1, 0.3, 1)` (exponential ease-out). `--duration-fast` is
-  160 ms, `--duration-slow` is 480 ms, and `--duration-settle` (220 ms) is a swiped viewer
-  photo springing back.
+  160 ms and `--duration-slow` is 480 ms.
 - Hover: a card's cover and a landing photo zoom in by 3% (480 ms); a card title turns blue
   and underlined; grid tiles get a 14% dark veil (with a mouse only: on a phone `:hover` sticks
   to the last tile tapped); buttons change fill over 160 ms.
@@ -416,13 +415,18 @@ the Instagram post layout (TRD §6.5): a native `<dialog>` opened with `showModa
 - **Focus:** on the header, the normal ring (drawn inside the download link and the ✕). On the photo, a
   `--color-viewer-focus` ring with a black halo, so it shows over any photo.
 - **Backdrop:** `--color-viewer-scrim` (82% black).
+- **Zoom:** only the photo zooms, clipped to the black photo area; the header and caption stay
+  still and readable.
 - **States:** a photo not yet loaded keeps its shape on black; after 300 ms a quiet 2 px ring
   appears, and the photo fades in over 160 ms. A photo that fails shows "This photo didn't
   load. Check your connection and try again." with a **Try again** button.
-- **Motion:** the overlay fades in over 160 ms (`@starting-style`); closing is instant; moving
-  between photos never animates. During a swipe the photo follows the finger, resists past
-  either end, and settles back over `--duration-settle`. Reduced motion makes all of it
-  instant.
+- **Motion:** the overlay fades in over 160 ms (`@starting-style`); closing by a control is
+  instant; moving by button or key never animates. Gestures are PhotoSwipe's springs: during
+  a swipe the photo and its neighbour follow the finger, resist past either end and carry
+  the finger's speed when let go. Swiping the photo away lets it leave the photo area; the
+  details are gone by halfway, the rest fades until the album shows through, and past the
+  point of no return it all fades out over `--duration-fast`. Reduced motion makes the
+  springs, zoom and fades instant; the photo still follows the finger.
 
 | Foreground | Background | Ratio | Use |
 |---|---|---|---|
