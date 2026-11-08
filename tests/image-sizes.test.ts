@@ -14,9 +14,9 @@ import {
   previewImageSize,
   SHORT_STORY_MAX_CHARS,
   startsNearTop,
-  thumbnailEdge,
+  thumbnailSizes,
+  thumbnailWidth,
   thumbnailWidths,
-  THUMBNAIL_SIZES,
   VIEWER_LAYOUT,
   VIEWER_SIZES,
   viewerFallbackWidth,
@@ -59,18 +59,19 @@ describe('viewerFallbackWidth', () => {
   });
 });
 
-describe('thumbnails (TRD §6.4: square, about 480 px)', () => {
-  it('crops a 480 px square from a normal photo', () => {
-    expect(thumbnailEdge(1600, 1067)).toBe(480);
-    expect(thumbnailEdge(1067, 1600)).toBe(480);
+describe('thumbnails (TRD §6.4: whole photo, about 480 px wide)', () => {
+  it('is 480 px wide, whatever the shape of the photo', () => {
+    expect(thumbnailWidth(1600)).toBe(480);
+    expect(thumbnailWidth(1067)).toBe(480);
   });
 
-  it('uses the short side of a small source instead of upscaling', () => {
-    expect(thumbnailEdge(640, 300)).toBe(300);
+  it('uses the width of a small source instead of upscaling', () => {
+    expect(thumbnailWidth(300)).toBe(300);
   });
 
-  it('adds a 240 px size for phones', () => {
-    expect(thumbnailWidths(480)).toEqual([240, 480]);
+  it('offers 240, 480 and 720 px, never wider than the source', () => {
+    expect(thumbnailWidths(1600)).toEqual([240, 480, 720]);
+    expect(thumbnailWidths(640)).toEqual([240, 480, 640]);
     expect(thumbnailWidths(300)).toEqual([240, 300]);
     expect(thumbnailWidths(200)).toEqual([200]);
   });
@@ -94,7 +95,7 @@ describe('card covers (4:3 crops)', () => {
 describe('sizes attributes', () => {
   it('match the layout breakpoints', () => {
     expect(VIEWER_SIZES).toBe('(min-width: 1696px) 1260px, (min-width: 900px) calc(94vw - 340px), (min-width: 600px) 576px, 100vw');
-    expect(THUMBNAIL_SIZES).toBe('(min-width: 1100px) 224px, (min-width: 600px) 25vw, 34vw');
+    expect(thumbnailSizes({ phone: 0.5, tablet: 0.3333, desktop: 0.25 })).toBe('(min-width: 1100px) 280px, (min-width: 600px) 34vw, 50vw');
     expect(coverSizes('event')).toBe('(min-width: 1100px) 374px, (min-width: 900px) 33vw, (min-width: 600px) 50vw, 100vw');
     expect(coverSizes('section')).toBe('(min-width: 1100px) 280px, (min-width: 900px) 33vw, 50vw');
   });

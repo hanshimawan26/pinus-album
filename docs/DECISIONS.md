@@ -1587,3 +1587,29 @@ each other. Decisions (the user chose the first three):
   mark. The switch is part of `WATERMARK_STYLE`, so flipping it renames every credited file
   and the image cache cannot serve the other state; the next build re-renders all viewer
   images and downloads once.
+
+## After the POC — justified photo grid
+
+Asked by the user: replace the square grid with one that follows each photo's shape, like
+Google Photos, with no gaps at the sides or in the middle. This changes TRD §6.4 and §7 and
+replaces the earlier decision on square thumbnails.
+
+- **Rows are chosen at build time, not measured in the browser.** `justified-grid.ts` breaks
+  the photos into rows for three layouts (phone, from 600 px, from 1100 px, the old column
+  breakpoints) and each tile stores its share of the grid width. Shares scale with the
+  window, so the page needs no layout script, nothing shifts while images load, and each
+  tile's `sizes` is accurate. A layout measured in the browser would have needed a script on
+  first paint and a fallback without one.
+- **Rows are balanced together** (a shortest-path search over the row breaks) rather than
+  filled one at a time as CSS `flex-wrap` alone would. That is what keeps a stray photo off
+  the last row, which Google Photos simply leaves ragged; the user asked for no side gaps.
+- **Row targets** come from the real albums, 80% of which are 3:2: two across on phones, three
+  on tablets, four on desktop. Portraits take less width, so rows with them hold more photos.
+- **The one exception to full-width rows:** when all the photos fit in one row too short to
+  fill the width without being taller than the window (one or two photos on a desktop, or a
+  filter that leaves that few), the row keeps a sensible height. The alternative, cropping to
+  a band, would break the promise of whole photos.
+- **The filter recomputes the rows** with the same pure function and updates each tile's
+  `sizes`, so "All" restores exactly the page as built.
+- **Thumbnails are the whole photo** at 240/480/720 px wide. 720 is new: a tile in a justified
+  row can be wider than the old 224 px square (280 px and up on desktop, drawn at 2x).

@@ -1,8 +1,9 @@
 ---
 /**
- * Instagram-profile photo grid (TRD §6.4): square thumbnails, 3 columns on phones, 4 from
- * 600px, 5 from 1100px, 3px gaps. Squares reserve their space, so nothing shifts while
- * images load. Each tile is a button named by the photo's alt text.
+ * Justified photo grid (TRD §6.4): whole photos in rows that each fill the grid's width, with
+ * 3px gaps. The rows come from justified-grid.ts, for phones, from 600px and from 1100px. Each
+ * tile reserves its space from the photo's aspect ratio, so nothing shifts while images load.
+ * Each tile is a button named by the photo's alt text.
  *
  * The post viewer (PostViewer.astro, TRD §6.5) reads the JSON below: `photos[i]` belongs to
  * the tile with `data-index="i"`; its `slug` is the deep-link hash (TRD §4.7).
@@ -11,10 +12,11 @@
  * With two or more credited photographers, filter chips sit above the grid (TRD §6.3 item 8);
  * each tile carries its photographer's slug as `data-photographer` for them.
  */
-import { loadingHint } from '../lib/image-sizes.ts';
+import { loadingHint, thumbnailSizes } from '../lib/image-sizes.ts';
 import PhotographerFilter from './PhotographerFilter.astro';
 import PostViewer from './PostViewer.astro';
 import { downloadImageFor, thumbnailFor, viewerImageFor } from '../lib/images.ts';
+import { aspectOf, tileShares, tileStyle } from '../lib/justified-grid.ts';
 import { photographerChips } from '../lib/photographer-filter.ts';
 import { jsonForScript } from '../lib/presentation.ts';
 import { downloadFileName, viewerPhoto, type GridPhoto, type ViewerData } from '../lib/viewer-data.ts';
@@ -31,11 +33,14 @@ interface Props {
 }
 
 const { photos, context, albumPath, nearTop } = Astro.props;
+const aspects = photos.map(({ photo }) => aspectOf(photo.width, photo.height));
+const shares = tileShares(aspects);
 const tiles = await Promise.all(
-  photos.map(async ({ photo, ...placement }) => ({
+  photos.map(async ({ photo, ...placement }, index) => ({
     photo,
     placement,
-    thumbnail: await thumbnailFor(photo),
+    style: tileStyle(aspects[index]!, shares[index]!),
+    thumbnail: await thumbnailFor(photo, thumbnailSizes(shares[index]!)),
     viewer: await viewerImageFor(photo),
     download: { ...(await downloadImageFor(photo)), fileName: downloadFileName(albumPath, placement.slug) },
   })),
@@ -45,18 +50,18 @@ const viewerData: ViewerData = {
   photos: tiles.map(({ photo, placement, viewer, download }) => viewerPhoto(photo, viewer, download, placement)),
 };
 const chips = photographerChips(photos.map(({ photo }) => photo));
-// The first row of the widest layout (5 tiles) loads eagerly with high priority: the tiles
-// are all the same size, so any of them can be the largest contentful paint.
+// The first few tiles (about a row on the widest layout, two on a phone) load eagerly with
+// high priority: any of them can be the largest contentful paint.
 const policy = { nearTop, highPriority: 5, eager: 5 };
 ---
 
 {chips.length > 0 && <PhotographerFilter chips={chips} total={photos.length} />}
 <ul class="bare-list grid" role="list" data-photo-grid>
   {
-    tiles.map(({ photo, thumbnail }, index) => {
+    tiles.map(({ photo, style, thumbnail }, index) => {
       const hint = loadingHint(index, policy);
       return (
-        <li>
+        <li style={style}>
           <button type="button" class="tile" aria-haspopup="dialog" data-index={index} data-photographer={photo.photographer?.slug}>
             <img
               src={thumbnail.src}
@@ -80,31 +85,50 @@ const policy = { nearTop, highPriority: 5, eager: 5 };
 
 <style>
   .grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
     gap: var(--grid-gap);
-    /* Edge to edge on phones, like a profile grid. */
+    /* Edge to edge on phones. */
     margin-inline: calc(-1 * var(--gutter));
+  }
+
+  /*
+   * A row's shares add up to 1. The basis leaves room for the gaps (so a row never wraps
+   * early) and growing by share hands the last few pixels back, so the row ends exactly at
+   * the grid's edge. The cap keeps a lone short row from growing (justified-grid.ts).
+   */
+  .grid > li {
+    --share: var(--share-phone);
+    position: relative;
+    flex: var(--share) 1 calc(var(--share) * 100% - var(--grid-gap));
+    min-width: 0;
+    max-width: calc(var(--share) * 100%);
+    aspect-ratio: var(--aspect);
   }
 
   @media (min-width: 600px) {
     .grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
       margin-inline: 0;
+    }
+
+    .grid > li {
+      --share: var(--share-tablet);
     }
   }
 
   @media (min-width: 1100px) {
-    .grid {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+    .grid > li {
+      --share: var(--share-desktop);
     }
   }
 
   .tile {
-    position: relative;
+    position: absolute;
+    inset: 0;
     display: block;
     width: 100%;
-    aspect-ratio: 1;
+    height: 100%;
     padding: 0;
     border: 0;
     border-radius: 0;

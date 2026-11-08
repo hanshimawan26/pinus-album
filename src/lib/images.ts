@@ -29,9 +29,8 @@ import {
   landingTileSizes,
   PREVIEW_IMAGE,
   previewImageSize,
-  thumbnailEdge,
+  thumbnailWidth,
   thumbnailWidths,
-  THUMBNAIL_SIZES,
   VIEWER_SIZES,
   viewerFallbackWidth,
   viewerWidths,
@@ -72,12 +71,16 @@ export interface ResponsiveImage {
   height: number;
 }
 
-/** Square grid thumbnail, about 480 px (240 px for phones), cropped from the centre (TRD §6.4, §7). */
-export async function thumbnailFor(photo: Photo): Promise<ResponsiveImage> {
-  const edge = thumbnailEdge(photo.width, photo.height);
-  const widths = thumbnailWidths(edge);
-  const image = await getImage({ src: sourceOf(photo), width: edge, height: edge, widths, fit: 'cover', format: OUTPUT_FORMAT });
-  return { src: image.src, srcset: image.srcSet.attribute, sizes: THUMBNAIL_SIZES, width: edge, height: edge };
+/**
+ * Grid thumbnail: the whole photo, about 480 px wide (TRD §6.4, §7), drawn at `sizes`.
+ * `cover` for the same reason as the viewer image below: exactly the claimed size.
+ */
+export async function thumbnailFor(photo: Photo, sizes: string): Promise<ResponsiveImage> {
+  const widths = thumbnailWidths(photo.width);
+  const width = thumbnailWidth(photo.width);
+  const height = Math.max(1, Math.round((width * photo.height) / photo.width));
+  const image = await getImage({ src: sourceOf(photo), width, height, widths, fit: 'cover', format: OUTPUT_FORMAT });
+  return { src: image.src, srcset: image.srcSet.attribute, sizes, width, height };
 }
 
 /**

@@ -262,8 +262,10 @@ A node with both photos and children shows the section cards first, then its own
 
 ### 6.4 Photo grid (P0)
 
-- Instagram-profile style: square-cropped thumbnails, 3 columns on mobile, 4–5 on desktop, 2–4 px gaps.
-- Lazy-loaded below the fold. Square tiles reserve space, so no layout shift.
+- Justified rows: each photo keeps its own shape, uncropped, and every row fills the full width, 2–4 px gaps. Rows hold about two 3:2 photos on mobile, three on tablets and four on desktop. Display order is kept, and the last row is balanced with the others.
+- The one exception: when all the photos fit in a single row too short to fill the width without becoming taller than the window (one or two photos on a desktop), that row keeps a sensible height and does not stretch.
+- When the photographer filter changes the photos shown, the remaining photos form new full-width rows.
+- Lazy-loaded below the fold. Each tile reserves its space from the photo's aspect ratio, so no layout shift.
 - Each tile is a button that opens the viewer.
 
 ### 6.5 Post viewer (P0, core feature)
@@ -322,7 +324,7 @@ Semantic landmarks, real `alt` text (§4.6), visible focus rings, `role="dialog"
 
 - **Source images:** committed to the repo as web-ready masters: long edge ≤ 2400 px, JPEG quality about 85, ideally under 1 MB each. Raw phone or camera originals must not be committed (`photos:prep`, §9, does the downscaling and keeps the EXIF date and orientation).
 - **Build outputs:**
-  - Grid thumbnail: square crop, about 480 px, WebP.
+  - Grid thumbnail: the whole photo, about 480 px wide (also 240 and 720 px), WebP.
   - Viewer image: responsive `srcset` at 800 / 1200 / 1600 / 2000 px, WebP.
   - Download (§6.5): the whole photo as a JPEG, long edge ≤ 2400 px (the web-ready master size, so a prepped photo downloads at its own size), quality 85. JPEG because every phone and computer opens it.
 - **Orientation:** honour EXIF orientation. Portrait phone photos must display upright in the grid and the viewer.
@@ -459,7 +461,7 @@ Claude Code: use the default and keep going. Record anything you assume in `docs
 |---|---|---|
 | 1 | What do the existing photo folders look like today (names, nesting)? | Per-event folders containing one folder per photographer. Adapt the `@` convention if the real structure differs |
 | 2 | Language of the site UI | English only. Indonesian or bilingual support is P2 |
-| 3 | Viewer style | Instagram-profile grid plus post-style overlay viewer (§6.4–6.5). A scrolling feed view is not built |
+| 3 | Viewer style | Justified photo grid plus post-style overlay viewer (§6.4–6.5). A scrolling feed view is not built |
 | 4 | Branding: org name, logo, colours | **Resolved:** name "Pinus Community" (descriptor "Indonesian Students Association at NUS"); official colours blue `#334E97`, red `#EF4C2B`, yellow `#F1B244`; official logo `public/logo.svg` |
 | 5 | Public repo and search indexing | Public repo, `noindex` site |
 | 6 | Custom domain | None. Use `github.io` |

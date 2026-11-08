@@ -82,6 +82,8 @@ src/
     all-photos.ts    PURE: the "All photos" page of an album with sections (TRD §6.3 item 7):
                      which nodes get one, date order, section-path slugs (`day-1/<slug>`)
     photographer-filter.ts  PURE: the filter chips of a grid (TRD §6.3 item 8)
+    justified-grid.ts  PURE: the photo grid's full-width rows (TRD §6.4): row breaks and each
+                     tile's width share per layout; used at build time and by the filter
     images.ts        ASTRO-ONLY: photos → getImage() derivatives (thumb, viewer srcset, covers
                      and landing tiles, the home hero, the 1200×630 JPEG link preview, the
                      viewer's 2400 px JPEG download)

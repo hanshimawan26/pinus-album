@@ -7,13 +7,14 @@
  * enough. The breakpoints are the ones in src/styles/global.css (see DESIGN.md).
  */
 import { PREP_LIMITS } from './authoring/prep-rules.ts';
+import type { TileShares } from './justified-grid.ts';
 
 /**
- * Grid thumbnails: square WebP crops of about 480 px (TRD §6.4, §7), plus a 240 px one for
- * phones, where a tile is only ~120 CSS px wide.
+ * Grid thumbnails: the whole photo as WebP, about 480 px wide (TRD §6.4, §7), plus 240 px for
+ * phones and 720 px for the wider tiles of a justified row on high-density screens.
  */
 export const THUMBNAIL_SIZE = 480;
-export const THUMBNAIL_WIDTHS = [240, THUMBNAIL_SIZE] as const;
+export const THUMBNAIL_WIDTHS = [240, THUMBNAIL_SIZE, 720] as const;
 
 /** Viewer image widths (TRD §7). Never larger than the source. */
 export const VIEWER_WIDTHS = [800, 1200, 1600, 2000] as const;
@@ -60,22 +61,25 @@ export function viewerFallbackWidth(widths: readonly number[]): number {
   return atMost.length > 0 ? Math.max(...atMost) : Math.min(...widths);
 }
 
+/** Width of a thumbnail's plain `src`: 480 px, or a smaller source's own width. */
+export function thumbnailWidth(sourceWidth: number): number {
+  return Math.max(1, Math.min(THUMBNAIL_SIZE, Math.round(sourceWidth)));
+}
+
+/** Srcset widths of the thumbnail of a source `sourceWidth` px wide. */
+export function thumbnailWidths(sourceWidth: number): number[] {
+  return widthsFor(sourceWidth, THUMBNAIL_WIDTHS);
+}
+
 /**
- * Edge of the square thumbnail: 480 px, or the short side of a smaller source, so the
- * crop stays square without upscaling.
+ * `sizes` for a grid tile, from its share of the grid width in each layout (justified-grid.ts).
+ * The grid runs edge to edge on phones; above that the gutters are ignored (the estimate errs
+ * on the large side, which only costs a slightly bigger file).
  */
-export function thumbnailEdge(sourceWidth: number, sourceHeight: number): number {
-  return Math.max(1, Math.min(THUMBNAIL_SIZE, Math.round(sourceWidth), Math.round(sourceHeight)));
+export function thumbnailSizes(shares: TileShares): string {
+  const vw = (share: number) => `${Math.ceil(share * 100)}vw`;
+  return `(min-width: ${BREAKPOINTS.lg}px) ${Math.ceil(shares.desktop * CONTENT_MAX)}px, (min-width: ${BREAKPOINTS.sm}px) ${vw(shares.tablet)}, ${vw(shares.phone)}`;
 }
-
-/** Widths of the square thumbnail of a source whose crop edge is `edge` px. */
-export function thumbnailWidths(edge: number): number[] {
-  return widthsFor(edge, THUMBNAIL_WIDTHS);
-}
-
-/** `sizes` for grid tiles: 3 columns, 4 from 600px, 5 from 1100px (edge to edge on phones). */
-export const THUMBNAIL_SIZES =
-  `(min-width: ${BREAKPOINTS.lg}px) ${Math.ceil(CONTENT_MAX / 5)}px, (min-width: ${BREAKPOINTS.sm}px) 25vw, 34vw`;
 
 /**
  * Card cover size for a source: the widths to generate and the crop height, keeping the
