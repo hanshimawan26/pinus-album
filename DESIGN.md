@@ -110,6 +110,19 @@ at least `--color-photo-scrim-soft`. Measured over a pure-white photo (the worst
 | 85% white | glass pill on soft scrim | 5.30:1 | Stat labels |
 | `#A9B9E6` focus ring | soft scrim over white | 5.08:1 | Focus inside the hero (non-text, needs 3:1) |
 
+The check circle on a grid tile sits straight on the photo, with no scrim, so one of its parts
+must stand out from any photo (graphics, need 3:1):
+
+| Part | Against | Ratio | Use |
+|---|---|---|---|
+| White check on the 55% black circle | over a white photo (≈`#737373`) | 4.74:1 | Unselected circle, the check on hover |
+| The 55% black circle | white photo | 4.74:1 | Unselected, on a light photo |
+| 85% white ring | black photo | 14.88:1 | Unselected, on a dark photo |
+| `#FAF8F4` check on `#334E97` (Day) | | 7.39:1 | Selected |
+| `#0B1326` check on `#A9B9E6` (Night) | | 9.49:1 | Selected |
+| `#334E97` fill (Day) / `#FAF8F4` ring | white photo / black photo | 7.84:1 / 19.80:1 | Selected on Day |
+| `#0B1326` ring (Night) / `#A9B9E6` fill | white photo / black photo | 18.50:1 / 10.77:1 | Selected on Night |
+
 ### Viewer tokens (both themes)
 
 | Token | Value | Role |
@@ -279,7 +292,10 @@ spotlight; landing chapters take turns; the three dots mark the site-wide blocks
   160 ms, `--duration-slow` is 480 ms, and `--duration-settle` (220 ms) is a swiped viewer
   photo springing back.
 - Hover: a card's cover and a landing photo zoom in by 3% (480 ms); a card title turns blue
-  and underlined; grid tiles get a 14% dark veil; buttons change fill over 160 ms.
+  and underlined; grid tiles get a 14% dark veil (with a mouse only: on a phone `:hover` sticks
+  to the last tile tapped); buttons change fill over 160 ms.
+- A selected grid photo draws in to 88% of its tile over 160 ms, and its check circle fades
+  in over the same time.
 - Everything starts from a visible state, and nothing animates in on load.
 - The post viewer's overlay fades in over 160 ms; nothing else in it animates on its own.
 - `prefers-reduced-motion: reduce` sets all transitions and animations to near zero, including
@@ -310,6 +326,8 @@ spotlight; landing chapters take turns; the three dots mark the site-wide blocks
 | Album card | `AlbumCard.astro`, `AlbumCardList.astro` | 4:3 cover (radius 10), title (Playfair 600: 22 px events, 18 px sections), then meta. The title link is stretched over the whole card; the cover has `alt=""` because the title names the link. Event cards 1/2/3 columns; section cards 2/3/4 |
 | Album page header | `albums/[...path].astro` | Eyebrow ("Event", red; or the parent album's title, blue), page title with status badge, node meta |
 | Photo grid | `PhotoGrid.astro` | Justified rows of whole, uncropped photos with 3 px gaps, each row exactly the grid's width (about 2/3/4 landscape photos across; `ROW_RULES` in `justified-grid.ts`), edge to edge on phones. Each tile is a `<button>` named by the photo's alt text, with `aria-haspopup="dialog"`. The viewer data is embedded as JSON and the grid renders the post viewer |
+| Check circle | `PhotoGrid.astro` (`.check`), `CheckIcon.astro` | Top left of a grid tile, as Google Photos (TRD §6.4.1). A 24 px circle in a 40 px target, a sibling of the tile's button. White check on `--color-viewer-control` with a 2 px `--color-on-photo-muted` ring. Invisible until hover or keyboard focus, and on touch screens not tappable until selecting starts. While selecting, every photo shows it: empty when unselected; `--color-accent` with `--color-on-accent` check and ring when selected, and the photo draws in on the sunken surface. Focus: `--color-viewer-focus` ring with a black halo, as on the viewer's photo. Exists only once the script has set `data-selectable` |
+| Selection bar | `SelectionBar.astro`, `src/scripts/selection/` | Fixed across the top of the window while selecting, on `--color-bg` with a hairline: ✕ (44 px round, like the viewer's), "2 selected" (600, 15 px), "Select all" in blue, and a primary Download button. Below 600 px Download is its icon, unless it reads "Save 12 photos" (then "Select all" is gone). While preparing, the label counts up and Download is sunken with muted text. Wraps at a large root font size |
 | Photographer filter | `PhotographerFilter.astro`, `src/scripts/viewer/chips.ts` | Pills above a grid with two or more photographers: "All 118", then each photographer with a count, most photos first. Unpressed: sunken fill, text-colour name (600), muted count; hover: border-colour fill. Pressed: `--color-accent` with `--color-on-accent`. 36 px tall, 15 px, 8 px apart. One sideways-scrolling row on phones, wrapping from 600 px. Hidden until the script runs. Toggles (`aria-pressed`) with a live region |
 | "View all" link | `albums/[...path].astro` | "View all 118 photos ›" in blue, 15 px 600, beside the "Sections" heading. Only on albums with sections |
 | All photos page | `albums/[...path]/all.astro` | Breadcrumbs ending in "All photos", eyebrow "All photos" (yellow), the album title, "date · All N photos", the filter and the grid |
@@ -318,7 +336,7 @@ spotlight; landing chapters take turns; the three dots mark the site-wide blocks
 | Empty state | `EmptyState.astro` | Sunken panel with an outline photo pictogram, a heading and one plain sentence ("No albums yet", "No photos here yet", the 404 page). As the page's h1 it uses `.page-title` |
 | Status badge | `StatusBadge.astro` | Pills after a title. "Draft": yellow with `--color-on-brand-yellow`, only in `npm run dev`. "Hidden": sunken fill, hairline, text colour, only in `npm run dev:hidden`. A real space before the badge keeps the accessible name readable ("Demo Event A Hidden") |
 | Photo credit | `PhotoCredit.astro`, `CameraIcon.astro` | The photographer's name with a camera outline in front, so it reads as "taken by", not as the name of someone pictured. Weight 500 in muted text (on a photo scrim: `--color-on-photo-credit`, 70% white), quieter than the text around it. Screen readers hear "Photo by Name" (the lead-in is visually hidden; the hero says "Cover photo by"). A long name ends in "…". Small: 11 px on phone tiles, 12 px on tiles from 600 px and in the hero, 13 px in the spotlight. Used on landing tiles, the hero and the spotlight; the post viewer's header draws the same camera + name |
-| Icons | `ChevronIcon.astro`, `CloseIcon.astro`, `DownloadIcon.astro`, `ImageIcon.astro`, `CameraIcon.astro` | Drawn SVG, 1.5–1.75 px round stroke in `currentColor`. Decorative |
+| Icons | `ChevronIcon.astro`, `CloseIcon.astro`, `CheckIcon.astro`, `DownloadIcon.astro`, `ImageIcon.astro`, `CameraIcon.astro` | Drawn SVG, 1.5–1.75 px round stroke in `currentColor`. Decorative |
 | Landing blocks | `LandingHero.astro`, `LandingChapter.astro`, `LandingSpotlight.astro`, `ShareBanner.astro` | See "Home page" |
 
 ### Home page

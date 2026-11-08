@@ -46,6 +46,7 @@ export function parseViewerData(json: string | null | undefined): ViewerData | n
     return null;
   }
   if (!isRecord(value) || typeof value.context !== 'string' || !Array.isArray(value.photos)) return null;
+  if (!isText(value.archiveName)) return null;
   if (value.photos.length === 0 || !value.photos.every(isPhoto)) return null;
-  return { context: value.context, photos: value.photos };
+  return { context: value.context, archiveName: value.archiveName, photos: value.photos };
 }

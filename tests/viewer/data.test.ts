@@ -8,6 +8,7 @@ const download = { src: '/a/1.jpg', width: 2400, height: 1600, fileName: 'demo-e
 
 const valid: ViewerData = {
   context: 'Day 1 · Demo Event A',
+  archiveName: 'demo-event-a-day-1-photos.zip',
   photos: [
     {
       slug: 'alice-demo-img-0001',
@@ -26,6 +27,10 @@ const valid: ViewerData = {
 };
 
 describe('parseViewerData', () => {
+  it('rejects data without the name of the ZIP', () => {
+    expect(parseViewerData(JSON.stringify({ ...valid, archiveName: '' }))).toBeNull();
+  });
+
   it('reads the data exactly as the page embeds it (escaped JSON)', () => {
     expect(parseViewerData(jsonForScript(valid))).toEqual(valid);
   });

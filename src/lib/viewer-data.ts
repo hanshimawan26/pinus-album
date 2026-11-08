@@ -55,6 +55,8 @@ export interface ViewerPhoto {
 export interface ViewerData {
   /** Where the photos come from, e.g. "Day 1 · Demo Event A" (desktop details panel). */
   context: string;
+  /** The name of a ZIP of photos selected on this page: `pinus-ori-day-1-photos.zip`. */
+  archiveName: string;
   /** In grid order: `photos[i]` belongs to the tile with `data-index="i"`. */
   photos: ViewerPhoto[];
 }
@@ -80,6 +82,11 @@ export const gridPhotos = (photos: readonly Photo[]): GridPhoto[] => photos.map(
  */
 export function downloadFileName(albumSlugPath: readonly string[], slug: string): string {
   return `${[...albumSlugPath, ...slug.split('/')].filter(Boolean).join('-')}.jpg`;
+}
+
+/** The file name of a ZIP of photos selected in this album (TRD §6.4.1). */
+export function archiveFileName(albumSlugPath: readonly string[]): string {
+  return `${[...albumSlugPath, 'photos'].filter(Boolean).join('-')}.zip`;
 }
 
 export function viewerPhoto(

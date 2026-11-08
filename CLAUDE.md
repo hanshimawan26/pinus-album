@@ -122,6 +122,10 @@ src/
                      (unit-tested); DOM dom.ts, view.ts, image.ts, gestures.ts, scroll-lock.ts,
                      chips.ts (filter chips); controller.ts (state, history, focus; moves
                      through the photos the filter left); index.ts (entry, used by PostViewer.astro)
+  scripts/selection/ selecting several photos and downloading them (TRD §6.4.1), started from
+                     viewer/index.ts: PURE state.ts, drag.ts (long-press and edge-scroll
+                     numbers), delivery.ts (file, ZIP or share sheet), bar-view.ts, zip.ts
+                     (unit-tested); DOM touch.ts, download.ts, controller.ts
 scripts/             maintainer CLIs (photos:check, photos:prep, photos:init, demo:images,
                      verify:dist) — thin wrappers over src/lib, run with Node type stripping;
                      cli.ts holds the shared colours and runCli() (readable crash message)
@@ -142,7 +146,7 @@ e2e/                 Playwright specs (viewer, navigation, landing, site-wide ru
 - **Absent data disappears.** Never render "Unknown" or an empty row (TRD §4.6, §6.5). In
   the viewer, rows without data get the `hidden` attribute (a global rule makes `[hidden]`
   win over component `display`), and user text is set with `textContent`, never `innerHTML`.
-- **Viewer JS budget:** ≤ 60 KB gzipped (TRD §11); it is about 5.1 KB (viewer and filter chips). No viewer library.
+- **Viewer JS budget:** ≤ 60 KB gzipped (TRD §11); it is about 9 KB (viewer, filter chips, selection and ZIP). No viewer library.
   Decisions the viewer makes (history, which rows show) go in its pure modules, not in
   `controller.ts`/`view.ts`, so they are unit-tested. `VIEWER_LAYOUT` in `image-sizes.ts`
   mirrors the viewer's CSS widths (a test reads the CSS to keep them in step).

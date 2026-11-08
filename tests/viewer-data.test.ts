@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { build, sourceTree } from './helpers/content.ts';
 import type { AlbumNode, Photo } from '../src/lib/content/types.ts';
-import { downloadFileName, gridPhotos, viewerContext, viewerPhoto, type ViewerDownload, type ViewerImage } from '../src/lib/viewer-data.ts';
+import { archiveFileName, downloadFileName, gridPhotos, viewerContext, viewerPhoto, type ViewerDownload, type ViewerImage } from '../src/lib/viewer-data.ts';
 
 const image: ViewerImage = { src: '/x/a.webp', srcset: '/x/a.webp 800w', sizes: '100vw', width: 800, height: 533 };
 const download: ViewerDownload = { src: '/x/a.jpg', width: 2400, height: 1600, fileName: 'event-a.jpg' };
@@ -71,6 +71,13 @@ describe('viewerPhoto', () => {
     expect(viewerPhoto(photo, image, download)).not.toHaveProperty('context');
     const placed = viewerPhoto(photo, image, download, { slug: 'day-1/sari-plain', context: 'Day 1 · Event' });
     expect(placed).toMatchObject({ slug: 'day-1/sari-plain', context: 'Day 1 · Event' });
+  });
+});
+
+describe('archiveFileName', () => {
+  it('names the ZIP after the album path', () => {
+    expect(archiveFileName(['pinus-ori', 'day-1'])).toBe('pinus-ori-day-1-photos.zip');
+    expect(archiveFileName(['halloween'])).toBe('halloween-photos.zip');
   });
 });
 

@@ -1613,3 +1613,37 @@ replaces the earlier decision on square thumbnails.
   `sizes`, so "All" restores exactly the page as built.
 - **Thumbnails are the whole photo** at 240/480/720 px wide. 720 is new: a tile in a justified
   row can be wider than the old 224 px square (280 px and up on desktop, drawn at 2x).
+
+## After the POC — selecting and downloading several photos
+
+Asked by the user: multi-select "like on Google Photos" (tap and hold on a phone, a translucent
+circle at the top left on a computer). TRD §6.4.1 has the behaviour.
+
+- **Delivery: a ZIP on computers, the share sheet on phones** (chosen by the user from three
+  options). A ZIP on an iPhone lands in Files and has to be unzipped; the share sheet offers
+  "Save Images" to Photos. Separate downloads were rejected: browsers ask permission, and
+  iPhone Safari handles them poorly.
+- **The ZIP is made in the browser**, as the site is static. No library: JPEGs do not compress,
+  so entries are "stored" and the writer is about 100 lines (`selection/zip.ts`), checked
+  with Python's `zipfile` and Windows' Expand-Archive. No new files are published, so the site
+  does not grow towards the Pages limit, unlike ready-made album ZIPs.
+- **Phones take two taps** ("Preparing…", then "Save 12 photos"). `navigator.share()` needs a
+  recent tap, and WebKit bugs 197779 and 225559 report Safari rejecting it after a `fetch`.
+  Fetching first and asking for a second tap is the reliable way round it.
+- **Android switches to a ZIP above 10 photos.** Chromium refuses more
+  (`kMaxSharedFileCount = 10` in `share_service_impl.h`, read on 8 Nov 2026). Safari
+  documents no limit. Any other refusal also falls back to the ZIP, so a limit we do not
+  know about costs a ZIP rather than a dead end.
+- **"Phone" means `pointer: coarse`.** Windows and Mac browsers can share files too, but someone
+  at a computer wants a file in Downloads.
+- **A selection survives a filter change** (a basket), so someone can pick from several
+  photographers. Ranges and "Select all" reach only the photos on screen.
+- **Touch events, not pointer events, for the long press:** only a non-passive `touchmove` can
+  stop the page scrolling once a drag has begun; `touch-action` is read too early.
+- **Long press replaces iOS's "Save Image" callout on grid tiles** (`-webkit-touch-callout:
+  none`). The viewer's image keeps it, and right-click on a computer is unchanged.
+- **Check circles are real buttons**, so keyboards and screen readers can select. That doubles
+  the Tab stops in a grid; the alternative was a keyboard shortcut nobody would discover.
+- **Android's Back button does not end selecting; it leaves the page.** Ending it needs a history
+  entry, which would interact with the viewer's history rules and scroll restoration. Left
+  out for now.

@@ -11,15 +11,21 @@
  *
  * With two or more credited photographers, filter chips sit above the grid (TRD §6.3 item 8);
  * each tile carries its photographer's slug as `data-photographer` for them.
+ *
+ * Each tile also has a check circle for selecting several photos to download (TRD §6.4.1). It
+ * is a sibling of the tile, as a button cannot hold a button, and needs the script: the circles
+ * exist on screen only once `src/scripts/selection/` has set `data-selectable` on the grid.
  */
 import { loadingHint, thumbnailSizes } from '../lib/image-sizes.ts';
+import CheckIcon from './CheckIcon.astro';
 import PhotographerFilter from './PhotographerFilter.astro';
 import PostViewer from './PostViewer.astro';
+import SelectionBar from './SelectionBar.astro';
 import { downloadImageFor, thumbnailFor, viewerImageFor } from '../lib/images.ts';
 import { aspectOf, tileShares, tileStyle } from '../lib/justified-grid.ts';
 import { photographerChips } from '../lib/photographer-filter.ts';
 import { jsonForScript } from '../lib/presentation.ts';
-import { downloadFileName, viewerPhoto, type GridPhoto, type ViewerData } from '../lib/viewer-data.ts';
+import { archiveFileName, downloadFileName, viewerPhoto, type GridPhoto, type ViewerData } from '../lib/viewer-data.ts';
 
 interface Props {
   /** In display order, with each photo's deep-link slug on this page. */
@@ -47,6 +53,7 @@ const tiles = await Promise.all(
 );
 const viewerData: ViewerData = {
   context,
+  archiveName: archiveFileName(albumPath),
   photos: tiles.map(({ photo, placement, viewer, download }) => viewerPhoto(photo, viewer, download, placement)),
 };
 const chips = photographerChips(photos.map(({ photo }) => photo));
@@ -75,12 +82,16 @@ const policy = { nearTop, highPriority: 5, eager: 5 };
               decoding="async"
             />
           </button>
+          <button type="button" class="check" aria-pressed="false" aria-label={`Select: ${photo.alt}`} data-select>
+            <span class="check-mark"><CheckIcon size={14} /></span>
+          </button>
         </li>
       );
     })
   }
 </ul>
 <script is:inline type="application/json" id="viewer-data" set:html={jsonForScript(viewerData)} />
+<SelectionBar />
 <PostViewer />
 
 <style>
@@ -141,6 +152,106 @@ const policy = { nearTop, highPriority: 5, eager: 5 };
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+
+  /* A selected photo draws in from the tile's edges, on the sunken surface. */
+  .is-selected .tile img {
+    transform: scale(0.88);
+  }
+
+  /* Tap-and-hold selects: no "Save image" callout or text selection in its way. */
+  .grid[data-selectable] .tile,
+  .grid[data-selectable] .tile img {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* ---------- Check circle ---------- */
+
+  .check {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-on-photo);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+
+  .grid[data-selectable] .check {
+    display: grid;
+  }
+
+  .check-mark {
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: var(--radius-full);
+    background: var(--color-viewer-control);
+    box-shadow: inset 0 0 0 2px var(--color-on-photo-muted);
+    transition: background-color var(--duration-fast) var(--ease-out);
+  }
+
+  /* Shown while selecting, on keyboard focus, and on hover where there is a mouse. */
+  .grid[data-selecting] .check,
+  .tile:focus-visible + .check,
+  .check:focus-visible {
+    opacity: 1;
+  }
+
+  /* An invisible circle must not catch taps meant to open the photo. */
+  .grid:not([data-selecting]) .check {
+    pointer-events: none;
+  }
+
+  @media (hover: hover) {
+    .grid > li:hover .check {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .check:hover .check-mark {
+      background: var(--color-viewer-control-hover);
+    }
+  }
+
+  /* While selecting, an unselected photo has an empty circle. */
+  .grid[data-selecting] li:not(.is-selected) .check:not(:focus-visible) :global(svg) {
+    opacity: 0;
+  }
+
+  @media (hover: hover) {
+    .grid[data-selecting] li:not(.is-selected) .check:hover :global(svg) {
+      opacity: 1;
+    }
+  }
+
+  .is-selected .check-mark,
+  .is-selected .check:hover .check-mark {
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    box-shadow: 0 0 0 2px var(--color-on-accent);
+  }
+
+  .check:focus-visible {
+    outline: none;
+  }
+
+  .check:focus-visible .check-mark {
+    outline: 2px solid var(--color-viewer-focus);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 6px var(--color-viewer-bg);
   }
 
   /* Hover veil and focus ring sit above the photo. */
@@ -153,8 +264,11 @@ const policy = { nearTop, highPriority: 5, eager: 5 };
     pointer-events: none;
   }
 
-  .tile:hover::after {
-    background: var(--color-tile-veil);
+  /* Only with a mouse: on a phone, :hover sticks to the last tile tapped. */
+  @media (hover: hover) {
+    .tile:hover::after {
+      background: var(--color-tile-veil);
+    }
   }
 
   .tile:focus-visible {

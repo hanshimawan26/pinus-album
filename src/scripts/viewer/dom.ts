@@ -31,9 +31,9 @@ export interface ViewerElements {
   announce: HTMLElement;
 }
 
-function required<T extends Element>(root: ParentNode, hook: string, type: new () => T): T {
+export function required<T extends Element>(root: ParentNode, hook: string, type: new () => T): T {
   const element = root.querySelector(`[data-${hook}]`);
-  if (!(element instanceof type)) throw new Error(`Post viewer: element [data-${hook}] is missing.`);
+  if (!(element instanceof type)) throw new Error(`Photo grid: element [data-${hook}] is missing.`);
   return element;
 }
 

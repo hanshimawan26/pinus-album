@@ -1,0 +1,25 @@
+---
+/** A check mark drawn at 1.75px stroke, matching CloseIcon. Decorative: the button carries the name. */
+interface Props {
+  size?: number;
+}
+const { size = 16 } = Astro.props;
+---
+
+<svg class="check-icon" width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+  <path d="M3.25 8.5l3.25 3.25 6.25-7"></path>
+</svg>
+
+<style>
+  .check-icon {
+    flex: none;
+    display: block;
+  }
+  path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+</style>

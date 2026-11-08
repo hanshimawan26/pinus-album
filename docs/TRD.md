@@ -268,6 +268,22 @@ A node with both photos and children shows the section cards first, then its own
 - Lazy-loaded below the fold. Each tile reserves its space from the photo's aspect ratio, so no layout shift.
 - Each tile is a button that opens the viewer.
 
+### 6.4.1 Selecting and downloading several photos
+
+Works like Google Photos, on every photo grid (album pages and "All photos"). It needs JavaScript; without it the grid is unchanged.
+
+- **Starting, with a mouse:** a translucent check circle appears at the top left of a photo on hover (and on keyboard focus). Clicking it selects the photo and starts selecting. Right-click keeps the browser's normal menu.
+- **Starting, on a touch screen:** tap and hold a photo (about half a second). A finger that moves first is scrolling and selects nothing, and a short tap still opens the viewer.
+- **While selecting:** a bar across the top of the window shows ✕, "2 selected", "Select all" and Download. Every photo shows its circle. A click or tap anywhere on a photo toggles it instead of opening the viewer. Deselecting the last photo, ✕ or **Esc** ends selecting.
+- **Ranges:** shift-click adds every photo between the last one picked and this one. On touch, sliding the finger after the hold selects the photos passed over; sliding back releases them; near the top or bottom of the screen the page scrolls.
+- **"Select all"** selects the photos on screen and becomes "Deselect all" once they all are. It follows the photographer filter. A selection survives a filter change, so photos from several photographers can be collected; ranges only reach photos on screen.
+- **Download** always gives the same JPEGs as the viewer's download (§6.5), with their credit, file names and grid order:
+  - One photo on a computer: that JPEG.
+  - Several photos on a computer: one ZIP named after the album (`pinus-ori-day-1-photos.zip`), made in the browser.
+  - On a phone: "Preparing 3 of 12…", then a **Save 12 photos** button that opens the system share sheet ("Save Images" on iPhone). The second tap is required: Safari refuses to open the sheet after a wait. Closing the sheet keeps the button.
+  - A phone that cannot share files, an Android phone with more than 10 photos (Chrome's limit), or a share that is refused: the ZIP (or the JPEG, for one photo).
+- ✕ or Esc during "Preparing" stops it and keeps the selection. If a photo cannot be fetched the bar says "Couldn't download. Try again." and keeps the selection. The selection is frozen while preparing.
+
 ### 6.5 Post viewer (P0, core feature)
 
 Opens as an overlay when a tile is clicked. The design mimics an Instagram post.
@@ -449,7 +465,7 @@ Work in this order. Each milestone ends with a commit and a short note on how to
 
 **P1 backlog (after the above):** "view all photos" aggregate grid, photographer filter chips, IPTC/XMP caption and photographer fallback, low-quality image placeholders, dark mode, Open Graph tags (cover image per album), Playwright E2E.
 
-**Status (13 Oct 2026):** P0 milestones 1–6 are done. Done from P1: "view all photos", photographer filter chips, dark mode, Open Graph tags, Playwright E2E, and the IPTC/XMP caption and photographer fallback (`embedded` sources). Added after the POC: the home page landing blocks (§6.2), the photographer credit on saved viewer images, and the viewer's download button (§6.5). Open: low-quality image placeholders.
+**Status (13 Oct 2026):** P0 milestones 1–6 are done. Done from P1: "view all photos", photographer filter chips, dark mode, Open Graph tags, Playwright E2E, and the IPTC/XMP caption and photographer fallback (`embedded` sources). Added after the POC: the home page landing blocks (§6.2), the photographer credit on saved viewer images, the viewer's download button (§6.5), and selecting and downloading several photos (§6.4.1). Open: low-quality image placeholders.
 
 ---
 
@@ -474,4 +490,4 @@ Claude Code: use the default and keep going. Record anything you assume in `docs
 
 ## 15. Future work (out of scope)
 
-Photographer pages and cross-event search; member-only access (for example Cloudflare Access); a CMS for captions (Decap, TinaCMS); moving image storage to Cloudflare R2 if the repo outgrows GitHub limits; video; slideshow mode; Indonesian/English toggle; RSS feed; download-album-as-zip.
+Photographer pages and cross-event search; member-only access (for example Cloudflare Access); a CMS for captions (Decap, TinaCMS); moving image storage to Cloudflare R2 if the repo outgrows GitHub limits; video; slideshow mode; Indonesian/English toggle; RSS feed.

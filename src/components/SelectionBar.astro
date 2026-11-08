@@ -1,0 +1,128 @@
+---
+/**
+ * The bar across the top of the window while photos are selected (TRD §6.4.1): ✕, "2 selected",
+ * "Select all" and Download. `src/scripts/selection/` shows it and fills in its text, so it stays
+ * hidden without JavaScript. Rendered by PhotoGrid.
+ *
+ * Below 600px Download is just its icon, except when it reads "Save 12 photos": then the text
+ * is the point, and "Select all" has gone to make room.
+ */
+import CloseIcon from './CloseIcon.astro';
+import DownloadIcon from './DownloadIcon.astro';
+---
+
+<div class="bar" role="group" aria-label="Selected photos" data-select-bar hidden>
+  <button type="button" class="close" aria-label="Cancel selection" data-select-close>
+    <CloseIcon size={20} />
+  </button>
+  <p class="label" data-select-label></p>
+  <button type="button" class="all" data-select-all>Select all</button>
+  <button type="button" class="button button--primary save" data-select-save>
+    <DownloadIcon size={18} />
+    <span class="save-text" data-select-save-text>Download</span>
+  </button>
+</div>
+<p class="visually-hidden" aria-live="polite" data-select-status></p>
+
+<style>
+  .bar {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+    padding: var(--space-1) var(--gutter);
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .close {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-inline-start: calc(-1 * var(--space-2));
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: transparent;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-out);
+  }
+
+  .close:hover {
+    background: var(--color-surface-sunken);
+  }
+
+  .close:focus-visible {
+    outline-offset: -3px;
+    border-radius: var(--radius-full);
+  }
+
+  .label {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--text-md);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .all {
+    flex: none;
+    min-height: 2.75rem;
+    padding: 0 var(--space-2);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-link);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-out);
+  }
+
+  .all:hover {
+    background: var(--color-surface-sunken);
+  }
+
+  .save {
+    flex: none;
+    min-width: 2.75rem;
+    padding-inline: var(--space-3);
+  }
+
+  .save:disabled {
+    background: var(--color-surface-sunken);
+    color: var(--color-text-muted);
+    cursor: default;
+  }
+
+  /* Visually hidden, not removed: the button keeps its name for screen readers. */
+  @media (max-width: 599.98px) {
+    .bar:not([data-phase='ready']) .save-text {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
+  @media (min-width: 600px) {
+    .all {
+      font-size: var(--text-md);
+    }
+
+    .save {
+      padding-inline: var(--space-5);
+    }
+  }
+</style>

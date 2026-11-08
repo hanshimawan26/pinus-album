@@ -397,8 +397,9 @@ a caption simply shows no caption.
   "Their Name".
 
 **The credit travels with the photo.** When someone downloads a photo (the download button
-at the top of the photo viewer, next to ✕; it gives a JPEG up to 2400 px wide) or saves it
-from the viewer, the photographer's name comes with it, in the file's details (Artist and
+at the top of the photo viewer, next to ✕; it gives a JPEG up to 2400 px wide), selects
+several in an album (the circle at the top left of a photo, or tap and hold on a phone) or
+saves one from the viewer, the photographer's name comes with it, in the file's details (Artist and
 Copyright). The website can also write a small, see-through "© Their Name" in the
 bottom-right corner of the picture; that watermark is switched off for now (a developer
 turns it back on with `WATERMARK_ENABLED` in `src/lib/credit/credit.ts`). The website adds the credit
