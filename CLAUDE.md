@@ -124,7 +124,7 @@ src/
                      through the photos the filter left); index.ts (entry, used by PostViewer.astro)
   scripts/selection/ selecting several photos and downloading them (TRD §6.4.1), started from
                      viewer/index.ts: PURE state.ts, drag.ts (long-press and edge-scroll
-                     numbers), delivery.ts (file, ZIP or share sheet), bar-view.ts, zip.ts
+                     numbers), delivery.ts (file, files, ZIP or share sheet), bar-view.ts, zip.ts
                      (unit-tested); DOM touch.ts, download.ts, controller.ts
 scripts/             maintainer CLIs (photos:check, photos:prep, photos:init, demo:images,
                      verify:dist) — thin wrappers over src/lib, run with Node type stripping;

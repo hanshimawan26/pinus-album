@@ -16,6 +16,10 @@ describe('barView', () => {
     expect(barView(state({ phase: 'preparing', count: 40, done: 12 }))).toMatchObject({ label: 'Preparing 12 of 40…', saveDisabled: true, showSelectAll: false });
   });
 
+  it('counts the separate downloads on Android and freezes the actions', () => {
+    expect(barView(state({ phase: 'saving', count: 40, done: 12 }))).toMatchObject({ label: 'Saving 12 of 40…', saveDisabled: true, showSelectAll: false });
+  });
+
   it('names the second tap on a phone', () => {
     expect(barView(state({ phase: 'ready', count: 12 }))).toMatchObject({ saveText: 'Save 12 photos', saveDisabled: false, showSelectAll: false });
     expect(barView(state({ phase: 'ready', count: 1 })).saveText).toBe('Save 1 photo');

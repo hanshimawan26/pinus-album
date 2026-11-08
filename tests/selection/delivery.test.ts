@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ANDROID_SHARE_LIMIT, deliveryFor, type Device } from '../../src/scripts/selection/delivery.ts';
+import { deliveryFor, type Device } from '../../src/scripts/selection/delivery.ts';
 
 const computer: Device = { phone: false, android: false, canShareFiles: false };
 const iPhone: Device = { phone: true, android: false, canShareFiles: true };
@@ -16,17 +16,18 @@ describe('deliveryFor', () => {
     expect(deliveryFor(5, { ...computer, canShareFiles: true })).toBe('zip');
   });
 
-  it('uses the share sheet on phones, even for one photo', () => {
+  it('uses the share sheet on iPhones, even for one photo', () => {
     expect(deliveryFor(1, iPhone)).toBe('share');
     expect(deliveryFor(200, iPhone)).toBe('share');
   });
 
-  it('switches Android to a ZIP above what Chrome will share', () => {
-    expect(deliveryFor(ANDROID_SHARE_LIMIT, android)).toBe('share');
-    expect(deliveryFor(ANDROID_SHARE_LIMIT + 1, android)).toBe('zip');
+  it('never uses the share sheet on Android, which cannot save from it', () => {
+    expect(deliveryFor(1, android)).toBe('file');
+    expect(deliveryFor(2, android)).toBe('files');
+    expect(deliveryFor(200, android)).toBe('files');
   });
 
-  it('falls back on phones that cannot share files', () => {
+  it('falls back on iPhones that cannot share files', () => {
     expect(deliveryFor(3, oldPhone)).toBe('zip');
     expect(deliveryFor(1, oldPhone)).toBe('file');
   });

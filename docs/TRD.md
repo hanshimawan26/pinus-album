@@ -280,9 +280,10 @@ Works like Google Photos, on every photo grid (album pages and "All photos"). It
 - **Download** always gives the same JPEGs as the viewer's download (§6.5), with their credit, file names and grid order:
   - One photo on a computer: that JPEG.
   - Several photos on a computer: one ZIP named after the album (`pinus-ori-day-1-photos.zip`), made in the browser.
-  - On a phone: "Preparing 3 of 12…", then a **Save 12 photos** button that opens the system share sheet ("Save Images" on iPhone). The second tap is required: Safari refuses to open the sheet after a wait. Closing the sheet keeps the button.
-  - A phone that cannot share files, an Android phone with more than 10 photos (Chrome's limit), or a share that is refused: the ZIP (or the JPEG, for one photo).
-- ✕ or Esc during "Preparing" stops it and keeps the selection. If a photo cannot be fetched the bar says "Couldn't download. Try again." and keeps the selection. The selection is frozen while preparing.
+  - On an iPhone: "Preparing 3 of 12…", then a **Save 12 photos** button that opens the system share sheet, which offers "Save Images". The second tap is required: Safari refuses to open the sheet after a wait. Closing the sheet keeps the button.
+  - On Android: each photo downloads as its own JPEG ("Saving 3 of 12…"), so it is in Downloads and the gallery with nothing to unzip. Android's share sheet is not used: it has no way to save to the device. Chrome may ask once to allow this site to download several files.
+  - An iPhone that cannot share files, or a share that is refused: the ZIP (or the JPEG, for one photo).
+- ✕ or Esc during "Preparing" or "Saving" stops it and keeps the selection (photos already saved stay saved). If a photo cannot be fetched the bar says "Couldn't download. Try again." and keeps the selection. The selection is frozen from the moment Download is pressed.
 
 ### 6.5 Post viewer (P0, core feature)
 

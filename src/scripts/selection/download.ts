@@ -13,6 +13,9 @@ const PARALLEL_FETCHES = 4;
 /** Long enough for a phone to start saving a large blob before its URL goes away. */
 const BLOB_URL_LIFETIME_MS = 60_000;
 
+/** Between separate downloads: browsers drop some when they are started all at once. */
+const SEPARATE_DOWNLOAD_GAP_MS = 250;
+
 /** Fetches the photos, a few at a time, and returns them in the order given. */
 export async function fetchPhotos(
   photos: readonly ViewerDownload[],
@@ -40,6 +43,22 @@ export function saveUrl(url: string, fileName: string): void {
   link.href = url;
   link.download = fileName;
   link.click();
+}
+
+/**
+ * Starts one download per photo, in order. The browser fetches them itself, so nothing is held
+ * in memory; the first starts inside the tap, which is what lets the download begin at all.
+ */
+export async function saveEach(
+  photos: readonly ViewerDownload[],
+  options: { signal: AbortSignal; onProgress: (done: number) => void },
+): Promise<void> {
+  for (const [index, photo] of photos.entries()) {
+    if (options.signal.aborted) return;
+    saveUrl(photo.src, photo.fileName);
+    options.onProgress(index + 1);
+    await new Promise((resolve) => window.setTimeout(resolve, SEPARATE_DOWNLOAD_GAP_MS));
+  }
 }
 
 export function saveZip(files: readonly ZipFile[], fileName: string): void {

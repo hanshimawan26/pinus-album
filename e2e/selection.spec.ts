@@ -175,22 +175,53 @@ async function hold(page: Page, from: Locator, options: { holdMs?: number; slide
   await session.detach();
 }
 
+/** A share sheet that records what it was given: a headless browser has none to open. */
+const stubShareSheet = (page: Page) =>
+  page.addInitScript(() => {
+    const shared: string[][] = [];
+    Object.assign(window, { shared });
+    Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true });
+    Object.defineProperty(navigator, 'share', {
+      value: (data: { files: File[] }) => {
+        shared.push(data.files.map((file) => `${file.name}:${file.type}`));
+        return Promise.resolve();
+      },
+      configurable: true,
+    });
+  });
+
+const sharedFiles = (page: Page): Promise<string[][]> => page.evaluate(() => (window as unknown as { shared: string[][] }).shared);
+
+test.describe('on Android', () => {
+  test.use({ userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36' });
+  test.skip(({ hasTouch }) => !hasTouch, 'touch only');
+
+  test('several photos save as separate JPEGs, never through the share sheet', async ({ page }) => {
+    await stubShareSheet(page);
+    await page.goto(PAGES.section);
+    await page.waitForLoadState('domcontentloaded');
+    const names = await page.locator('#viewer-data').evaluate((script) => {
+      const { photos } = JSON.parse(script.textContent ?? '') as { photos: { download: { fileName: string } }[] };
+      return [photos[0]!.download.fileName, photos[1]!.download.fileName];
+    });
+    const saved: string[] = [];
+    page.on('download', (download) => saved.push(download.suggestedFilename()));
+
+    await hold(page, tile(page, 0));
+    await tile(page, 1).tap();
+    await bar(page).getByRole('button', { name: 'Download' }).tap();
+
+    await expect.poll(() => saved).toEqual(names);
+    await expect(bar(page)).toBeHidden();
+    expect(await sharedFiles(page)).toEqual([]);
+  });
+});
+
 test.describe('selecting by touch', () => {
   test.skip(({ hasTouch }) => !hasTouch, 'touch only');
 
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      const shared: string[][] = [];
-      Object.assign(window, { shared });
-      Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true });
-      Object.defineProperty(navigator, 'share', {
-        value: (data: { files: File[] }) => {
-          shared.push(data.files.map((file) => `${file.name}:${file.type}`));
-          return Promise.resolve();
-        },
-        configurable: true,
-      });
-    });
+    await stubShareSheet(page);
     await page.goto(PAGES.section);
     await page.waitForLoadState('domcontentloaded');
   });
@@ -236,7 +267,7 @@ test.describe('selecting by touch', () => {
     await expect(bar(page)).toBeHidden();
   });
 
-  test('the phone prepares the photos, then a second tap opens the share sheet', async ({ page }) => {
+  test('an iPhone prepares the photos, then a second tap opens the share sheet', async ({ page }) => {
     await hold(page, tile(page, 0));
     await tile(page, 1).tap();
     await bar(page).getByRole('button', { name: 'Download' }).tap();
@@ -245,7 +276,7 @@ test.describe('selecting by touch', () => {
     await expect(save).toBeVisible();
     await save.tap();
     await expect(bar(page)).toBeHidden();
-    const shared = await page.evaluate(() => (window as unknown as { shared: string[][] }).shared);
+    const shared = await sharedFiles(page);
     expect(shared).toHaveLength(1);
     expect(shared[0]).toHaveLength(2);
     for (const file of shared[0]!) expect(file).toMatch(/\.jpg:image\/jpeg$/);

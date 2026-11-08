@@ -1619,21 +1619,23 @@ replaces the earlier decision on square thumbnails.
 Asked by the user: multi-select "like on Google Photos" (tap and hold on a phone, a translucent
 circle at the top left on a computer). TRD §6.4.1 has the behaviour.
 
-- **Delivery: a ZIP on computers, the share sheet on phones** (chosen by the user from three
-  options). A ZIP on an iPhone lands in Files and has to be unzipped; the share sheet offers
-  "Save Images" to Photos. Separate downloads were rejected: browsers ask permission, and
-  iPhone Safari handles them poorly.
+- **Delivery: a ZIP on computers, the share sheet on iPhones, separate JPEGs on Android.** The
+  user first chose a ZIP on computers and the share sheet on all phones. A ZIP on an iPhone
+  lands in Files and has to be unzipped; the share sheet offers "Save Images" to Photos.
+- **Android changed after the user tested it:** its share sheet only sends files to other
+  apps and has no way to save them, so "Save photos" was a dead end. Each photo now downloads
+  as its own JPEG, which puts it in Downloads and the gallery with nothing to unzip. Chrome may
+  ask once to allow several downloads. Separate files stay rejected on iPhone, where Safari
+  handles them poorly.
 - **The ZIP is made in the browser**, as the site is static. No library: JPEGs do not compress,
   so entries are "stored" and the writer is about 100 lines (`selection/zip.ts`), checked
   with Python's `zipfile` and Windows' Expand-Archive. No new files are published, so the site
   does not grow towards the Pages limit, unlike ready-made album ZIPs.
-- **Phones take two taps** ("Preparing…", then "Save 12 photos"). `navigator.share()` needs a
+- **iPhones take two taps** ("Preparing…", then "Save 12 photos"). `navigator.share()` needs a
   recent tap, and WebKit bugs 197779 and 225559 report Safari rejecting it after a `fetch`.
   Fetching first and asking for a second tap is the reliable way round it.
-- **Android switches to a ZIP above 10 photos.** Chromium refuses more
-  (`kMaxSharedFileCount = 10` in `share_service_impl.h`, read on 8 Nov 2026). Safari
-  documents no limit. Any other refusal also falls back to the ZIP, so a limit we do not
-  know about costs a ZIP rather than a dead end.
+- **A refused share falls back to the ZIP**, so a limit we do not know about costs a ZIP
+  rather than a dead end.
 - **"Phone" means `pointer: coarse`.** Windows and Mac browsers can share files too, but someone
   at a computer wants a file in Downloads.
 - **A selection survives a filter change** (a basket), so someone can pick from several

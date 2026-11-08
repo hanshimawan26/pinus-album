@@ -12,7 +12,7 @@ import type { ViewerData } from '../../lib/viewer-data.ts';
 import { required, setShown } from '../viewer/dom.ts';
 import { barView, savedStatus, type Phase } from './bar-view.ts';
 import { deliveryFor } from './delivery.ts';
-import { currentDevice, fetchPhotos, isDismissed, saveUrl, saveZip, shareFiles } from './download.ts';
+import { currentDevice, fetchPhotos, isDismissed, saveEach, saveUrl, saveZip, shareFiles } from './download.ts';
 import {
   allShownSelected,
   deselectShown,
@@ -106,7 +106,7 @@ export class PhotoSelection {
     const index = this.#tileOf(element);
     if (index === null) return false;
     if (index === this.#selection.anchor && performance.now() < this.#ignoreClicksUntil) return true;
-    if (this.#phase === 'preparing' || this.#phase === 'ready') return true;
+    if (this.#isDownloading) return true;
     if (this.#phase === 'idle' && !element?.closest('[data-select]')) return false;
 
     const range = event.shiftKey && this.#phase === 'selecting';
@@ -120,6 +120,11 @@ export class PhotoSelection {
   // -------------------------------------------------------------------------------------
   // Leaving and rendering
   // -------------------------------------------------------------------------------------
+
+  /** The selection is frozen from the moment Download is pressed. */
+  get #isDownloading(): boolean {
+    return this.#phase === 'preparing' || this.#phase === 'ready' || this.#phase === 'saving';
+  }
 
   /** Selecting ends by itself when the last photo is deselected. */
   #settle(): void {
@@ -143,7 +148,7 @@ export class PhotoSelection {
 
   /** ✕ or Esc: stops a download in progress, otherwise leaves selecting. */
   #cancel(): void {
-    if (this.#phase === 'preparing' || this.#phase === 'ready') {
+    if (this.#isDownloading) {
       this.#stopDownload();
       this.#phase = 'selecting';
       this.#render();
@@ -221,10 +226,19 @@ export class PhotoSelection {
 
     const abort = new AbortController();
     this.#abort = abort;
-    this.#phase = 'preparing';
+    this.#phase = delivery === 'files' ? 'saving' : 'preparing';
     this.#done = 0;
     this.#failed = false;
     this.#render();
+    if (delivery === 'files') {
+      const onProgress = (done: number): void => {
+        this.#done = done;
+        this.#render();
+      };
+      await saveEach(photos, { signal: abort.signal, onProgress });
+      if (this.#abort === abort) this.#finish();
+      return;
+    }
     try {
       const files = await fetchPhotos(photos, {
         signal: abort.signal,

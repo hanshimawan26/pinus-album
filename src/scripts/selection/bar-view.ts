@@ -2,11 +2,12 @@
  * What the selection bar says and offers in each phase (TRD §6.4.1). PURE.
  *
  * Phases: `idle` (no bar), `selecting`, `preparing` (the photos are being fetched; the selection
- * is frozen) and `ready` (phones only: the photos are in memory and a second tap opens the share
- * sheet, because Safari refuses to open it after a wait).
+ * is frozen), `ready` (iPhones: the photos are in memory and a second tap opens the share sheet,
+ * because Safari refuses to open it after a wait) and `saving` (Android: each photo is being
+ * handed to the browser as its own download).
  */
 
-export type Phase = 'idle' | 'selecting' | 'preparing' | 'ready';
+export type Phase = 'idle' | 'selecting' | 'preparing' | 'ready' | 'saving';
 
 export interface BarState {
   phase: Phase;
@@ -35,6 +36,8 @@ export function barView({ phase, count, done, allShown, failed }: BarState): Bar
   switch (phase) {
     case 'preparing':
       return { label: `Preparing ${done} of ${count}…`, saveText: 'Download', saveDisabled: true, showSelectAll: false, selectAllText };
+    case 'saving':
+      return { label: `Saving ${done} of ${count}…`, saveText: 'Download', saveDisabled: true, showSelectAll: false, selectAllText };
     case 'ready':
       return { label: 'Ready', saveText: `Save ${photoCount(count)}`, saveDisabled: false, showSelectAll: false, selectAllText };
     default:
